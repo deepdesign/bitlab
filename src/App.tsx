@@ -1,5 +1,16 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Button, Card, DropdownMenu, DropdownMenuTrigger, DropdownMenuContent } from 'pixel-retroui'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { Button, Card } from 'pixel-retroui'
+
+import { Tabs, TabsTriggerList, TabsTrigger, TabsPanels, TabsContent } from './components/retroui/Tab'
+import { Switch } from './components/retroui/Switch'
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectValue,
+} from './components/retroui/Select'
 
 import {
   createSpriteController,
@@ -8,10 +19,10 @@ import {
   type SpriteController,
   type SpriteMode,
   type MovementMode,
+  type BackgroundMode,
 } from './generator'
 import { getPixelArtIconById, pixelArtIconAssets } from './data/pixelartIconAssets'
 import { palettes } from './data/palettes'
-
 const BUTTON_PRIMARY = {
   bg: 'var(--btn-primary-bg)',
   textColor: 'var(--btn-primary-text)',
@@ -26,34 +37,38 @@ const BUTTON_SECONDARY = {
   borderColor: 'var(--btn-secondary-border)',
 }
 
-const BUTTON_MUTED = {
-  bg: 'var(--btn-muted-bg)',
-  textColor: 'var(--btn-muted-text)',
-  shadow: 'var(--btn-muted-shadow)',
-  borderColor: 'var(--btn-muted-border)',
-}
-
-const BLEND_MODES: BlendModeOption[] = ['RANDOM', 'BLEND', 'MULTIPLY', 'SCREEN', 'HARD_LIGHT', 'OVERLAY']
+const BLEND_MODES: BlendModeOption[] = ['NONE', 'MULTIPLY', 'SCREEN', 'HARD_LIGHT', 'OVERLAY']
+const BACKGROUND_OPTIONS = [
+  { value: 'palette', label: 'Palette (auto)' },
+  { value: 'midnight', label: 'Midnight' },
+  { value: 'charcoal', label: 'Charcoal' },
+  { value: 'dusk', label: 'Dusk' },
+  { value: 'dawn', label: 'Dawn' },
+  { value: 'nebula', label: 'Nebula' },
+] as const
 
 type ThemeMode = 'system' | 'light' | 'dark'
-type ThemeColor = 'amber' | 'mint' | 'violet'
-type ThemeShape = 'box' | 'rounded'
+type ThemeColor = 'amber' | 'mint' | 'violet' | 'ember' | 'lagoon' | 'rose'
 
 const THEME_MODE_STORAGE_KEY = 'retro-theme-mode'
 const THEME_COLOR_STORAGE_KEY = 'retro-theme-color'
-const THEME_SHAPE_STORAGE_KEY = 'retro-theme-shape'
-const GITHUB_REPO_URL = 'https://github.com/deepdesign/artlab'
-
 const THEME_COLOR_OPTIONS: Array<{ value: ThemeColor; label: string }> = [
-  { value: 'amber', label: 'Amber' },
-  { value: 'mint', label: 'Mint' },
-  { value: 'violet', label: 'Violet' },
+  { value: 'amber', label: 'Sunburst' },
+  { value: 'mint', label: 'Neon Grid' },
+  { value: 'violet', label: 'Nebula' },
+  { value: 'ember', label: 'Ember Glow' },
+  { value: 'lagoon', label: 'Lagoon Tide' },
+  { value: 'rose', label: 'Rose Quartz' },
 ]
 
-const THEME_SHAPE_OPTIONS: Array<{ value: ThemeShape; label: string }> = [
-  { value: 'box', label: 'Box' },
-  { value: 'rounded', label: 'Rounded' },
-]
+const THEME_COLOR_PREVIEW: Record<ThemeColor, string> = {
+  amber: '#ffdb33',
+  mint: '#58f5c2',
+  violet: '#c99cff',
+  ember: '#ff6b3d',
+  lagoon: '#3ad7ff',
+  rose: '#ff7cc8',
+}
 
 const SPRITE_MODES: Array<{ value: SpriteMode; label: string; description: string }> = [
   { value: 'pixel-glass', label: 'Pixel Glass', description: 'Dense pixel mosaics with retro motion' },
@@ -61,43 +76,86 @@ const SPRITE_MODES: Array<{ value: SpriteMode; label: string; description: strin
   { value: 'square', label: 'Square', description: 'Chunky voxel tiles snapped to a tight grid' },
   { value: 'triangle', label: 'Triangle', description: 'Angular shards with sharp tessellations' },
   { value: 'hexagon', label: 'Hexagon', description: 'Honeycomb lattices with layered depth' },
+  { value: 'ring', label: 'Orbit Rings', description: 'Outlined halos that wobble and pulse like retro radar' },
+  { value: 'diamond', label: 'Crystal Diamonds', description: 'Faceted lozenges drifting in shimmering parallax' },
+  { value: 'star', label: 'Starburst', description: 'Five-point bursts that twinkle with layered motion' },
+  { value: 'line', label: 'Neon Lines', description: 'Light trails that slice across the canvas with rhythm' },
   { value: 'icon', label: 'Icon', description: 'Single pixelart icon from the library' },
 ]
 
 const PALETTE_OPTIONS = palettes.map((palette) => ({ value: palette.id, label: palette.name }))
+
+const CLUSTER_PRESET_OPTIONS = [
+  { value: 'single', label: 'Single Tile Preset' },
+  { value: 'nebula', label: 'Nebula Cluster' },
+  { value: 'minimal', label: 'Minimal Grid' },
+  { value: 'shuffle', label: 'Shuffle Cluster' },
+]
 
 const MOVEMENT_MODES: Array<{ value: MovementMode; label: string }> = [
   { value: 'sway', label: 'Sway' },
   { value: 'pulse', label: 'Pulse' },
   { value: 'orbit', label: 'Orbit' },
   { value: 'drift', label: 'Drift' },
+  { value: 'ripple', label: 'Ripple' },
+  { value: 'zigzag', label: 'Zigzag' },
+  { value: 'cascade', label: 'Cascade' },
+  { value: 'spiral', label: 'Spiral Orbit' },
+  { value: 'comet', label: 'Comet Trail' },
+  { value: 'wavefront', label: 'Wavefront' },
 ]
 
 const formatBlendMode = (mode: BlendModeOption) =>
-  mode === 'RANDOM'
-    ? 'Auto Shuffle'
-    : mode
-        .toLowerCase()
-        .split('_')
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ')
+  mode
+    .toLowerCase()
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
 
 const formatMovementMode = (mode: MovementMode) =>
   MOVEMENT_MODES.find((entry) => entry.value === mode)?.label ?? 'Sway'
 
-const formatBlendStatus = (mode: BlendModeOption, auto: boolean) =>
-  auto ? 'Auto Shuffle' : formatBlendMode(mode)
+const useMediaQuery = (query: string) => {
+  const [matches, setMatches] = useState(() => {
+    if (typeof window === 'undefined') {
+      return false
+    }
+    return window.matchMedia(query).matches
+  })
 
-const randomColor = () => `#${Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, '0')}`
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+    const media = window.matchMedia(query)
+    const listener = () => setMatches(media.matches)
+    listener()
+    if (typeof media.addEventListener === 'function') {
+      media.addEventListener('change', listener)
+      return () => media.removeEventListener('change', listener)
+    }
+    media.addListener(listener)
+    return () => media.removeListener(listener)
+  }, [query])
 
-const buildGradient = () => {
-  const colors = Array.from({ length: 4 }, () => randomColor())
-  return `linear-gradient(120deg, ${colors.join(', ')})`
+  return matches
 }
 
-const caretMaskSvg =
-  '<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128"><path d="M32 16h16v16h16v16h16v16h16v16h-16v16h-16v16h-16v16h-16v16h-16z" fill="currentColor"/></svg>'
-const caretMask = `url("data:image/svg+xml,${encodeURIComponent(caretMaskSvg)}")`
+const TooltipIcon = ({ id, text, label }: { id: string; text: string; label: string }) => (
+  <span className="retro-tooltip">
+    <button
+      type="button"
+      className="tooltip-trigger"
+      aria-describedby={id}
+      aria-label={`More about ${label}`}
+    >
+      ?
+    </button>
+    <span id={id} role="tooltip" className="tooltip-content">
+      {text}
+    </span>
+  </span>
+)
 
 const ControlSlider = ({
   id,
@@ -109,6 +167,7 @@ const ControlSlider = ({
   onChange,
   displayValue,
   disabled,
+  tooltip,
 }: {
   id: string
   label: string
@@ -119,96 +178,100 @@ const ControlSlider = ({
   displayValue: string
   onChange: (value: number) => void
   disabled?: boolean
-}) => (
-  <div className="control-group">
-    <label className="control-label" htmlFor={id}>
-      <span>{label}</span>
-      <span className="control-value">{displayValue}</span>
-    </label>
-    <input
-      id={id}
-      className="retro-slider"
-      type="range"
-      min={min}
-      max={max}
-      step={step}
-      value={value}
-      onChange={(event) => onChange(Number(event.target.value))}
-      disabled={disabled}
-    />
-  </div>
-)
-
-const Dropdown = ({
-  label,
-  current,
-  activeValue,
-  onSelect,
-  options,
-  disabled,
-  hideLabel = false,
-}: {
-  label: string
-  current: string
-  activeValue?: string | null
-  onSelect: (value: string) => void
-  options: Array<{ value: string; label: string }>
-  disabled: boolean
-  hideLabel?: boolean
+  tooltip?: string
 }) => {
-  const handleSelect = useCallback(
-    (value: string) => {
-      if (disabled) return
-      onSelect(value)
-      window.requestAnimationFrame(() => {
-        document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }))
-      })
-    },
-    [disabled, onSelect],
-  )
-
-  const selectedValue = activeValue ?? null
-
   return (
-    <DropdownMenu className={`retro-select${disabled ? ' retro-select-disabled' : ''}`}>
-      <DropdownMenuTrigger
-        className={`retro-btn retro-btn--md retro-select-trigger${disabled ? ' retro-select-trigger-disabled' : ''}`}
+    <div className="control-field">
+      <div className="field-heading">
+        <div className="field-heading-left">
+          <span className="field-label" id={`${id}-label`}>
+            {label}
+          </span>
+          {tooltip && <TooltipIcon id={`${id}-tip`} text={tooltip} label={label} />}
+        </div>
+        <span className="field-value">{displayValue}</span>
+      </div>
+      <input
+        className="control-slider"
+        type="range"
+        id={id}
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(event) => onChange(Number(event.target.value))}
         disabled={disabled}
-        aria-haspopup="listbox"
-      >
-        <div className="retro-select-meta">
-          {!hideLabel && <span className="retro-select-label">{label}</span>}
-          <span className="retro-select-value">{current}</span>
-        </div>
-        <span
-          className="retro-select-caret"
-          aria-hidden="true"
-          style={{ maskImage: caretMask, WebkitMaskImage: caretMask }}
-        />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="retro-select-menu">
-        <div role="listbox" aria-label={label} className="retro-select-options">
-          {options.map((option) => {
-            const isActive = option.value === selectedValue
-            return (
-              <button
-                key={option.value}
-                type="button"
-                className={`retro-select-option${isActive ? ' retro-select-option-active' : ''}`}
-                onClick={() => handleSelect(option.value)}
-                role="option"
-                aria-selected={isActive}
-              >
-                {option.label}
-                {isActive && <span className="retro-select-dot" aria-hidden="true" />}
-              </button>
-            )
-          })}
-        </div>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        aria-labelledby={`${id}-label`}
+      />
+    </div>
   )
 }
+
+const ControlSelect = ({
+  id,
+  label,
+  options,
+  value,
+  onChange,
+  disabled,
+  placeholder,
+  tooltip,
+  currentLabel,
+}: {
+  id: string
+  label: string
+  options: Array<{ value: string; label: string }>
+  value: string | null
+  onChange: (value: string) => void
+  disabled?: boolean
+  placeholder?: string
+  tooltip?: string
+  currentLabel?: string
+}) => {
+  const tooltipId = tooltip ? `${id}-tip` : undefined
+  const resolvedLabel = currentLabel ?? options.find((option) => option.value === value)?.label ?? placeholder ?? 'Select'
+
+  return (
+    <div className="control-field">
+      <div className="field-heading">
+        <div className="field-heading-left">
+          <span className="field-label" id={`${id}-label`}>
+            {label}
+          </span>
+          {tooltip && tooltipId && <TooltipIcon id={tooltipId} text={tooltip} label={label} />}
+        </div>
+      </div>
+      <Select value={value ?? undefined} onValueChange={onChange} disabled={disabled}>
+        <SelectTrigger className="control-dropdown-trigger" aria-labelledby={`${id}-label`}>
+          <SelectValue placeholder={placeholder ?? 'Select'}>{resolvedLabel}</SelectValue>
+        </SelectTrigger>
+        <SelectContent className="control-dropdown-menu">
+          <SelectGroup>
+            {options.map((option) => (
+              <SelectItem key={option.value} value={option.value} className="control-dropdown-item">
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+    </div>
+  )
+}
+
+const BitlabLogo = ({ className = '' }: { className?: string }) => (
+  <svg
+    className={className}
+    viewBox="0 0 330 45"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+  >
+    <path
+      fill="currentColor"
+      d="M52.5 7.5h-7.5V0h7.5v7.5h7.5v30h-7.5v7.5H0v-7.5h45v-7.5h7.5v-7.5h-7.5v-7.5h7.5v-7.5zm-30 7.5V7.5h7.5V15h-7.5zm0 15v-7.5h7.5V30h-7.5zM90 45h-30v-7.5h22.5V0H90v45zM90 7.5h15v7.5H90V7.5zm45 22.5h-7.5V7.5h15V0h7.5v15h-15v15h7.5v15h-45v-7.5h37.5v-7.5zM210 45h-60v-7.5h52.5v-7.5H210V45zm-37.5-15V0h7.5v30h-7.5zM262.5 7.5h-7.5V0h7.5v7.5h7.5v37.5h-60v-7.5h22.5v-7.5h7.5v7.5h22.5V7.5zm-30 15V7.5h7.5v15h-7.5zM322.5 7.5h-7.5V0h7.5v7.5h7.5v30h-7.5v7.5h-52.5v-7.5h45v-7.5h7.5v-7.5h-7.5v-7.5h7.5v-7.5zm-30 7.5V7.5h7.5V15h-7.5zm0 15v-7.5h7.5V30h-7.5z"
+    />
+  </svg>
+)
 
 const getStoredThemeMode = (): ThemeMode => {
   if (typeof window === 'undefined') {
@@ -223,15 +286,13 @@ const getStoredThemeColor = (): ThemeColor => {
     return 'amber'
   }
   const stored = window.localStorage.getItem(THEME_COLOR_STORAGE_KEY)
-  return stored === 'mint' || stored === 'violet' ? (stored as ThemeColor) : 'amber'
-}
-
-const getStoredThemeShape = (): ThemeShape => {
-  if (typeof window === 'undefined') {
-    return 'box'
-  }
-  const stored = window.localStorage.getItem(THEME_SHAPE_STORAGE_KEY)
-  return stored === 'rounded' ? 'rounded' : 'box'
+  return stored === 'mint' ||
+    stored === 'violet' ||
+    stored === 'ember' ||
+    stored === 'lagoon' ||
+    stored === 'rose'
+    ? (stored as ThemeColor)
+    : 'amber'
 }
 
 const App = () => {
@@ -241,9 +302,13 @@ const App = () => {
   const [frameRate, setFrameRate] = useState<number>(60)
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => getStoredThemeMode())
   const [themeColor, setThemeColor] = useState<ThemeColor>(() => getStoredThemeColor())
-  const [themeShape, setThemeShape] = useState<ThemeShape>(() => getStoredThemeShape())
+  const [clusterPreset, setClusterPreset] = useState<'single' | 'nebula' | 'minimal' | 'shuffle'>('shuffle')
   const [controlTab, setControlTab] = useState<'sprites' | 'fx'>('sprites')
-  const [logoGradient, setLogoGradient] = useState<string>(() => buildGradient())
+  const isStudioLayout = useMediaQuery('(min-width: 1760px)')
+  const themeColorLabel = useMemo(
+    () => THEME_COLOR_OPTIONS.find((option) => option.value === themeColor)?.label ?? THEME_COLOR_OPTIONS[0].label,
+    [themeColor],
+  )
 
   const cycleThemeMode = useCallback(() => {
     setThemeMode((prev) => {
@@ -321,6 +386,10 @@ const App = () => {
     controllerRef.current?.usePalette(paletteId)
   }, [])
 
+  const handleBackgroundSelect = useCallback((mode: string) => {
+    controllerRef.current?.setBackgroundMode(mode as BackgroundMode)
+  }, [])
+
   const handleBlendSelect = useCallback((mode: BlendModeOption) => {
     controllerRef.current?.setBlendMode(mode)
   }, [])
@@ -341,98 +410,96 @@ const App = () => {
     controllerRef.current?.setIconAsset(iconId)
   }, [])
 
-  const randomiseIconControls = useCallback(() => {
-    if (!controllerRef.current) {
-      return
+  const handleThemeSelect = useCallback((value: string) => {
+    if (value === 'amber' || value === 'mint' || value === 'violet' || value === 'ember' || value === 'lagoon' || value === 'rose') {
+      setThemeColor(value)
     }
-    controllerRef.current.randomizeIcon()
   }, [])
 
-  const randomiseBlend = useCallback(() => {
-    controllerRef.current?.randomizeBlendMode()
+  const randomiseCluster = useCallback(() => {
+    controllerRef.current?.randomizeCluster()
   }, [])
 
-  const handleLogoClick = useCallback(() => {
-    setLogoGradient(buildGradient())
+  const applySingleTilePreset = useCallback(() => {
+    controllerRef.current?.applySingleTilePreset()
   }, [])
+
+  const applyNebulaPreset = useCallback(() => {
+    controllerRef.current?.applyNebulaPreset()
+  }, [])
+
+  const applyMinimalPreset = useCallback(() => {
+    controllerRef.current?.applyMinimalGridPreset()
+  }, [])
+
+  const handleClusterPresetSelect = useCallback(
+    (value: string) => {
+      if (!controllerRef.current) return
+      switch (value) {
+        case 'single':
+          applySingleTilePreset()
+          break
+        case 'nebula':
+          applyNebulaPreset()
+          break
+        case 'minimal':
+          applyMinimalPreset()
+          break
+        case 'shuffle':
+        default:
+          randomiseCluster()
+          break
+      }
+      const presetValue =
+        value === 'single' || value === 'nebula' || value === 'minimal' ? value : 'shuffle'
+      setClusterPreset(presetValue as 'single' | 'nebula' | 'minimal' | 'shuffle')
+    },
+    [applyMinimalPreset, applyNebulaPreset, applySingleTilePreset, randomiseCluster],
+  )
 
   const handleRandomiseAll = useCallback(() => {
     controllerRef.current?.randomizeAll()
   }, [])
 
-  const logoStyle = useMemo(
-    () => ({
-      background: logoGradient,
-      backgroundSize: '200% 200%',
-      animation: 'logoGradientShift 12s ease infinite',
-      WebkitMaskImage: 'url(/artlab-logo-white.svg)',
-      maskImage: 'url(/artlab-logo-white.svg)',
-      WebkitMaskRepeat: 'no-repeat',
-      maskRepeat: 'no-repeat',
-      WebkitMaskPosition: 'center',
-      maskPosition: 'center',
-      WebkitMaskSize: 'contain',
-      maskSize: 'contain',
-    }),
-    [logoGradient],
-  )
-
-  const statusSeed = spriteState?.seed ?? '----'
   const statusPalette = currentPalette.name
   const statusMode = currentModeLabel
-  const statusMotif = useMemo(() => {
-    if (!spriteState) {
-      return '—'
-    }
-    if (spriteState.spriteMode === 'icon') {
-      return currentIconAsset?.label ?? 'Icon'
-    }
-    if (spriteState.spriteMode === 'pixel-glass') {
-      return spriteState.icon?.name ?? 'Pixel Glass'
-    }
-    return (
-      SPRITE_MODES.find((entry) => entry.value === spriteState.spriteMode)?.label ?? spriteState.spriteMode
-    )
-  }, [spriteState, currentIconAsset])
-  const statusBlend = spriteState ? formatBlendStatus(spriteState.blendMode as BlendModeOption, spriteState.blendModeAuto) : 'Auto'
+  const statusBlend = spriteState ? formatBlendMode(spriteState.blendMode as BlendModeOption) : 'None'
+  const statusMotion = spriteState ? formatMovementMode(spriteState.movementMode) : 'Sway'
 
-  const applyDocumentTheme = useCallback(
-    (mode: ThemeMode, color: ThemeColor, shape: ThemeShape) => {
-      if (typeof document === 'undefined') {
-        return
-      }
-      const root = document.documentElement
-      const prefersDark =
-        mode === 'system' && typeof window !== 'undefined' && typeof window.matchMedia === 'function'
-          ? window.matchMedia('(prefers-color-scheme: dark)').matches
-          : false
-      const resolved: Exclude<ThemeMode, 'system'> = mode === 'system' ? (prefersDark ? 'dark' : 'light') : mode
-      root.setAttribute('data-theme-mode', mode)
-      root.setAttribute('data-theme', resolved)
-      root.setAttribute('data-theme-color', color)
-      root.setAttribute('data-theme-shape', shape)
-      root.style.setProperty('color-scheme', resolved)
-    },
-    [],
-  )
+  const applyDocumentTheme = useCallback((mode: ThemeMode, color: ThemeColor) => {
+    if (typeof document === 'undefined') {
+      return
+    }
+    const root = document.documentElement
+    const prefersDark =
+      mode === 'system' && typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+        ? window.matchMedia('(prefers-color-scheme: dark)').matches
+        : false
+    const resolved: Exclude<ThemeMode, 'system'> = mode === 'system' ? (prefersDark ? 'dark' : 'light') : mode
+    root.setAttribute('data-theme-mode', mode)
+    root.setAttribute('data-theme', resolved)
+    root.setAttribute('data-theme-color', color)
+    root.setAttribute('data-theme-shape', 'box')
+    root.style.setProperty('color-scheme', resolved)
+  }, [])
 
-  useEffect(() => {
-    applyDocumentTheme(themeMode, themeColor, themeShape)
-  }, [applyDocumentTheme, themeMode, themeColor, themeShape])
+  useLayoutEffect(() => {
+    applyDocumentTheme(themeMode, themeColor)
+  }, [applyDocumentTheme, themeMode, themeColor])
 
   useEffect(() => {
     if (themeMode !== 'system' || typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
       return
     }
     const media = window.matchMedia('(prefers-color-scheme: dark)')
-    const handler = () => applyDocumentTheme('system', themeColor, themeShape)
+    const handler = () => applyDocumentTheme('system', themeColor)
     if (typeof media.addEventListener === 'function') {
       media.addEventListener('change', handler)
       return () => media.removeEventListener('change', handler)
     }
     media.addListener(handler)
     return () => media.removeListener(handler)
-  }, [applyDocumentTheme, themeColor, themeMode, themeShape])
+  }, [applyDocumentTheme, themeColor, themeMode])
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -448,384 +515,422 @@ const App = () => {
     window.localStorage.setItem(THEME_COLOR_STORAGE_KEY, themeColor)
   }, [themeColor])
 
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return
+  const renderSpriteControls = () => {
+    if (!spriteState) {
+      return null
     }
-    window.localStorage.setItem(THEME_SHAPE_STORAGE_KEY, themeShape)
-  }, [themeShape])
+    return (
+      <>
+        <div className="section">
+          <h3 className="section-title">Generation</h3>
+          <ControlSelect
+            id="render-mode"
+            label="Render Mode"
+            value={spriteState.spriteMode}
+            onChange={(value) => handleModeChange(value as SpriteMode)}
+            disabled={!ready}
+            options={SPRITE_MODES.map((mode) => ({ value: mode.value, label: mode.label }))}
+            tooltip="Swap between pixel mosaics, geometric sprite layers, or a single icon motif."
+          />
+
+          <ControlSlider
+            id="density-range"
+            label="Tile Density"
+            min={20}
+            max={400}
+            value={Math.round(spriteState.scalePercent)}
+            displayValue={`${Math.round(spriteState.scalePercent)}%`}
+            onChange={(value) => controllerRef.current?.setScalePercent(value)}
+            disabled={!ready}
+            tooltip="Controls how many tiles spawn per layer; higher values create a busier canvas."
+          />
+          <ControlSlider
+            id="scale-base"
+            label="Scale Base"
+            min={40}
+            max={220}
+            value={Math.round(spriteState.scaleBase)}
+            displayValue={`${Math.round(spriteState.scaleBase)}%`}
+            onChange={(value) => controllerRef.current?.setScaleBase(value)}
+            disabled={!ready}
+            tooltip="Sets the baseline sprite size before any random spread is applied."
+          />
+          <ControlSlider
+            id="scale-range"
+            label="Scale Range"
+            min={30}
+            max={360}
+            value={Math.round(spriteState.scaleSpread)}
+            displayValue={`${Math.round(spriteState.scaleSpread)}%`}
+            onChange={(value) => controllerRef.current?.setScaleSpread(value)}
+            disabled={!ready}
+            tooltip="Expands or tightens the difference between the smallest and largest sprites."
+          />
+          {spriteState.spriteMode === 'pixel-glass' && (
+            <>
+              <ControlSlider
+                id="cluster-amount"
+                label="Cluster Amount"
+                min={0}
+                max={100}
+                value={Math.round(spriteState.clusterAmount)}
+                displayValue={`${Math.round(spriteState.clusterAmount)}%`}
+                onChange={(value) => controllerRef.current?.setClusterAmount(value)}
+                disabled={!ready}
+                tooltip="Blend between a single featured tile (0) and a fully packed pixel-glass cluster (100)."
+              />
+              <ControlSelect
+                id="cluster-preset"
+                label="Cluster Preset"
+                value={clusterPreset}
+                onChange={handleClusterPresetSelect}
+                options={CLUSTER_PRESET_OPTIONS}
+                disabled={!ready}
+                tooltip="Apply ready-made cluster recipes or trigger a fresh random shuffle."
+                currentLabel={
+                  CLUSTER_PRESET_OPTIONS.find((option) => option.value === clusterPreset)?.label ??
+                  CLUSTER_PRESET_OPTIONS[3].label
+                }
+              />
+            </>
+          )}
+        </div>
+
+        {spriteState.spriteMode === 'icon' && (
+          <div className="section">
+            <h3 className="section-title">Icon Selection</h3>
+            <p className="section-hint">Choose one icon from the Pixelarticons library.</p>
+            <div className="icon-selector">
+              {currentIconAsset && (
+                <div className="icon-selector-preview">
+                  <img src={currentIconAsset.url} alt={currentIconAsset.label} width={28} height={28} />
+                </div>
+              )}
+              <ControlSelect
+                id="library-icon"
+                label="Library Icon"
+                value={spriteState.iconAssetId}
+                onChange={handleIconAssetSelect}
+                disabled={!ready}
+                options={pixelArtIconAssets.map((assetOption) => ({
+                  value: assetOption.id,
+                  label: assetOption.label,
+                }))}
+                placeholder="Select Icon"
+                tooltip="Choose the pixelarticons asset rendered for icon mode outputs."
+                currentLabel={currentIconAsset?.label}
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="panel-footer">
+          <Button
+            {...BUTTON_PRIMARY}
+            type="button"
+            className="panel-footer-button"
+            onClick={handleRandomiseAll}
+            disabled={!ready}
+          >
+            Randomise All
+          </Button>
+        </div>
+      </>
+    )
+  }
+
+  const renderFxControls = () => {
+    if (!spriteState) {
+      return null
+    }
+    const blendAutoLabelId = 'blend-auto-label'
+
+    return (
+      <>
+        <div className="section">
+          <h3 className="section-title">Motion &amp; Blend</h3>
+          <ControlSelect
+            id="movement-mode"
+            label="Movement"
+            value={spriteState.movementMode}
+            onChange={(value) => handleMovementSelect(value as MovementMode)}
+            disabled={!ready}
+            options={MOVEMENT_MODES.map((mode) => ({ value: mode.value, label: mode.label }))}
+            tooltip="Select the animation path applied to each sprite layer."
+            currentLabel={formatMovementMode(spriteState.movementMode)}
+          />
+          <ControlSlider
+            id="motion-range"
+            label="Motion Intensity"
+            min={0}
+            max={100}
+            value={Math.round(spriteState.motionIntensity)}
+            displayValue={`${Math.round(spriteState.motionIntensity)}%`}
+            onChange={(value) => controllerRef.current?.setMotionIntensity(value)}
+            disabled={!ready}
+            tooltip="Adjust how far sprites travel within their chosen movement path."
+          />
+          <ControlSlider
+            id="motion-speed"
+            label="Animation Speed"
+            min={0}
+            max={300}
+            step={5}
+            value={Math.round(spriteState.motionSpeed)}
+            displayValue={`${Math.round(spriteState.motionSpeed)}%`}
+            onChange={(value) => controllerRef.current?.setMotionSpeed(value)}
+            disabled={!ready}
+            tooltip="Slow every layer down or accelerate the motion-wide choreography."
+          />
+          <ControlSlider
+            id="opacity-range"
+            label="Layer Opacity"
+            min={15}
+            max={100}
+            value={Math.round(spriteState.layerOpacity)}
+            displayValue={`${Math.round(spriteState.layerOpacity)}%`}
+            onChange={(value) => controllerRef.current?.setLayerOpacity(value)}
+            disabled={!ready}
+            tooltip="Sets the base transparency for each rendered layer before blending."
+          />
+          <ControlSelect
+            id="blend-mode"
+            label="Blend Mode"
+            value={spriteState.blendMode as string}
+            onChange={(value) => handleBlendSelect(value as BlendModeOption)}
+            disabled={!ready || spriteState.blendModeAuto}
+            options={BLEND_MODES.map((mode) => ({ value: mode, label: formatBlendMode(mode) }))}
+            tooltip="Choose the compositing mode applied when layers draw over each other."
+            currentLabel={formatBlendMode(spriteState.blendMode as BlendModeOption)}
+          />
+          <div className="control-field control-field--spaced">
+            <div className="field-heading">
+              <div className="field-heading-left">
+                <span className="field-label" id={blendAutoLabelId}>
+                  Random sprite blend
+                </span>
+                <TooltipIcon
+                  id="blend-auto-tip"
+                  text="Give every sprite an individual blend pick from the RetroUI-compatible pool."
+                  label="Random sprite blend"
+                />
+              </div>
+            </div>
+            <div className="switch-row">
+              <Switch
+                id="blend-auto"
+                checked={spriteState.blendModeAuto}
+                onCheckedChange={handleBlendAutoToggle}
+                disabled={!ready}
+                aria-labelledby={blendAutoLabelId}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="section">
+          <h3 className="section-title">Palette &amp; Variance</h3>
+          <ControlSlider
+            id="palette-range"
+            label="Palette Variance"
+            min={0}
+            max={100}
+            value={Math.round(spriteState.paletteVariance)}
+            displayValue={`${Math.round(spriteState.paletteVariance)}%`}
+            onChange={(value) => controllerRef.current?.setPaletteVariance(value)}
+            disabled={!ready}
+            tooltip="Controls how much each colour can drift away from the base palette swatches."
+          />
+          <ControlSelect
+            id="palette-presets"
+            label="Palette Presets"
+            value={currentPalette.id}
+            onChange={(value) => handlePaletteSelection(value)}
+            disabled={!ready}
+            options={PALETTE_OPTIONS}
+            tooltip="Select the core palette used for tinting sprites before variance is applied."
+            currentLabel={currentPalette.name}
+          />
+          <ControlSelect
+            id="background-mode"
+            label="Canvas Background"
+            value={spriteState.backgroundMode}
+            onChange={handleBackgroundSelect}
+            disabled={!ready}
+            options={BACKGROUND_OPTIONS.map((option) => ({ value: option.value, label: option.label }))}
+            tooltip="Choose the colour applied behind the canvas."
+            currentLabel={
+              BACKGROUND_OPTIONS.find((option) => option.value === spriteState.backgroundMode)?.label
+            }
+          />
+        </div>
+
+        <div className="panel-footer">
+          <Button
+            {...BUTTON_PRIMARY}
+            type="button"
+            className="panel-footer-button"
+            onClick={handleRandomiseAll}
+            disabled={!ready}
+          >
+            Randomise All
+          </Button>
+        </div>
+      </>
+    )
+  }
+
+  const renderUtilities = () => (
+    <div className="utilities-actions">
+      <Button type="button" className="utilities-button" onClick={() => controllerRef.current?.reset()} disabled={!ready}>
+        Reset
+      </Button>
+      <Button type="button" className="utilities-button" disabled>
+        Save Preset
+      </Button>
+    </div>
+  )
+
+  const renderDisplayContent = () => (
+    <>
+      <Card {...BUTTON_SECONDARY} className="panel canvas-card">
+        <div className="canvas-wrapper">
+          <div className="sketch-container" ref={sketchContainerRef} aria-live="polite" />
+        </div>
+        <div className="status-bar">
+          <span className="status-chip">Palette · {statusPalette}</span>
+          <span className="status-chip">Mode · {statusMode}</span>
+          <span className="status-chip">Blend · {statusBlend}</span>
+          <span className="status-chip">Motion · {statusMotion}</span>
+          <span className="status-chip">{frameRate.toFixed(0)} FPS</span>
+        </div>
+      </Card>
+
+      <Card {...BUTTON_SECONDARY} className="panel">
+        <h2 className="control-label">Session Notes</h2>
+        <p className="notes-text">
+          Sculpt vivid voxel compositions inside BitLab. Iterate on iconography, mutate colour systems, elevate motion envelopes,
+          and layer blend modes to surface unexpected pixel poetry.
+        </p>
+        <div className="external-links">
+          <a href="https://github.com/halfmage/pixelarticons" target="_blank" rel="noreferrer">
+            Pixel Art Icons
+          </a>
+          <a href="https://p5js.org/" target="_blank" rel="noreferrer">
+            p5.js
+          </a>
+          <a href="https://www.retroui.dev/docs" target="_blank" rel="noreferrer">
+            RetroUI Docs
+          </a>
+        </div>
+      </Card>
+    </>
+  )
 
   return (
     <div className="app-shell">
       <header className="app-header">
-        <button
-          type="button"
-          className="app-logo-button"
-          style={logoStyle}
-          onClick={handleLogoClick}
-          aria-label="Regenerate ArtLab gradient"
-        />
-        <div className="header-actions">
-          <button
-            type="button"
-            className="theme-cycle-button"
-            onClick={cycleThemeMode}
-            aria-label={`Switch theme mode (current ${themeModeText})`}
-            title={`Theme: ${themeModeText}`}
-          >
-            <span aria-hidden="true">{themeModeIcon}</span>
-          </button>
-          <Button
-            {...BUTTON_SECONDARY}
-            type="button"
-            className="retro-btn retro-btn--sm header-star"
-            onClick={() => {
-              if (typeof window !== 'undefined') {
-                window.open(GITHUB_REPO_URL, '_blank', 'noreferrer')
-              }
-            }}
-          >
-            ★ Star on GitHub
-          </Button>
+        <button type="button" className="app-logo-button" aria-label="BitLab">
+          <BitlabLogo className="app-logo-svg" />
+        </button>
+        <div className="header-toolbar">
+          <div className="header-spacer" />
+          <div className="header-actions">
+            <Select value={themeColor} onValueChange={handleThemeSelect}>
+              <SelectTrigger className="header-theme-trigger" aria-label="Theme colour">
+                <SelectValue placeholder="Theme">{themeColorLabel}</SelectValue>
+              </SelectTrigger>
+              <SelectContent className="header-theme-menu">
+                <SelectGroup>
+                  {THEME_COLOR_OPTIONS.map((option) => (
+                    <SelectItem
+                      key={option.value}
+                      value={option.value}
+                      className="header-theme-item"
+                      style={{ '--theme-preview': THEME_COLOR_PREVIEW[option.value] } as CSSProperties}
+                    >
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+            <Button
+              type="button"
+              className="header-icon-button"
+              onClick={cycleThemeMode}
+              aria-label={`Switch theme mode (current ${themeModeText})`}
+              title={`Theme: ${themeModeText}`}
+            >
+              <span aria-hidden="true">{themeModeIcon}</span>
+            </Button>
+          </div>
         </div>
       </header>
 
       <main className="app-main">
-        <Card {...BUTTON_SECONDARY} className="control-card">
-          <div className="panel">
-            <div className="panel-heading">Controls</div>
-            <div className="retro-tabs" role="tablist" aria-label="Control Panels">
-              <button
-                type="button"
-                id="tab-sprites"
-                role="tab"
-                aria-controls="panel-sprites"
-                aria-selected={controlTab === 'sprites'}
-                className={`retro-tab${controlTab === 'sprites' ? ' retro-tab-active' : ''}`}
-                onClick={() => setControlTab('sprites')}
-              >
-                Sprites
-              </button>
-              <button
-                type="button"
-                id="tab-fx"
-                role="tab"
-                aria-controls="panel-fx"
-                aria-selected={controlTab === 'fx'}
-                className={`retro-tab${controlTab === 'fx' ? ' retro-tab-active' : ''}`}
-                onClick={() => setControlTab('fx')}
-              >
-                FX & Motion
-              </button>
-            </div>
+        <div className={`app-layout${isStudioLayout ? ' app-layout--studio' : ''}`}>
+          <aside className="control-column">
+            {isStudioLayout ? (
+              <>
+                <Card {...BUTTON_SECONDARY} className="control-card">
+                  <div className="panel">
+                    <div className="panel-heading">Sprite Controls</div>
+                    {renderSpriteControls()}
+                  </div>
+                </Card>
+                <Card {...BUTTON_SECONDARY} className="utility-card">
+                  <div className="panel">
+                    <div className="panel-heading">Utilities</div>
+                    {renderUtilities()}
+                  </div>
+                </Card>
+              </>
+            ) : (
+              <>
+                <Card {...BUTTON_SECONDARY} className="control-card">
+                  <div className="panel">
+                    <Tabs value={controlTab} onValueChange={(next) => setControlTab(next as 'sprites' | 'fx')}>
+                      <TabsTriggerList className="retro-tabs">
+                        <TabsTrigger value="sprites">Sprites</TabsTrigger>
+                        <TabsTrigger value="fx">FX</TabsTrigger>
+                      </TabsTriggerList>
+                      <TabsPanels>
+                        <TabsContent value="sprites" className="tab-panel">
+                          {renderSpriteControls()}
+                        </TabsContent>
+                        <TabsContent value="fx" className="tab-panel">
+                          {renderFxControls()}
+                        </TabsContent>
+                      </TabsPanels>
+                    </Tabs>
+                  </div>
+                  <div className="panel">
+                    <div className="panel-heading">Utilities</div>
+                    {renderUtilities()}
+                  </div>
+                </Card>
+              </>
+            )}
+          </aside>
 
-            <div className="control-tab-content">
-              <section
-                id="panel-sprites"
-                role="tabpanel"
-                aria-labelledby="tab-sprites"
-                hidden={controlTab !== 'sprites'}
-                className="tab-panel"
-              >
-                {spriteState && controlTab === 'sprites' && (
-                  <>
-                    <div className="section">
-                      <h3 className="section-title">Generation</h3>
-                      <Dropdown
-                        label="Render Mode"
-                        current={currentModeLabel}
-                        activeValue={spriteState.spriteMode}
-                        disabled={!ready}
-                        onSelect={(value) => handleModeChange(value as SpriteMode)}
-                        options={SPRITE_MODES.map((mode) => ({ value: mode.value, label: mode.label }))}
-                      />
+          <div className="display-column">{renderDisplayContent()}</div>
 
-                      <ControlSlider
-                        id="density-range"
-                        label="Tile Density"
-                        min={20}
-                        max={400}
-                        value={Math.round(spriteState.scalePercent)}
-                        displayValue={`${Math.round(spriteState.scalePercent)}%`}
-                        onChange={(value) => controllerRef.current?.setScalePercent(value)}
-                        disabled={!ready}
-                      />
-                      <ControlSlider
-                        id="scale-range"
-                        label="Scale Range"
-                        min={30}
-                        max={360}
-                        value={Math.round(spriteState.scaleSpread)}
-                        displayValue={`${Math.round(spriteState.scaleSpread)}%`}
-                        onChange={(value) => controllerRef.current?.setScaleSpread(value)}
-                        disabled={!ready}
-                      />
-                    </div>
-
-                    {spriteState.spriteMode === 'icon' && (
-                      <div className="section">
-                        <h3 className="section-title">Icon Selection</h3>
-                        <p className="section-hint">Choose one icon from the Pixelarticons library.</p>
-                        <div className="icon-selector">
-                          {currentIconAsset && (
-                            <div className="icon-selector-preview">
-                              <img src={currentIconAsset.url} alt={currentIconAsset.label} width={28} height={28} />
-                            </div>
-                          )}
-                          <Dropdown
-                            label="Library Icon"
-                            current={currentIconAsset?.label ?? 'Select Icon'}
-                            activeValue={spriteState.iconAssetId}
-                            disabled={!ready}
-                            onSelect={handleIconAssetSelect}
-                            options={pixelArtIconAssets.map((assetOption) => ({
-                              value: assetOption.id,
-                              label: assetOption.label,
-                            }))}
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
-              </section>
-
-              <section id="panel-fx" role="tabpanel" aria-labelledby="tab-fx" hidden={controlTab !== 'fx'} className="tab-panel">
-                {spriteState && controlTab === 'fx' && (
-                  <>
-                    <div className="section">
-                      <h3 className="section-title">Motion & Blend</h3>
-                      <Dropdown
-                        label="Movement"
-                        current={formatMovementMode(spriteState.movementMode)}
-                        activeValue={spriteState.movementMode}
-                        disabled={!ready}
-                        onSelect={(value) => handleMovementSelect(value as MovementMode)}
-                        options={MOVEMENT_MODES.map((mode) => ({ value: mode.value, label: mode.label }))}
-                      />
-                      <ControlSlider
-                        id="motion-range"
-                        label="Motion Intensity"
-                        min={0}
-                        max={100}
-                        value={Math.round(spriteState.motionIntensity)}
-                        displayValue={`${Math.round(spriteState.motionIntensity)}%`}
-                        onChange={(value) => controllerRef.current?.setMotionIntensity(value)}
-                        disabled={!ready}
-                      />
-                      <ControlSlider
-                        id="opacity-range"
-                        label="Layer Opacity"
-                        min={15}
-                        max={100}
-                        value={Math.round(spriteState.layerOpacity)}
-                        displayValue={`${Math.round(spriteState.layerOpacity)}%`}
-                        onChange={(value) => controllerRef.current?.setLayerOpacity(value)}
-                        disabled={!ready}
-                      />
-                      <Dropdown
-                        label="Blend Mode"
-                        current={formatBlendStatus(spriteState.blendMode as BlendModeOption, spriteState.blendModeAuto)}
-                        activeValue={spriteState.blendModeAuto ? 'RANDOM' : (spriteState.blendMode as string)}
-                        disabled={!ready}
-                        onSelect={(value) => handleBlendSelect(value as BlendModeOption)}
-                        options={BLEND_MODES.map((mode) => ({ value: mode, label: formatBlendMode(mode) }))}
-                      />
-                      <label className="retro-checkbox">
-                        <input
-                          type="checkbox"
-                          checked={spriteState.blendModeAuto}
-                          onChange={(event) => handleBlendAutoToggle(event.target.checked)}
-                          disabled={!ready}
-                        />
-                        <span>Apply random blend to each sprite</span>
-                      </label>
-                    </div>
-
-                    <div className="section">
-                      <h3 className="section-title">Palette & Variance</h3>
-                      <ControlSlider
-                        id="palette-range"
-                        label="Palette Variance"
-                        min={0}
-                        max={100}
-                        value={Math.round(spriteState.paletteVariance)}
-                        displayValue={`${Math.round(spriteState.paletteVariance)}%`}
-                        onChange={(value) => controllerRef.current?.setPaletteVariance(value)}
-                        disabled={!ready}
-                      />
-                      <Dropdown
-                        label="Palette Presets"
-                        current={currentPalette.name}
-                        activeValue={currentPalette.id}
-                        disabled={!ready}
-                        onSelect={(value) => handlePaletteSelection(value)}
-                        options={PALETTE_OPTIONS}
-                      />
-                    </div>
-                  </>
-                )}
-              </section>
-            </div>
-          </div>
-
-          <div className="panel">
-            <div className="panel-heading">Utilities</div>
-            <div className="retro-button-group" role="group" aria-label="Randomise parameters">
-              <span className="group-heading">Randomise Parameters</span>
-              <small className="group-subtext">Each button shuffles the specific setting labelled below.</small>
-              <Button
-                {...BUTTON_PRIMARY}
-                type="button"
-                className="retro-btn retro-btn--md control-button"
-                onClick={randomiseIconControls}
-                disabled={!ready}
-              >
-                <span className="control-button-label">Icon</span>
-              </Button>
-              <Button
-                {...BUTTON_PRIMARY}
-                type="button"
-                className="retro-btn retro-btn--md control-button"
-                onClick={() => controllerRef.current?.randomizeColors()}
-                disabled={!ready}
-              >
-                <span className="control-button-label">Palette</span>
-              </Button>
-              <Button
-                {...BUTTON_PRIMARY}
-                type="button"
-                className="retro-btn retro-btn--md control-button"
-                onClick={() => {
-                  controllerRef.current?.randomizeScale()
-                  controllerRef.current?.randomizeScaleRange()
-                }}
-                disabled={!ready}
-              >
-                <span className="control-button-label">Scale</span>
-              </Button>
-              <Button
-                {...BUTTON_PRIMARY}
-                type="button"
-                className="retro-btn retro-btn--md control-button"
-                onClick={() => controllerRef.current?.randomizeMotion()}
-                disabled={!ready}
-              >
-                <span className="control-button-label">Motion</span>
-              </Button>
-              <Button
-                {...BUTTON_PRIMARY}
-                type="button"
-                className="retro-btn retro-btn--md control-button"
-                onClick={randomiseBlend}
-                disabled={!ready}
-              >
-                <span className="control-button-label">Blend</span>
-              </Button>
-              <Button
-                {...BUTTON_MUTED}
-                type="button"
-                className="retro-btn retro-btn--md control-button"
-                onClick={() => controllerRef.current?.reset()}
-                disabled={!ready}
-              >
-                <span className="control-button-label">Reset</span>
-              </Button>
-            </div>
-            <div className="utilities-actions">
-              <Button
-                {...BUTTON_PRIMARY}
-                type="button"
-                className="retro-btn retro-btn--lg utilities-button"
-                onClick={handleRandomiseAll}
-                disabled={!ready}
-              >
-                Randomise All
-              </Button>
-              <Button {...BUTTON_MUTED} type="button" className="retro-btn retro-btn--lg utilities-button" disabled>
-                Save Preset
-              </Button>
-            </div>
-          </div>
-
-          <div className="panel">
-            <div className="panel-heading">Theme Styling</div>
-            <div className="section">
-              <div className="toggle-stack">
-                <span className="toggle-label">Colour</span>
-                <div className="retro-toggle-group" role="group" aria-label="Theme colour">
-                  {THEME_COLOR_OPTIONS.map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      className={`retro-toggle${themeColor === option.value ? ' retro-toggle-active' : ''}`}
-                      onClick={() => setThemeColor(option.value)}
-                      aria-pressed={themeColor === option.value}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
+          {isStudioLayout && (
+            <aside className="fx-column">
+              <Card {...BUTTON_SECONDARY} className="fx-card">
+                <div className="panel">
+                  <div className="panel-heading">FX</div>
+                  {renderFxControls()}
                 </div>
-              </div>
-              <div className="toggle-stack">
-                <span className="toggle-label">Corners</span>
-                <div className="retro-toggle-group" role="group" aria-label="Corner style">
-                  {THEME_SHAPE_OPTIONS.map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      className={`retro-toggle${themeShape === option.value ? ' retro-toggle-active' : ''}`}
-                      onClick={() => setThemeShape(option.value)}
-                      aria-pressed={themeShape === option.value}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-        </Card>
-
-        <div className="display-column">
-          <Card {...BUTTON_SECONDARY} className="canvas-card">
-            <div className="canvas-wrapper">
-              <div className="sketch-container" ref={sketchContainerRef} aria-live="polite" />
-            </div>
-            <div className="status-bar">
-              <span className="status-chip">Seed · {statusSeed}</span>
-              <span className="status-chip">Palette · {statusPalette}</span>
-              <span className="status-chip">Mode · {statusMode}</span>
-              <span className="status-chip">Motif · {statusMotif}</span>
-              <span className="status-chip">Blend · {statusBlend}</span>
-              <span className="status-chip">{frameRate.toFixed(0)} FPS</span>
-            </div>
-          </Card>
-
-          <Card {...BUTTON_SECONDARY} className="notes-card">
-            <h2 className="control-label">Session Notes</h2>
-            <p className="notes-text">
-              Sculpt vivid voxel compositions inside ArtLab. Iterate on iconography, mutate colour systems, elevate motion envelopes,
-              and layer blend modes to surface unexpected pixel poetry.
-            </p>
-            <div className="external-links">
-              <a href="https://github.com/halfmage/pixelarticons" target="_blank" rel="noreferrer">
-                Pixel Art Icons
-              </a>
-              <a href="https://p5js.org/" target="_blank" rel="noreferrer">
-                p5.js
-              </a>
-              <a href="https://www.retroui.dev/docs" target="_blank" rel="noreferrer">
-                RetroUI Docs
-              </a>
-            </div>
-          </Card>
+              </Card>
+            </aside>
+          )}
         </div>
       </main>
 
       <footer className="app-footer">
-        <span>© {new Date().getFullYear()} ArtLab · Generative Playground</span>
+        <span>© {new Date().getFullYear()} BitLab · Generative Playground</span>
         <span>
           Inspired by{' '}
           <a href="https://github.com/djnavarro/series-advent" target="_blank" rel="noreferrer">

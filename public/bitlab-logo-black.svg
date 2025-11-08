@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 330 45">
+  <g id="Layer_1-2" data-name="Layer 1">
+    <g>
+      <path d="M52.5,7.5h-7.5V0h7.5v7.5h7.5v30h-7.5v7.5H0v-7.5h45v-7.5h7.5v-7.5h-7.5v-7.5h7.5v-7.5ZM22.5,15v-7.5h7.5v7.5h-7.5ZM22.5,30v-7.5h7.5v7.5h-7.5Z"/>
+      <path d="M90,45h-30v-7.5h22.5V0h7.5v45Z"/>
+      <path d="M90,7.5h15v7.5h-15v-7.5ZM135,30h-7.5V7.5h15V0h7.5v15h-15v15h7.5v15h-45v-7.5h37.5v-7.5Z"/>
+      <path d="M210,45h-60v-7.5h52.5v-7.5h7.5v15ZM172.5,30V0h7.5v30h-7.5Z"/>
+      <path d="M262.5,7.5h-7.5V0h7.5v7.5h7.5v37.5h-60v-7.5h22.5v-7.5h7.5v7.5h22.5V7.5ZM232.5,22.5V7.5h7.5v15h-7.5Z"/>
+      <path d="M322.5,7.5h-7.5V0h7.5v7.5h7.5v30h-7.5v7.5h-52.5v-7.5h45v-7.5h7.5v-7.5h-7.5v-7.5h7.5v-7.5ZM292.5,15v-7.5h7.5v7.5h-7.5ZM292.5,30v-7.5h7.5v7.5h-7.5Z"/>
+    </g>
+  </g>
+</svg>

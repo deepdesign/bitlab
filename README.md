@@ -1,8 +1,8 @@
-# ![ArtLab](public/artlab-logo-black.svg)
+# ![BitLab](public/bitlab-logo-black.svg)
 
 ## Generative Pixel Playground
 
-ArtLab is a generative art workbench built with React, p5.js, Tailwind, and RetroUI. Mix pixel iconography, palette theory, and motion envelopes to create richly layered sprite compositions in real time. ArtLab ships with theme cycling, palette randomisation, blend-mode experiments, and a curated icon library sourced from [pixelarticons](https://github.com/halfmage/pixelarticons).
+BitLab is a generative art workbench built with React, p5.js, Tailwind, and RetroUI. Mix pixel iconography, palette theory, and motion envelopes to create richly layered sprite compositions in real time. BitLab ships with theme cycling, palette randomisation, blend-mode experiments, and a curated icon library sourced from [pixelarticons](https://github.com/halfmage/pixelarticons).
 
 ---
 
@@ -21,13 +21,15 @@ ArtLab is a generative art workbench built with React, p5.js, Tailwind, and Retr
 
 ## Features
 
-- **Generative Sprite Canvas** – Multi-layer sprite engine with p5.js, configurable density, scale, and motion profiles.
-- **Icon Modes** – Quick access to curated pixel shapes (circle, square, triangle, hexagon) or a full icon selector fed from `pixelarticons`.
-- **Blend Architectures** – Layer-specific blend modes (multiply, screen, hard light, overlay) with optional per-sprite randomisation.
-- **Theme Designer** – One-click cycling between system/light/dark plus dropdowns for colour accent and corner shape.
+- **Generative Sprite Canvas** – Multi-layer sprite engine with p5.js, configurable density, scale, palette variance, and animation speed.
+- **Expanded Sprite Modes** – Pixel glass mosaics, geometric motifs (circle, square, triangle, hexagon), and fresh outlines like rings, diamonds, stars, and neon lines.
+- **Movement Library** – Ten motion envelopes (spiral, comet, wavefront, etc.) plus a per-project animation speed slider for slow cinematic drifts or rapid energy.
+- **Icon Modes** – Toggle to the curated `pixelarticons` library with inline preview and one-click randomisation.
+- **Blend Architectures** – Layer-specific blend modes (multiply, screen, hard light, overlay) with optional per-sprite randomisation switch.
+- **Theme Designer** – System/light/dark cycling, colour-accent dropdown, and BitLab box chassis styled with RetroUI.
 - **Palette Lab** – Synthwave, neon, pastel and bespoke palettes with jitter controls to push hue, saturation, and luminance.
-- **Session Metrics** – Live seed, palette, motif, blend mode, and FPS readouts for reproducibility.
-- **Responsive RetroUI** – RetroUI components reskinned with Tailwind-driven theming for both desktop and tablet layouts.
+- **Session Metrics** – Live seed, palette, motif, blend mode, motion speed, and FPS readouts for reproducibility.
+- **Responsive RetroUI** – RetroUI components reskinned with Tailwind-driven theming across desktop, tablet, and narrow layouts.
 
 ---
 
@@ -35,12 +37,12 @@ ArtLab is a generative art workbench built with React, p5.js, Tailwind, and Retr
 
 | Area | Highlights |
 | ---- | ---------- |
-| **Header** | Animated ArtLab logomark and a cycling theme toggle (system → light → dark) alongside a GitHub star button. |
-| **Controls Panel** | Split into sprite controls and FX tooling. Sliders adjust density, scale spread, palette variance, motion intensity, and layer opacity. |
+| **Header** | Animated BitLab logomark and a cycling theme toggle (system → light → dark) alongside a GitHub star button. |
+| **Controls Panel** | Split into sprite controls and FX tooling. Sliders cover density, scale spread, palette variance, motion intensity, and animation speed. |
 | **Icon Selection** | When in **Icon** mode, a dropdown reveals the entire pixel icon catalogue with preview thumbnail. |
-| **Utilities** | One-click randomisers for icons, palettes, scale, motion, blend, plus a full reset and “randomise all” macro. |
-| **Theme Styling** | Toggle groups customise colourway (Amber, Mint, Violet) and chassis shape (Box or Rounded). |
-| **Canvas** | p5.js renders layered sprites, with status chips reporting live seed, palette, motif, blend mode, and FPS. |
+| **Utilities** | Full-width buttons for randomising icons, palettes, scale, motion, blend, plus a full reset and “randomise all” macro. |
+| **Theme Styling** | Select menu customises colourway (Sunburst, Neon Grid, Nebula, Ember Glow, Lagoon Tide, Rose Quartz) alongside the system/light/dark toggle. |
+| **Canvas** | p5.js renders layered sprites, with status chips reporting live seed, palette, motif, blend mode, motion speed, and FPS. |
 | **Session Notes** | Quick tips with links to pixelarticons, p5.js, and RetroUI docs for deeper exploration. |
 
 ---
@@ -54,8 +56,8 @@ ArtLab is a generative art workbench built with React, p5.js, Tailwind, and Retr
 ### Installation
 ```bash
 # clone the repository
-git clone https://github.com/deepdesign/artlab.git
-cd artlab
+git clone https://github.com/deepdesign/bitlab.git
+cd bitlab
 
 # install dependencies
 npm install
@@ -104,8 +106,8 @@ The build artifacts land in `/dist` and are ready for static hosting.
 ## Project Structure
 ```
 ├── public/
-│   ├── artlab-logo-black.svg
-│   └── artlab-logo-white.svg
+│   ├── bitlab-logo-black.svg
+│   └── bitlab-logo-white.svg
 ├── src/
 │   ├── App.tsx           # Main UI & state wiring
 │   ├── generator.ts      # p5.js sprite logic & controller API
@@ -123,7 +125,7 @@ The build artifacts land in `/dist` and are ready for static hosting.
 2. Run `npm run dev` and ensure changes pass `npm run build` before committing.
 3. Submit a pull request describing the tweak, referencing any issues.
 
-Bug reports and enhancement ideas are always welcome via [GitHub issues](https://github.com/deepdesign/artlab/issues).
+Bug reports and enhancement ideas are always welcome via [GitHub issues](https://github.com/deepdesign/bitlab/issues).
 
 ---
 
