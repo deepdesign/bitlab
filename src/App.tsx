@@ -651,7 +651,8 @@ const App = () => {
     return (
       <>
         <div className="section">
-          {showHeading && <h3 className="section-title">Animation</h3>}
+          {showHeading && <h3 className="section-title">Motion</h3>}
+          <h3 className="section-title">Animation</h3>
           <ControlSelect
             id="movement-mode"
             label="Movement"
