@@ -2,9 +2,16 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 import { Card } from '@/components/Card'
 import { Button } from '@/components/Button'
 
-import { Select, SelectTrigger, SelectContent, SelectGroup, SelectItem, SelectValue } from '@/components/Select'
-import { Switch } from '@/components/Switch'
-import { Tabs, TabsTriggerList, TabsTrigger, TabsPanels, TabsContent } from '@/components/Tabs'
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectValue,
+} from '@/components/retroui/Select'
+import { Switch } from '@/components/retroui/Switch'
+import { Tabs, TabsTriggerList, TabsTrigger, TabsPanels, TabsContent } from '@/components/retroui/Tab'
 
 import {
   createSpriteController,
@@ -559,7 +566,7 @@ const App = () => {
         </div>
 
         <div className="panel-footer">
-          <Button type="button" className="panel-footer-button" onClick={handleRandomiseAll} disabled={!ready}>
+          <Button type="button" size="lg" className="panel-footer-button" onClick={handleRandomiseAll} disabled={!ready}>
             Randomise All
           </Button>
         </div>
@@ -624,7 +631,7 @@ const App = () => {
         </div>
 
         <div className="panel-footer">
-          <Button type="button" className="panel-footer-button" onClick={handleRandomiseAll} disabled={!ready}>
+          <Button type="button" size="lg" className="panel-footer-button" onClick={handleRandomiseAll} disabled={!ready}>
             Randomise All
           </Button>
         </div>
@@ -724,7 +731,7 @@ const App = () => {
         </div>
 
         <div className="panel-footer">
-          <Button type="button" className="panel-footer-button" onClick={handleRandomiseAll} disabled={!ready}>
+          <Button type="button" size="lg" className="panel-footer-button" onClick={handleRandomiseAll} disabled={!ready}>
             Randomise All
           </Button>
         </div>
@@ -736,7 +743,7 @@ const App = () => {
     <div className="utilities-actions">
       <Button
         type="button"
-        size="md"
+        size="lg"
         className="utilities-button"
         variant="link"
         onClick={() => controllerRef.current?.reset()}
@@ -744,7 +751,7 @@ const App = () => {
       >
         Reset
       </Button>
-      <Button type="button" size="md" className="utilities-button utilities-button--full" variant="secondary" disabled>
+      <Button type="button" size="lg" className="utilities-button utilities-button--full" variant="secondary" disabled>
         Save Preset
       </Button>
     </div>
@@ -810,8 +817,7 @@ const App = () => {
             </Select>
             <Button
               type="button"
-              size="md"
-              variant="icon"
+              size="icon"
               className="header-icon-button"
               onClick={cycleThemeMode}
               aria-label={`Switch theme mode (current ${themeModeText})`}
@@ -826,7 +832,7 @@ const App = () => {
       <main className="app-main">
         <div className={`app-layout${isStudioLayout ? ' app-layout--studio' : ''}`}>
           <aside className="control-column">
-            <div className="panel">
+            <Card className="panel">
               <Tabs selectedIndex={controlTabIndex} onChange={setControlTabIndex}>
                 <TabsTriggerList className="retro-tabs">
                   <TabsTrigger>Sprites</TabsTrigger>
@@ -839,18 +845,18 @@ const App = () => {
                   {!isStudioLayout && <TabsContent>{renderMotionControls(false)}</TabsContent>}
                 </TabsPanels>
               </Tabs>
-            </div>
-            <div className="panel">
+            </Card>
+            <Card className="panel">
               <div className="panel-heading">Utilities</div>
               {renderUtilities()}
-            </div>
+            </Card>
           </aside>
 
           <div className="display-column">{renderDisplayContent()}</div>
 
           {isStudioLayout && (
             <aside className="motion-column">
-              <div className="panel">{renderMotionControls(true)}</div>
+              <Card className="panel">{renderMotionControls(true)}</Card>
             </aside>
           )}
         </div>

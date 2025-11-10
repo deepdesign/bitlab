@@ -746,11 +746,14 @@ export const createSpriteController = (
               baseUnit: baseIconSize,
               layerTileSize,
               speedFactor,
+              clusterMotion,
             })
             const iconSize = baseIconSize * movement.scaleMultiplier
 
             p.push()
-            p.tint(tile.tint)
+            const tintColour = p.color(tile.tint)
+            tintColour.setAlpha(Math.round(layer.opacity * 255))
+            p.tint(tintColour)
             p.image(iconGraphic, baseX + movement.offsetX, baseY + movement.offsetY, iconSize, iconSize)
             p.pop()
           } else if (tile.kind === 'shape') {
