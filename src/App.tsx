@@ -60,7 +60,7 @@ const THEME_COLOR_PREVIEW: Record<ThemeColor, string> = {
 }
 
 const SPRITE_MODES: Array<{ value: SpriteMode; label: string; description: string }> = [
-  { value: 'tile', label: 'Tile', description: 'Rounded tiles that layer into clustered grids' },
+  { value: 'pixel-glass', label: 'Pixel Glass', description: 'Layered mosaics built from pixel glyphs' },
   { value: 'circle', label: 'Circle', description: 'Soft orbital clusters with rounded silhouettes' },
   { value: 'square', label: 'Square', description: 'Chunky voxel tiles snapped to a tight grid' },
   { value: 'triangle', label: 'Triangle', description: 'Angular shards with sharp tessellations' },
@@ -75,7 +75,6 @@ const SPRITE_MODES: Array<{ value: SpriteMode; label: string; description: strin
 const PALETTE_OPTIONS = palettes.map((palette) => ({ value: palette.id, label: palette.name }))
 
 const MOVEMENT_MODES: Array<{ value: MovementMode; label: string }> = [
-  { value: 'none', label: 'None' },
   { value: 'sway', label: 'Sway' },
   { value: 'pulse', label: 'Pulse' },
   { value: 'orbit', label: 'Orbit' },
@@ -395,10 +394,6 @@ const App = () => {
     controllerRef.current?.setClusterIntensity(value)
   }, [])
 
-  const handleClusterMotionChange = useCallback((value: number) => {
-    controllerRef.current?.setClusterMotion(value)
-  }, [])
-
   const handleIconAssetSelect = useCallback((iconId: string) => {
     controllerRef.current?.setIconAsset(iconId)
   }, [])
@@ -482,6 +477,9 @@ const App = () => {
     if (!spriteState) {
       return null
     }
+    const clusterIntensityValue = Number.isFinite(spriteState.clusterIntensity)
+      ? Math.round(spriteState.clusterIntensity)
+      : 0
     return (
       <>
         <div className="section">
@@ -524,8 +522,8 @@ const App = () => {
             label="Cluster"
             min={0}
             max={100}
-            value={Math.round(spriteState.clusterIntensity)}
-            displayValue={`${Math.round(spriteState.clusterIntensity)}%`}
+            value={clusterIntensityValue}
+            displayValue={`${clusterIntensityValue}%`}
             onChange={handleClusterIntensityChange}
             disabled={!ready}
             tooltip="Blend between single sprites (0) and packed clusters (100)."
@@ -566,7 +564,7 @@ const App = () => {
         </div>
 
         <div className="panel-footer">
-          <Button type="button" size="lg" className="panel-footer-button" onClick={handleRandomiseAll} disabled={!ready}>
+          <Button type="button" size="lg" className="flex-1" onClick={handleRandomiseAll} disabled={!ready}>
             Randomise All
           </Button>
         </div>
@@ -617,21 +615,10 @@ const App = () => {
             disabled={!ready}
             tooltip="Slow every layer down or accelerate the motion-wide choreography."
           />
-          <ControlSlider
-            id="cluster-motion"
-            label="Cluster Movement"
-            min={0}
-            max={100}
-            value={Math.round(spriteState.clusterMotion)}
-            displayValue={`${Math.round(spriteState.clusterMotion)}%`}
-            onChange={handleClusterMotionChange}
-            disabled={!ready || spriteState.clusterIntensity <= 0}
-            tooltip="Dial how much grouped sprites drift together and orbit as a unit."
-          />
         </div>
 
         <div className="panel-footer">
-          <Button type="button" size="lg" className="panel-footer-button" onClick={handleRandomiseAll} disabled={!ready}>
+          <Button type="button" size="lg" className="flex-1" onClick={handleRandomiseAll} disabled={!ready}>
             Randomise All
           </Button>
         </div>
@@ -731,7 +718,7 @@ const App = () => {
         </div>
 
         <div className="panel-footer">
-          <Button type="button" size="lg" className="panel-footer-button" onClick={handleRandomiseAll} disabled={!ready}>
+          <Button type="button" size="lg" className="flex-1" onClick={handleRandomiseAll} disabled={!ready}>
             Randomise All
           </Button>
         </div>
@@ -744,14 +731,14 @@ const App = () => {
       <Button
         type="button"
         size="lg"
-        className="utilities-button"
+        className="flex-none"
         variant="link"
         onClick={() => controllerRef.current?.reset()}
         disabled={!ready}
       >
         Reset
       </Button>
-      <Button type="button" size="lg" className="utilities-button utilities-button--full" variant="secondary" disabled>
+      <Button type="button" size="lg" className="flex-1" variant="secondary" disabled>
         Save Preset
       </Button>
     </div>

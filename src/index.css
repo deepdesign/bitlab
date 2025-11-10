@@ -564,10 +564,6 @@ body {
   gap: theme('spacing.3');
 }
 
-.panel-footer-button {
-  @apply inline-flex w-full flex-1 items-center justify-center;
-}
-
 .tab-panel[hidden] {
   display: none;
 }
@@ -1102,23 +1098,9 @@ body {
   flex-wrap: nowrap;
 }
 
-.utilities-button {
-  @apply inline-flex items-center justify-center;
-  width: auto;
-}
-
-.utilities-button--full {
-  flex: 1 1 0;
-  width: 100%;
-}
-
 @media (max-width: 640px) {
   .utilities-actions {
     @apply flex-col items-stretch;
-  }
-
-  .utilities-button {
-    @apply w-full;
   }
 }
 

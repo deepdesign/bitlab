@@ -112,7 +112,7 @@ export interface GeneratorState {
   layerOpacity: number
   spriteMode: SpriteMode
   iconAssetId: string
-  clusterAmount: number
+  clusterIntensity: number
   clusterSeed: string
   movementMode: MovementMode
   backgroundMode: BackgroundMode
@@ -186,7 +186,7 @@ export const DEFAULT_STATE: GeneratorState = {
   layerOpacity: 68,
   spriteMode: 'pixel-glass',
   iconAssetId: pixelArtIconIds[0],
-  clusterAmount: 75,
+  clusterIntensity: 75,
   clusterSeed: 'CAFEBABE',
   movementMode: 'sway',
   backgroundMode: 'palette',
@@ -432,7 +432,7 @@ const computeSprite = (state: GeneratorState): PreparedSprite => {
   const densityT = (densityValue - 20) / (400 - 20)
   const baseScaleFactor = clamp(state.scaleBase / 100, 0.2, 4)
   const rangeFactor = clamp(state.scaleSpread / 100, 0, 3)
-  const clusterRatio = clamp(state.clusterAmount / 100, 0, 1)
+  const clusterRatio = clamp(state.clusterIntensity / 100, 0, 1)
   const baseIconId = resolveIconAssetId(state.iconAssetId)
   const isIconMode = state.spriteMode === 'icon'
   const isShapeMode = shapeModes.includes(state.spriteMode as ShapeMode)
@@ -569,7 +569,7 @@ export interface SpriteController {
   setSpriteMode: (mode: SpriteMode) => void
   setMovementMode: (mode: MovementMode) => void
   setIconAsset: (iconId: string) => void
-  setClusterAmount: (value: number) => void
+  setClusterIntensity: (value: number) => void
   randomizeCluster: () => void
   applySingleTilePreset: () => void
   applyNebulaPreset: () => void
@@ -746,7 +746,6 @@ export const createSpriteController = (
               baseUnit: baseIconSize,
               layerTileSize,
               speedFactor,
-              clusterMotion,
             })
             const iconSize = baseIconSize * movement.scaleMultiplier
 
@@ -899,7 +898,7 @@ export const createSpriteController = (
       state.blendModeAuto = true
       state.previousBlendMode = state.blendMode
       state.movementMode = movementModes[Math.floor(Math.random() * movementModes.length)]
-      state.clusterAmount = Math.floor(Math.random() * 101)
+      state.clusterIntensity = Math.floor(Math.random() * 101)
       state.clusterSeed = generateSeedString()
       state.backgroundMode = 'palette'
       updateSprite()
@@ -998,8 +997,9 @@ export const createSpriteController = (
       const resolved = resolveIconAssetId(iconId)
       applyState({ iconAssetId: resolved })
     },
-    setClusterAmount: (value: number) => {
-      applyState({ clusterAmount: clamp(value, 0, 100) })
+    setClusterIntensity: (value: number) => {
+      const sanitized = Number.isFinite(value) ? value : 0
+      applyState({ clusterIntensity: clamp(sanitized, 0, 100) })
     },
     setBackgroundMode: (mode: BackgroundMode) => {
       if (!(mode in backgroundPresets)) {
@@ -1013,7 +1013,7 @@ export const createSpriteController = (
       const nextAuto = Math.random() > 0.35
       applyState({
         clusterSeed: generateSeedString(),
-        clusterAmount: Math.floor(Math.random() * 101),
+        clusterIntensity: Math.floor(Math.random() * 101),
         scalePercent: 20 + Math.floor(Math.random() * 380),
         movementMode: movementModes[Math.floor(Math.random() * movementModes.length)],
         paletteVariance: Math.floor(Math.random() * 101),
@@ -1027,7 +1027,7 @@ export const createSpriteController = (
     applySingleTilePreset: () => {
       applyState({
         clusterSeed: generateSeedString(),
-        clusterAmount: 0,
+        clusterIntensity: 0,
         scalePercent: 22,
         scaleBase: 185,
         scaleSpread: 55,
@@ -1039,7 +1039,7 @@ export const createSpriteController = (
     applyNebulaPreset: () => {
       applyState({
         clusterSeed: generateSeedString(),
-        clusterAmount: 100,
+        clusterIntensity: 100,
         scalePercent: 320,
         scaleBase: 140,
         scaleSpread: 280,
@@ -1056,7 +1056,7 @@ export const createSpriteController = (
     applyMinimalGridPreset: () => {
       applyState({
         clusterSeed: generateSeedString(),
-        clusterAmount: 12,
+        clusterIntensity: 12,
         scalePercent: 65,
         scaleBase: 95,
         scaleSpread: 38,
