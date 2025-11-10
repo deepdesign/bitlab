@@ -4,6 +4,8 @@
 
 ## 🎨 Generative Pixel Playground
 
+- Live demo: https://bitlab.jamescutts.me/
+
 BitLab is a vibrant generative art workbench built with React, p5.js, Tailwind, and RetroUI. Mix pixel iconography, palette theory, and motion envelopes to compose shimmering sprite tapestries in real time.
 
 <p align="center">
