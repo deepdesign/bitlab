@@ -565,7 +565,7 @@ body {
 }
 
 .panel-footer-button {
-  @apply flex w-full flex-1 items-center justify-center;
+  @apply inline-flex w-full flex-1 items-center justify-center;
 }
 
 .tab-panel[hidden] {
@@ -1103,7 +1103,7 @@ body {
 }
 
 .utilities-button {
-  @apply flex items-center justify-center;
+  @apply inline-flex items-center justify-center;
   width: auto;
 }
 
