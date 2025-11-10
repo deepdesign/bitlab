@@ -140,20 +140,26 @@ const SPRITE_MODES: Array<{
   },
 ];
 
-const TILE_DENSITY_MIN = 50
-const TILE_DENSITY_MAX = 1000
+const TILE_DENSITY_MIN = 50;
+const TILE_DENSITY_MAX = 1000;
 
-const clampValue = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
+const clampValue = (value: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, value));
 
 const densityToUi = (value: number) => {
-  const bounded = clampValue(value, TILE_DENSITY_MIN, TILE_DENSITY_MAX)
-  return Math.round(((bounded - TILE_DENSITY_MIN) / (TILE_DENSITY_MAX - TILE_DENSITY_MIN)) * 100)
-}
+  const bounded = clampValue(value, TILE_DENSITY_MIN, TILE_DENSITY_MAX);
+  return Math.round(
+    ((bounded - TILE_DENSITY_MIN) / (TILE_DENSITY_MAX - TILE_DENSITY_MIN)) *
+      100,
+  );
+};
 
 const uiToDensity = (value: number) => {
-  const bounded = clampValue(value, 0, 100)
-  return Math.round(TILE_DENSITY_MIN + (bounded / 100) * (TILE_DENSITY_MAX - TILE_DENSITY_MIN))
-}
+  const bounded = clampValue(value, 0, 100);
+  return Math.round(
+    TILE_DENSITY_MIN + (bounded / 100) * (TILE_DENSITY_MAX - TILE_DENSITY_MIN),
+  );
+};
 
 const PALETTE_OPTIONS = palettes.map((palette) => ({
   value: palette.id,
@@ -451,31 +457,33 @@ const App = () => {
   }, [themeMode]);
 
   const ThemeModeIcon = useMemo(() => {
-     switch (themeMode) {
-       case 'light':
-         return Sun
-       case 'dark':
-         return Moon
-       default:
-         return Monitor
-     }
-   }, [themeMode])
+    switch (themeMode) {
+      case "light":
+        return Sun;
+      case "dark":
+        return Moon;
+      default:
+        return Monitor;
+    }
+  }, [themeMode]);
 
-  const ThemeModeIconComponent = ThemeModeIcon
+  const ThemeModeIconComponent = ThemeModeIcon;
 
   const ready = spriteState !== null && controllerRef.current !== null;
 
   const currentPalette = useMemo(() => {
-    return palettes.find((item) => item.id === spriteState?.paletteId) ?? palettes[0]
-  }, [spriteState?.paletteId])
+    return (
+      palettes.find((item) => item.id === spriteState?.paletteId) ?? palettes[0]
+    );
+  }, [spriteState?.paletteId]);
 
   const currentModeLabel = useMemo(() => {
-    if (!spriteState) return SPRITE_MODES[0].label
+    if (!spriteState) return SPRITE_MODES[0].label;
     return (
-      SPRITE_MODES.find((mode) => mode.value === spriteState.spriteMode)?.label ??
-      SPRITE_MODES[0].label
-    )
-  }, [spriteState])
+      SPRITE_MODES.find((mode) => mode.value === spriteState.spriteMode)
+        ?.label ?? SPRITE_MODES[0].label
+    );
+  }, [spriteState]);
 
   useEffect(() => {
     if (isStudioLayout && controlTabIndex > 1) {
@@ -487,8 +495,10 @@ const App = () => {
     if (!spriteState || spriteState.spriteMode !== "icon") {
       return null;
     }
-    return getPixelArtIconById(spriteState.iconAssetId) ?? pixelArtIconAssets[0]
-  }, [spriteState?.iconAssetId, spriteState?.spriteMode])
+    return (
+      getPixelArtIconById(spriteState.iconAssetId) ?? pixelArtIconAssets[0]
+    );
+  }, [spriteState?.iconAssetId, spriteState?.spriteMode]);
 
   useEffect(() => {
     const container = sketchContainerRef.current;
@@ -574,8 +584,8 @@ const App = () => {
     controllerRef.current?.randomizeAll();
   }, []);
 
-  const statusPalette = currentPalette.name
-  const statusMode = currentModeLabel
+  const statusPalette = currentPalette.name;
+  const statusMode = currentModeLabel;
   const statusBlend = spriteState
     ? formatBlendMode(spriteState.blendMode as BlendModeOption)
     : "None";
@@ -654,7 +664,7 @@ const App = () => {
       return null;
     }
 
-    const densityValueUi = densityToUi(spriteState.scalePercent)
+    const densityValueUi = densityToUi(spriteState.scalePercent);
 
     return (
       <>
@@ -696,7 +706,7 @@ const App = () => {
                   label: assetOption.label,
                 }))}
                 placeholder="Select Icon"
-                tooltip="Choose the Bit Bonanza sprite served from the local sprites library."
+                tooltip="Choose an SVG sprite served from the local sprites library."
               />
             </div>
           )}
@@ -708,7 +718,9 @@ const App = () => {
             max={100}
             value={densityValueUi}
             displayValue={`${densityValueUi}%`}
-            onChange={(value) => controllerRef.current?.setScalePercent(uiToDensity(value))}
+            onChange={(value) =>
+              controllerRef.current?.setScalePercent(uiToDensity(value))
+            }
             disabled={!ready}
             tooltip="Controls how many tiles spawn per layer; higher values create a busier canvas."
           />
@@ -854,7 +866,9 @@ const App = () => {
               <Switch
                 id="rotation-animate"
                 checked={spriteState.rotationSpeed > 0}
-                onCheckedChange={(checked) => handleRotationSpeedChange(checked ? 25 : 0)}
+                onCheckedChange={(checked) =>
+                  handleRotationSpeedChange(checked ? 25 : 0)
+                }
                 disabled={!ready}
                 aria-labelledby="rotation-animate-label"
               />

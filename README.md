@@ -40,7 +40,7 @@ BitLab is a vibrant generative art workbench built with React, p5.js, Tailwind, 
 ## ✨ Highlights
 
 - **Generative Sprite Canvas** – Multi-layer p5.js engine with dialed-in controls for density (50 → 1,000% under the hood), scale spread, palette variance, opacity, and animation tempo.
-- **Expanded Sprite Modes** – Tiles, circles, hexagons, rings, diamonds, neon trails, comet bursts, a long-form scanline, and a curated Bit Bonanza sprite library.
+- **Expanded Sprite Modes** – Tiles, circles, hexagons, rings, diamonds, neon trails, comet bursts, and a long-form scanline.
 - **Motion Lab** – Density-driven layering paired with ten motion envelopes (sway → wavefront) and a master speed dial.
 - **Rotation System** – Independent rotation offsets (Sprites tab) and spin animation (Motion tab) with per-sprite direction, speed and angle variance.
 - **Blend Architectures** – Layer-specific blend modes (multiply, screen, hard light, overlay) with optional per-sprite randomisation.
@@ -111,7 +111,7 @@ The build artifacts land in `/dist` ready for static hosting.
 
 ## 🎨 Sprite Packs
 
-Drop additional SVG assets into `public/sprites/` (e.g. `public/sprites/Bit-Bonanza-10x10-v-5.0/`). Vite serves these automatically at `/sprites/<folder>/<filename>.svg`, so pointing the sprite selector at new packs is as simple as adding metadata.
+Drop additional SVG assets into `public/sprites/`. Vite serves these automatically at `/sprites/<folder>/<filename>.svg`, so pointing the sprite selector at new packs is as simple as adding metadata.
 
 ---
 
@@ -122,7 +122,7 @@ Drop additional SVG assets into `public/sprites/` (e.g. `public/sprites/Bit-Bona
 - [TypeScript](https://www.typescriptlang.org/) for confident refactors
 - [p5.js](https://p5js.org/) driving the generative engine
 - [Tailwind CSS](https://tailwindcss.com/) + [RetroUI](https://www.retroui.dev/) supplying the retro design system
-- Bit Bonanza SVG packs for the bundled icon sprite library
+- Custom SVG packs for the bundled icon sprite library
 
 ---
 
@@ -133,7 +133,7 @@ Drop additional SVG assets into `public/sprites/` (e.g. `public/sprites/Bit-Bona
 │   ├── bitlab-logo-black.svg
 │   ├── bitlab-logo-white.svg
 │   └── sprites/
-│       └── Bit-Bonanza-10x10-v-5.0/   # Drop-in slot for additional SVG sprite packs
+│       └── sprites-pack/              # Drop-in slot for additional SVG sprite packs
 ├── src/
 │   ├── App.tsx           # Main UI & state wiring
 │   ├── generator.ts      # p5.js sprite logic & controller API
