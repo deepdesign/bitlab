@@ -146,16 +146,6 @@ const SPRITE_MODES: Array<{
     label: "Cross",
     description: "Bold plus signs that anchor grid compositions",
   },
-  {
-    value: "capsule",
-    label: "Capsule",
-    description: "Rounded pills that make sleek comet trails",
-  },
-  {
-    value: "ellipse",
-    label: "Ellipse",
-    description: "Elongated orbs that soften orbit patterns",
-  },
 ];
 
 const TILE_DENSITY_MIN = 50;
@@ -556,12 +546,6 @@ const ShapeIcon = ({ shape, size = 24 }: { shape: SpriteMode; size?: number }) =
             <rect x={center - 10} y={center - 3} width={20} height={6} rx={2} />
           </g>
         );
-
-      case "capsule":
-        return <rect x={center - 8} y={center - 6} width={16} height={12} rx={6} fill="currentColor" />;
-
-      case "ellipse":
-        return <ellipse cx={center} cy={center} rx={radius * 1.2} ry={radius * 0.75} fill="currentColor" />;
  
       default:
         return <circle cx={center} cy={center} r={radius} fill="currentColor" />;

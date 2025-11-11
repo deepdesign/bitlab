@@ -98,9 +98,7 @@ export type SpriteMode =
   | "line"
   | "pentagon"
   | "asterisk"
-  | "cross"
-  | "capsule"
-  | "ellipse";
+  | "cross";
 
 interface ShapeTile {
   kind: "shape";
@@ -175,8 +173,6 @@ const shapeModes = [
   "pentagon",
   "asterisk",
   "cross",
-  "capsule",
-  "ellipse",
 ] as const;
 const spriteModePool: SpriteMode[] = [...shapeModes];
 
@@ -991,17 +987,6 @@ export const createSpriteController = (
                 p.rectMode(p.CENTER);
                 p.rect(0, 0, barThickness, barLength);
                 p.rect(0, 0, barLength, barThickness);
-                break;
-              }
-              case "capsule": {
-                const capsuleWidth = shapeSize * 1.05;
-                const capsuleHeight = shapeSize * 0.5;
-                p.rectMode(p.CENTER);
-                p.rect(0, 0, capsuleWidth, capsuleHeight, capsuleHeight * 0.5);
-                break;
-              }
-              case "ellipse": {
-                p.ellipse(0, 0, shapeSize, shapeSize * 0.65);
                 break;
               }
               default:
