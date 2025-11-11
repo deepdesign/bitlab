@@ -1056,20 +1056,26 @@ export const createSpriteController = (
       }, { recompute: false });
     },
     setBlendModeAuto: (value: boolean) => {
-      // When blendModeAuto changes, we need to regenerate to assign random blend modes to tiles
-      // But if turning it off, we can use state.blendMode without regeneration
       if (value) {
-        const stored = state.blendModeAuto
-          ? state.previousBlendMode
-          : state.blendMode;
-        applyState({
-          blendModeAuto: true,
-          previousBlendMode: stored,
-        });
+        const stored =
+          state.blendModeAuto && state.previousBlendMode
+            ? state.previousBlendMode
+            : state.blendMode ?? "NONE";
+        // Refresh seed so auto blend redistributes when toggled on
+        updateSeed();
+        applyState(
+          {
+            blendModeAuto: true,
+            previousBlendMode: stored,
+          },
+          { recompute: true },
+        );
       } else {
         const fallback = state.previousBlendMode ?? state.blendMode ?? "NONE";
-        // When turning off auto, we can apply state.blendMode without regeneration
-        applyState({ blendModeAuto: false, blendMode: fallback }, { recompute: false });
+        applyState(
+          { blendModeAuto: false, blendMode: fallback },
+          { recompute: false },
+        );
       }
     },
     setLayerOpacity: (value: number) => {
