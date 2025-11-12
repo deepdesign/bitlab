@@ -59,8 +59,8 @@ BitLab is a vibrant generative art workbench built with React, p5.js, Tailwind, 
 - **Blend Architectures** – Layer-specific blend modes (multiply, screen, hard light, overlay) with optional per-sprite randomisation.
 - **Theme Designer** – System/light/dark cycling, six colourway accents, and RetroUI Box/Rounded chassis toggle applied across the entire shell.
 - **Status HUD** – Live palette, sprite mode, blend, motion, density, and FPS read-outs follow you into fullscreen.
-- **Canvas Export** – Export your creations at high resolution with custom dimensions, preset sizes for social media and print, and aspect ratio locking. Animation pauses during export for clean captures.
-- **Tailwind Retro Components** – Buttons, Selects, Switches, Tabs, Cards, and Accordions rebuilt on the Tailwind spacing scale while honouring RetroUI tokens.
+- **High-Resolution Export** – Export your canvas at any resolution with presets for social media, wallpapers, and print. Aspect ratio locking, custom dimensions, and high-quality PNG output with smooth scaling.
+- **Tailwind Retro Components** – Buttons, Selects, Switches, Tabs, Cards, and Accordion rebuilt on the Tailwind spacing scale while honouring RetroUI tokens.
 - **Footer Resources** – Slim footer featuring the BitLab logotype, quick access to RetroUI docs, p5.js, and `jamescutts.me`.
 
 ---
@@ -70,10 +70,10 @@ BitLab is a vibrant generative art workbench built with React, p5.js, Tailwind, 
 | Area             | Highlights                                                                                                                                                                                                                              |
 | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Header**       | Accent selector, Box/Rounded toggle, and a cycling System → Light → Dark icon button.                                                                                                                                                   |
-| **Control Deck** | Tabs for Sprites / Layers / Motion / FX (Motion and FX gain their own column in wide layouts). Sliders cover tile density, scale base/spread, rotation offsets, blend, palette variance, motion intensity, rotation speed, and animation speed. |
+| **Control Deck** | Tabs for Sprites / Layers / Motion / FX (Motion and FX gain their own column at wide viewports). Sliders cover tile density, scale base/spread, rotation offsets, blend, palette variance, motion intensity, rotation speed, and animation speed. |
 | **Sprite Selector** | Icon-buttons for each geometric mode line up beneath the "Generation" heading so you can audition shapes instantly. |
 | **Status Bar / HUD** | Palette, sprite mode, blend, motion, density, and FPS badges anchor to the canvas edge alongside Randomise, Presets, Export, and Fullscreen buttons. In fullscreen they float as an auto-hiding HUD. |
-| **Export Modal** | High-resolution canvas export with custom dimensions, preset sizes (social media, wallpapers, print), aspect ratio locking, and PNG format. Animation automatically pauses during export. |
+| **Export Modal** | High-resolution export with dimension presets (Social, Wallpapers, Print), custom dimensions, aspect ratio locking, and PNG output. Animation pauses during export for crisp captures. |
 | **Canvas**       | BitLab renders layered motion paths with depth-aware scaling, leaving the status HUD and fullscreen controls within reach. |
 | **Footer**       | BitLab wordmark plus links to p5.js, RetroUI docs, and `jamescutts.me`. |
 
@@ -142,7 +142,7 @@ The build artifacts land in `/dist` ready for static hosting.
 │   ├── App.tsx           # Main UI & state wiring
 │   ├── generator.ts      # p5.js sprite logic & controller API
 │   ├── components/       # Tailwind-first Retro components (Button, Select, Switch, Tabs, Card, Accordion, ExportModal, PresetManager)
-│   ├── lib/              # Utility modules (responsiveLayout, exportService, presetStorage)
+│   ├── lib/              # Utility modules (responsiveLayout, exportService)
 │   ├── data/             # palettes & supporting data
 │   └── index.css         # Tailwind import + RetroUI overrides
 ├── index.html            # Entry HTML + favicon

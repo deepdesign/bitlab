@@ -110,6 +110,23 @@ export const ExportModal = ({
     }
   }, [isOpen, p5Instance, controller]);
 
+  // Calculate greatest common divisor to simplify aspect ratio
+  const gcd = useCallback((a: number, b: number): number => {
+    return b === 0 ? a : gcd(b, a % b);
+  }, []);
+
+  // Get simplified aspect ratio as string (e.g., "1:1", "16:9")
+  const getSimplifiedRatio = useCallback((w: number, h: number): string => {
+    const divisor = gcd(w, h);
+    const simplifiedW = w / divisor;
+    const simplifiedH = h / divisor;
+    // Limit to reasonable values (e.g., if ratio is very large, show decimal)
+    if (simplifiedW > 100 || simplifiedH > 100) {
+      return `${(w / h).toFixed(2)}:1`;
+    }
+    return `${simplifiedW}:${simplifiedH}`;
+  }, [gcd]);
+
   const handlePresetSelect = useCallback((preset: { width: number; height: number; label: string }, presetKey: string) => {
     setSelectedPreset(presetKey);
     if (preset.width === 0 && preset.height === 0) {
@@ -332,7 +349,7 @@ export const ExportModal = ({
                       className="export-aspect-ratio-checkbox"
                     />
                     <label htmlFor="aspect-ratio-lock" className="export-aspect-ratio-label">
-                      Lock aspect ratio to 1:1 (square)
+                      Lock aspect ratio to {getSimplifiedRatio(width, height)}
                     </label>
                   </div>
                 </div>
