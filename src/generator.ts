@@ -71,19 +71,30 @@ export type BlendModeOption = BlendModeKey;
 
 export type BackgroundMode =
   | "palette"
-  | "midnight"
-  | "charcoal"
-  | "dusk"
-  | "dawn"
-  | "nebula";
+  | "void_deep"
+  | "oceanic_abyss"
+  | "arcade_night"
+  | "sunset_purple"
+  | "aurora_violet"
+  | "neon_cyan"
+  | "pastel_sky"
+  | "flora_blush"
+  | "ember_glow";
 
 const backgroundPresets: Record<BackgroundMode, string | null> = {
   palette: null,
-  midnight: "#050509",
-  charcoal: "#15151f",
-  dusk: "#1f1b3b",
-  dawn: "#fbe8c8",
-  nebula: "#121835",
+  // Dark backgrounds (3) - rich, deep colors from palettes
+  void_deep: "#0f0f1c", // Deepest purple-black from void palette (#0f0f1c)
+  oceanic_abyss: "#031a6b", // Deepest blue from oceanic palette (#031a6b)
+  arcade_night: "#3a0ca3", // Rich purple from arcade palette (#3a0ca3)
+  // Medium backgrounds (3) - vibrant, colorful from palettes
+  sunset_purple: "#ad00ff", // Rich purple from sunset palette (#ad00ff)
+  aurora_violet: "#7b42f6", // Vivid violet from aurora palette (#7b42f6)
+  neon_cyan: "#2b86c5", // Bright cyan-blue from neon palette (#2b86c5)
+  // Light backgrounds (3) - bright, colorful from palettes
+  pastel_sky: "#c4f3ff", // Bright sky blue from pastel palette (#c4f3ff)
+  flora_blush: "#ffafbd", // Warm pink from flora palette (#ffafbd)
+  ember_glow: "#ffd17c", // Warm golden from ember palette (#ffd17c)
 };
 
 export type SpriteMode =
@@ -148,6 +159,7 @@ export interface GeneratorState {
   spriteMode: SpriteMode;
   movementMode: MovementMode;
   backgroundMode: BackgroundMode;
+  backgroundHueShift: number;
   motionSpeed: number;
   rotationEnabled: boolean;
   rotationAmount: number;
@@ -194,6 +206,7 @@ export const DEFAULT_STATE: GeneratorState = {
   spriteMode: "star",
   movementMode: "orbit",
   backgroundMode: "palette",
+  backgroundHueShift: 0,
   motionSpeed: 8.5,
   rotationEnabled: true,
   rotationAmount: 72,
@@ -480,10 +493,15 @@ const computeSprite = (state: GeneratorState): PreparedSprite => {
   );
   const backgroundBase = shiftedPalette[0];
   const presetBackground = backgroundPresets[state.backgroundMode];
+  // Apply background hue shift to preset backgrounds (0-100 maps to 0-360 degrees)
+  // Don't apply hue shift to palette mode (it uses the shifted palette color)
+  const backgroundHueShiftDegrees = state.backgroundMode !== "palette" 
+    ? (state.backgroundHueShift / 100) * 360 
+    : 0;
   const background =
     presetBackground === null
       ? jitterColor(backgroundBase, variance * 0.5, colorRng)
-      : presetBackground;
+      : shiftHue(presetBackground, backgroundHueShiftDegrees);
 
   const densityRatio = clamp(state.scalePercent / MAX_DENSITY_PERCENT_UI, 0, 1);
   const baseScaleValue = clamp(state.scaleBase / 100, 0, 1);
@@ -660,6 +678,7 @@ export interface SpriteController {
   setRotationAnimated: (value: boolean) => void;
   usePalette: (paletteId: PaletteId) => void;
   setBackgroundMode: (mode: BackgroundMode) => void;
+  setBackgroundHueShift: (value: number) => void;
   applySingleTilePreset: () => void;
   applyNebulaPreset: () => void;
   applyMinimalGridPreset: () => void;
@@ -1079,6 +1098,7 @@ export const createSpriteController = (
       state.movementMode =
         movementModes[Math.floor(Math.random() * movementModes.length)];
       state.backgroundMode = "palette";
+      state.backgroundHueShift = 0;
       const rotationActive = Math.random() > 0.35;
       state.rotationEnabled = rotationActive;
       state.rotationAmount = rotationActive
@@ -1224,6 +1244,11 @@ export const createSpriteController = (
         return;
       }
       applyState({ backgroundMode: mode });
+    },
+    setBackgroundHueShift: (value: number) => {
+      // Background hue shift affects background color, so regeneration is needed
+      // Background hue shift is stored as 0-100 (maps to 0-360 degrees)
+      applyState({ backgroundHueShift: clamp(value, 0, 100) });
     },
     applySingleTilePreset: () => {
       updateSeed();

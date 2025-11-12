@@ -39,10 +39,12 @@ import {
 } from "./generator";
 import { PresetManager } from "./components/PresetManager";
 import { ExportModal } from "./components/ExportModal";
+import { MobileMenu } from "./components/MobileMenu";
 import { Badge } from "./components/retroui/Badge";
 import { Moon, Monitor, Sun, Maximize2, X, RefreshCw, Bookmark, Camera } from "lucide-react";
 import { palettes } from "./data/palettes";
 import { shouldSplitColumns, getAppMainPadding } from "./lib/responsiveLayout";
+import { useIsMobile, useIsTablet, useIsPhone } from "./hooks/useIsMobile";
 const BLEND_MODES: BlendModeOption[] = [
   "NONE",
   "MULTIPLY",
@@ -52,11 +54,18 @@ const BLEND_MODES: BlendModeOption[] = [
 ];
 const BACKGROUND_OPTIONS = [
   { value: "palette", label: "Palette (auto)" },
-  { value: "midnight", label: "Midnight" },
-  { value: "charcoal", label: "Charcoal" },
-  { value: "dusk", label: "Dusk" },
-  { value: "dawn", label: "Dawn" },
-  { value: "nebula", label: "Nebula" },
+  // Dark backgrounds
+  { value: "void_deep", label: "Void Deep" },
+  { value: "oceanic_abyss", label: "Oceanic Abyss" },
+  { value: "arcade_night", label: "Arcade Night" },
+  // Medium backgrounds
+  { value: "sunset_purple", label: "Sunset Purple" },
+  { value: "aurora_violet", label: "Aurora Violet" },
+  { value: "neon_cyan", label: "Neon Cyan" },
+  // Light backgrounds
+  { value: "pastel_sky", label: "Pastel Sky" },
+  { value: "flora_blush", label: "Flora Blush" },
+  { value: "ember_glow", label: "Ember Glow" },
 ] as const;
 
 type ThemeMode = "system" | "light" | "dark";
@@ -641,6 +650,11 @@ const App = () => {
   const [isWideLayout, setIsWideLayout] = useState(false);
   const canvasWrapperRef = useRef<HTMLDivElement | null>(null);
   const layoutRef = useRef<HTMLDivElement | null>(null);
+  
+  // Mobile device detection
+  const isMobile = useIsMobile();
+  const isTablet = useIsTablet();
+  const isPhone = useIsPhone();
 
   /**
    * Check if columns should be split or merged based on viewport width
@@ -1419,7 +1433,7 @@ const App = () => {
           <h3 className="section-title">Palette &amp; Variance</h3>
           <ControlSelect
             id="palette-presets"
-            label="Palette Presets"
+            label="Sprite palette"
             value={currentPalette.id}
             onChange={(value) => handlePaletteSelection(value)}
             onItemSelect={handlePaletteOptionSelect}
@@ -1431,7 +1445,7 @@ const App = () => {
           />
           <ControlSlider
             id="palette-range"
-            label="Palette Variance"
+            label="Sprite palette variance"
             min={0}
             max={100}
             value={varianceToUi(spriteState.paletteVariance)}
@@ -1444,7 +1458,7 @@ const App = () => {
           />
           <ControlSlider
             id="hue-shift"
-            label="Hue Shift"
+            label="Sprite hue shift"
             min={0}
             max={100}
             value={spriteState.hueShift ?? 0}
@@ -1457,7 +1471,7 @@ const App = () => {
           />
           <ControlSelect
             id="background-mode"
-            label="Canvas Background"
+            label="Canvas"
             value={spriteState.backgroundMode}
             onChange={handleBackgroundSelect}
             disabled={!ready}
@@ -1471,6 +1485,19 @@ const App = () => {
                 (option) => option.value === spriteState.backgroundMode,
               )?.label
             }
+          />
+          <ControlSlider
+            id="background-hue-shift"
+            label="Canvas hue shift"
+            min={0}
+            max={100}
+            value={Math.round(spriteState.backgroundHueShift ?? 0)}
+            displayValue={`${Math.round(spriteState.backgroundHueShift ?? 0)}%`}
+            onChange={(value) =>
+              controllerRef.current?.setBackgroundHueShift(value)
+            }
+            disabled={!ready || spriteState.backgroundMode === "palette"}
+            tooltip="Shifts the background color around the color wheel (0-360°). Only applies to preset backgrounds, not Palette (auto)."
           />
         </div>
 
@@ -1702,98 +1729,112 @@ const App = () => {
         </button>
         <div className="header-toolbar">
           <div className="header-spacer" />
-          <div className="header-actions">
-            <Select value={themeColor} onValueChange={handleThemeSelect}>
-              <SelectTrigger
-                className="header-theme-trigger"
-                aria-label="Theme colour"
-              >
-                <SelectValue placeholder="Theme">
-                  {THEME_COLOR_OPTIONS.find(
-                    (option) => option.value === themeColor,
-                  )?.label ?? "Theme"}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent className="header-theme-menu">
-                <SelectGroup>
-                  {THEME_COLOR_OPTIONS.map((option) => (
-                    <SelectItem
-                      key={option.value}
-                      value={option.value}
-                      className="header-theme-item"
-                      style={
-                        {
-                          "--theme-preview": THEME_COLOR_PREVIEW[option.value],
-                        } as CSSProperties
-                      }
-                    >
-                      {option.label}
+          {isMobile ? (
+            <MobileMenu
+              themeColor={themeColor}
+              themeShape={themeShape}
+              themeModeText={themeModeText}
+              ThemeModeIcon={ThemeModeIconComponent}
+              onThemeColorChange={handleThemeSelect}
+              onThemeShapeChange={handleShapeSelect}
+              onThemeModeCycle={cycleThemeMode}
+              themeColorOptions={THEME_COLOR_OPTIONS}
+              themeColorPreview={THEME_COLOR_PREVIEW}
+            />
+          ) : (
+            <div className="header-actions">
+              <Select value={themeColor} onValueChange={handleThemeSelect}>
+                <SelectTrigger
+                  className="header-theme-trigger"
+                  aria-label="Theme colour"
+                >
+                  <SelectValue placeholder="Theme">
+                    {THEME_COLOR_OPTIONS.find(
+                      (option) => option.value === themeColor,
+                    )?.label ?? "Theme"}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent className="header-theme-menu">
+                  <SelectGroup>
+                    {THEME_COLOR_OPTIONS.map((option) => (
+                      <SelectItem
+                        key={option.value}
+                        value={option.value}
+                        className="header-theme-item"
+                        style={
+                          {
+                            "--theme-preview": THEME_COLOR_PREVIEW[option.value],
+                          } as CSSProperties
+                        }
+                      >
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              <Select value={themeShape} onValueChange={handleShapeSelect}>
+                <SelectTrigger
+                  className="header-theme-trigger"
+                  aria-label="Theme shape"
+                >
+                  <SelectValue placeholder="Shape">
+                    {themeShape === "rounded" ? "Rounded" : "Box"}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent className="header-theme-menu">
+                  <SelectGroup>
+                    <SelectItem value="box" className="header-theme-item">
+                      Box
                     </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-            <Select value={themeShape} onValueChange={handleShapeSelect}>
-              <SelectTrigger
-                className="header-theme-trigger"
-                aria-label="Theme shape"
+                    <SelectItem value="rounded" className="header-theme-item">
+                      Rounded
+                    </SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                className="header-icon-button"
+                onClick={cycleThemeMode}
+                aria-label={`Switch theme mode (current ${themeModeText})`}
+                title={`Theme: ${themeModeText}`}
               >
-                <SelectValue placeholder="Shape">
-                  {themeShape === "rounded" ? "Rounded" : "Box"}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent className="header-theme-menu">
-                <SelectGroup>
-                  <SelectItem value="box" className="header-theme-item">
-                    Box
-                  </SelectItem>
-                  <SelectItem value="rounded" className="header-theme-item">
-                    Rounded
-                  </SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-            <Button
-              type="button"
-              size="icon"
-              variant="outline"
-              className="header-icon-button"
-              onClick={cycleThemeMode}
-              aria-label={`Switch theme mode (current ${themeModeText})`}
-              title={`Theme: ${themeModeText}`}
-            >
-              <ThemeModeIconComponent className="h-4 w-4" aria-hidden="true" />
-            </Button>
-          </div>
+                <ThemeModeIconComponent className="h-4 w-4" aria-hidden="true" />
+              </Button>
+            </div>
+          )}
         </div>
       </header>
 
       <main className="app-main">
         <div
           ref={layoutRef}
-          className={`app-layout${isStudioLayout ? " app-layout--studio" : ""}${isWideLayout ? " app-layout--wide" : ""}`}
+          className={`app-layout${isStudioLayout ? " app-layout--studio" : ""}${isWideLayout ? " app-layout--wide" : ""}${isMobile ? " app-layout--mobile" : ""}`}
         >
-          <aside className="control-column">
-            <Card className="panel">
-              <Tabs
-                selectedIndex={controlTabIndex}
-                onChange={setControlTabIndex}
-              >
-                <TabsTriggerList className="retro-tabs">
-                  <TabsTrigger>Sprites</TabsTrigger>
-                  <TabsTrigger>Layers</TabsTrigger>
-                  {!isWideLayout && (
-                    <>
+          {isMobile ? (
+            // Mobile layout: Canvas first, then controls
+            <>
+              <div className="display-column">
+                {renderDisplayContent()}
+              </div>
+              <aside className="control-column">
+                <Card className="panel">
+                  <Tabs
+                    selectedIndex={controlTabIndex}
+                    onChange={setControlTabIndex}
+                  >
+                    <TabsTriggerList className="retro-tabs">
+                      <TabsTrigger>Sprites</TabsTrigger>
+                      <TabsTrigger>Layers</TabsTrigger>
                       <TabsTrigger>Motion</TabsTrigger>
                       <TabsTrigger>FX</TabsTrigger>
-                    </>
-                  )}
-                </TabsTriggerList>
-                <TabsPanels>
-                  <TabsContent>{renderSpriteControls()}</TabsContent>
-                  <TabsContent>{renderFxControls()}</TabsContent>
-                  {!isWideLayout && (
-                    <>
+                    </TabsTriggerList>
+                    <TabsPanels>
+                      <TabsContent>{renderSpriteControls()}</TabsContent>
+                      <TabsContent>{renderFxControls()}</TabsContent>
                       <TabsContent>{renderMotionControls(false)}</TabsContent>
                       <TabsContent>
                         <div className="section">
@@ -1809,48 +1850,94 @@ const App = () => {
                           </p>
                         </div>
                       </TabsContent>
-                    </>
-                  )}
-                </TabsPanels>
-              </Tabs>
-            </Card>
-          </aside>
+                    </TabsPanels>
+                  </Tabs>
+                </Card>
+              </aside>
+            </>
+          ) : (
+            // Desktop layout: Controls first, then canvas
+            <>
+              <aside className="control-column">
+                <Card className="panel">
+                  <Tabs
+                    selectedIndex={controlTabIndex}
+                    onChange={setControlTabIndex}
+                  >
+                    <TabsTriggerList className="retro-tabs">
+                      <TabsTrigger>Sprites</TabsTrigger>
+                      <TabsTrigger>Layers</TabsTrigger>
+                      {!isWideLayout && (
+                        <>
+                          <TabsTrigger>Motion</TabsTrigger>
+                          <TabsTrigger>FX</TabsTrigger>
+                        </>
+                      )}
+                    </TabsTriggerList>
+                    <TabsPanels>
+                      <TabsContent>{renderSpriteControls()}</TabsContent>
+                      <TabsContent>{renderFxControls()}</TabsContent>
+                      {!isWideLayout && (
+                        <>
+                          <TabsContent>{renderMotionControls(false)}</TabsContent>
+                          <TabsContent>
+                            <div className="section">
+                              <h3 className="section-title">FX Effects</h3>
+                              <p style={{ 
+                                color: 'var(--text-muted)', 
+                                fontSize: '0.75rem', 
+                                lineHeight: '1.6',
+                                marginTop: '1rem'
+                              }}>
+                                Advanced effects and post-processing controls coming soon. 
+                                Stay tuned for filters, distortions, color grading, and more creative tools.
+                              </p>
+                            </div>
+                          </TabsContent>
+                        </>
+                      )}
+                    </TabsPanels>
+                  </Tabs>
+                </Card>
+              </aside>
 
-          <div className="display-column">
-            {renderDisplayContent()}
-          </div>
+              <div className="display-column">
+                {renderDisplayContent()}
+              </div>
 
-          {isWideLayout && (
-            <aside className="motion-column">
-              <Card className="panel">
-                <Tabs
-                  selectedIndex={motionTabIndex}
-                  onChange={setMotionTabIndex}
-                >
-                  <TabsTriggerList className="retro-tabs">
-                    <TabsTrigger>Motion</TabsTrigger>
-                    <TabsTrigger>FX</TabsTrigger>
-                  </TabsTriggerList>
-                  <TabsPanels>
-                    <TabsContent>{renderMotionControls(false)}</TabsContent>
-                    <TabsContent>
-                      <div className="section">
-                        <h3 className="section-title">FX Effects</h3>
-                        <p style={{ 
-                          color: 'var(--text-muted)', 
-                          fontSize: '0.75rem', 
-                          lineHeight: '1.6',
-                          marginTop: '1rem'
-                        }}>
-                          Advanced effects and post-processing controls coming soon. 
-                          Stay tuned for filters, distortions, color grading, and more creative tools.
-                        </p>
-                      </div>
-                    </TabsContent>
-                  </TabsPanels>
-                </Tabs>
-              </Card>
-            </aside>
+              {isWideLayout && (
+                <aside className="motion-column">
+                  <Card className="panel">
+                    <Tabs
+                      selectedIndex={motionTabIndex}
+                      onChange={setMotionTabIndex}
+                    >
+                      <TabsTriggerList className="retro-tabs">
+                        <TabsTrigger>Motion</TabsTrigger>
+                        <TabsTrigger>FX</TabsTrigger>
+                      </TabsTriggerList>
+                      <TabsPanels>
+                        <TabsContent>{renderMotionControls(false)}</TabsContent>
+                        <TabsContent>
+                          <div className="section">
+                            <h3 className="section-title">FX Effects</h3>
+                            <p style={{ 
+                              color: 'var(--text-muted)', 
+                              fontSize: '0.75rem', 
+                              lineHeight: '1.6',
+                              marginTop: '1rem'
+                            }}>
+                              Advanced effects and post-processing controls coming soon. 
+                              Stay tuned for filters, distortions, color grading, and more creative tools.
+                            </p>
+                          </div>
+                        </TabsContent>
+                      </TabsPanels>
+                    </Tabs>
+                  </Card>
+                </aside>
+              )}
+            </>
           )}
         </div>
       </main>
