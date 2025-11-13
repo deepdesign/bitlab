@@ -110,16 +110,28 @@ export const MobileMenu = ({
                 <Select value={themeShape} onValueChange={onThemeShapeChange}>
                   <SelectTrigger className="mobile-menu-select">
                     <SelectValue placeholder="Shape">
-                      {themeShape === "rounded" ? "Rounded" : "Box"}
+                      {themeShape === "rounded" ? (
+                        <svg width={16} height={16} viewBox="0 0 24 24" fill="currentColor" style={{ display: "block" }}>
+                          <rect x={4} y={4} width={16} height={16} rx={3} ry={3} fill="currentColor" />
+                        </svg>
+                      ) : (
+                        <svg width={16} height={16} viewBox="0 0 24 24" fill="currentColor" style={{ display: "block" }}>
+                          <rect x={4} y={4} width={16} height={16} fill="currentColor" />
+                        </svg>
+                      )}
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent className="mobile-menu-dropdown">
                     <SelectGroup>
                       <SelectItem value="box" className="mobile-menu-item">
-                        Box
+                        <svg width={16} height={16} viewBox="0 0 24 24" fill="currentColor" style={{ display: "block" }}>
+                          <rect x={4} y={4} width={16} height={16} fill="currentColor" />
+                        </svg>
                       </SelectItem>
                       <SelectItem value="rounded" className="mobile-menu-item">
-                        Rounded
+                        <svg width={16} height={16} viewBox="0 0 24 24" fill="currentColor" style={{ display: "block" }}>
+                          <rect x={4} y={4} width={16} height={16} rx={3} ry={3} fill="currentColor" />
+                        </svg>
                       </SelectItem>
                     </SelectGroup>
                   </SelectContent>

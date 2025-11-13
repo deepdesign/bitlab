@@ -41,8 +41,9 @@ import { PresetManager } from "./components/PresetManager";
 import { ExportModal } from "./components/ExportModal";
 import { MobileMenu } from "./components/MobileMenu";
 import { Badge } from "./components/retroui/Badge";
-import { Moon, Monitor, Sun, Maximize2, X, RefreshCw, Bookmark, Camera, HelpCircle } from "lucide-react";
+import { Moon, Monitor, Sun, Maximize2, X, RefreshCw, Bookmark, Camera, HelpCircle, Lock, Unlock } from "lucide-react";
 import { palettes } from "./data/palettes";
+import { gradientPresets } from "./data/gradients";
 import { shouldSplitColumns, getAppMainPadding } from "./lib/responsiveLayout";
 import { useIsMobile } from "./hooks/useIsMobile";
 const BLEND_MODES: BlendModeOption[] = [
@@ -51,6 +52,9 @@ const BLEND_MODES: BlendModeOption[] = [
   "SCREEN",
   "HARD_LIGHT",
   "OVERLAY",
+  "SOFT_LIGHT",
+  "DARKEST",
+  "LIGHTEST",
 ];
 const BACKGROUND_OPTIONS = [
   { value: "palette", label: "Palette (auto)" },
@@ -216,16 +220,15 @@ const PALETTE_OPTIONS = palettes.map((palette) => ({
 }));
 
 const MOVEMENT_MODES: Array<{ value: MovementMode; label: string }> = [
-  { value: "sway", label: "Sway" },
   { value: "pulse", label: "Pulse" },
-  { value: "orbit", label: "Orbit" },
   { value: "drift", label: "Drift" },
   { value: "ripple", label: "Ripple" },
   { value: "zigzag", label: "Zigzag" },
   { value: "cascade", label: "Cascade" },
   { value: "spiral", label: "Spiral Orbit" },
   { value: "comet", label: "Comet Trail" },
-  { value: "wavefront", label: "Wavefront" },
+  { value: "linear", label: "Linear" },
+  { value: "isometric", label: "Isometric" },
 ];
 
 const formatBlendMode = (mode: BlendModeOption) =>
@@ -368,6 +371,8 @@ const ControlSelect = ({
   currentLabel,
   onItemSelect,
   onItemPointerDown,
+  locked,
+  onLockToggle,
 }: {
   id: string;
   label: string;
@@ -380,6 +385,8 @@ const ControlSelect = ({
   currentLabel?: string;
   onItemSelect?: (value: string) => void;
   onItemPointerDown?: (value: string) => void;
+  locked?: boolean;
+  onLockToggle?: () => void;
 }) => {
   const tooltipId = tooltip ? `${id}-tip` : undefined;
   const resolvedLabel =
@@ -403,42 +410,62 @@ const ControlSelect = ({
           <span className="field-value">{currentLabel}</span>
         ) : null}
       </div>
+      <div className="control-select-with-lock">
       <Select
         value={value ?? undefined}
         onValueChange={onChange}
-        disabled={disabled}
+        disabled={disabled || locked}
       >
-        <SelectTrigger aria-labelledby={`${id}-label`}>
-          <SelectValue placeholder={placeholder ?? "Select"}>
-            {resolvedLabel}
-          </SelectValue>
-        </SelectTrigger>
-        <SelectContent>
-          <SelectGroup>
-            {options.map((option) => (
-              <SelectItem
-                key={option.value}
-                value={option.value}
-                onSelect={
-                  onItemSelect ? () => onItemSelect(option.value) : undefined
-                }
-                onPointerDown={
-                  onItemPointerDown
-                    ? (event) => {
-                        if (event.pointerType === "mouse" && event.button !== 0) {
-                          return;
+          <SelectTrigger aria-labelledby={`${id}-label`}>
+            <SelectValue placeholder={placeholder ?? "Select"}>
+              {resolvedLabel}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              {options.map((option) => (
+                <SelectItem
+                  key={option.value}
+                  value={option.value}
+                  onSelect={
+                    onItemSelect ? () => onItemSelect(option.value) : undefined
+                  }
+                  onPointerDown={
+                    onItemPointerDown
+                      ? (event) => {
+                          if (event.pointerType === "mouse" && event.button !== 0) {
+                            return;
+                          }
+                          onItemPointerDown(option.value);
                         }
-                        onItemPointerDown(option.value);
-                      }
-                    : undefined
-                }
-              >
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectGroup>
-        </SelectContent>
-      </Select>
+                      : undefined
+                  }
+                >
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+        {onLockToggle && (
+          <Button
+            type="button"
+            size="icon"
+            variant="outline"
+            onClick={onLockToggle}
+            disabled={disabled}
+            className={locked ? "control-lock-button control-lock-button-locked" : "control-lock-button"}
+            aria-label={locked ? "Unlock" : "Lock"}
+            title={locked ? "Unlock this value" : "Lock this value"}
+          >
+            {locked ? (
+              <Lock className="h-4 w-4" />
+            ) : (
+              <Unlock className="h-4 w-4" />
+            )}
+          </Button>
+        )}
+      </div>
     </div>
   );
 };
@@ -554,8 +581,8 @@ const ShapeIcon = ({ shape, size = 24 }: { shape: SpriteMode; size?: number }) =
       case "cross":
         return (
           <g fill="currentColor">
-            <rect x={center - 3} y={center - 10} width={6} height={20} rx={2} />
-            <rect x={center - 10} y={center - 3} width={20} height={6} rx={2} />
+            <rect x={center - 3} y={center - 10} width={6} height={20} />
+            <rect x={center - 10} y={center - 3} width={20} height={6} />
           </g>
         );
  
@@ -644,6 +671,11 @@ const App = () => {
   const [showExportModal, setShowExportModal] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [hudVisible, setHudVisible] = useState(true);
+  const [lockedMovementMode, setLockedMovementMode] = useState(false);
+  const [lockedSpritePalette, setLockedSpritePalette] = useState(false);
+  const [lockedCanvasPalette, setLockedCanvasPalette] = useState(false);
+  const [lockedBlendMode, setLockedBlendMode] = useState(false);
+  const [lockedSpriteMode, setLockedSpriteMode] = useState(false);
   const hudTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showStatusInfo, setShowStatusInfo] = useState(false);
   
@@ -710,6 +742,10 @@ const App = () => {
       if (prev === "light") return "dark";
       return "system";
     });
+  }, []);
+
+  const cycleThemeShape = useCallback(() => {
+    setThemeShape((prev) => (prev === "box" ? "rounded" : "box"));
   }, []);
 
   const themeModeText = useMemo(() => {
@@ -930,11 +966,8 @@ const App = () => {
   const handleRotationAnimatedToggle = useCallback(
     (checked: boolean) => {
       controllerRef.current?.setRotationAnimated(checked);
-      if (checked && spriteState && spriteState.rotationSpeed === 0) {
-        controllerRef.current?.setRotationSpeed(25);
-      }
     },
-    [spriteState],
+    [],
   );
 
 
@@ -1211,7 +1244,7 @@ const App = () => {
     return (
       <>
         <div className="section">
-          <h3 className="section-title">Generation</h3>
+          <h3 className="section-title">Shape</h3>
           {/* Label, status, and tooltip for sprite selection */}
           <div className="control-field">
             <div className="field-heading">
@@ -1228,8 +1261,8 @@ const App = () => {
           </div>
 
           {/* Icon button row for sprite selection */}
-          <div className="sprite-icon-buttons" style={{ marginTop: '0.25rem', marginBottom: '1rem' }}>
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <div className="sprite-icon-buttons" style={{ marginTop: '0.25rem', marginBottom: '0' }}>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
               {SPRITE_MODES.map((mode) => {
                 const isSelected = spriteState.spriteMode === mode.value;
                 return (
@@ -1239,18 +1272,37 @@ const App = () => {
                     size="icon"
                     variant={isSelected ? "default" : "outline"}
                     onClick={() => handleModeChange(mode.value)}
-                    disabled={!ready}
+                    disabled={!ready || lockedSpriteMode}
                     title={mode.label}
                     aria-label={mode.label}
-                    style={{ width: '44px', height: '44px', padding: '8px' }}
                   >
-                    <ShapeIcon shape={mode.value} size={28} />
+                    <ShapeIcon shape={mode.value} size={24} />
                   </Button>
                 );
               })}
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                onClick={() => setLockedSpriteMode(!lockedSpriteMode)}
+                disabled={!ready}
+                className={lockedSpriteMode ? "control-lock-button control-lock-button-locked" : "control-lock-button"}
+                aria-label={lockedSpriteMode ? "Unlock sprite mode" : "Lock sprite mode"}
+                title={lockedSpriteMode ? "Unlock sprite mode" : "Lock sprite mode"}
+              >
+                {lockedSpriteMode ? (
+                  <Lock className="h-4 w-4" />
+                ) : (
+                  <Unlock className="h-4 w-4" />
+                )}
+              </Button>
             </div>
           </div>
+        </div>
 
+        <div className="section" style={{ marginTop: '2rem' }}>
+          <hr className="section-divider" />
+          <h3 className="section-title">Density &amp; Scale</h3>
           <ControlSlider
             id="density-range"
             label="Tile Density"
@@ -1286,7 +1338,11 @@ const App = () => {
             disabled={!ready}
             tooltip="Expands or tightens the difference between the smallest and largest sprites."
           />
+        </div>
 
+        <div className="section" style={{ marginTop: '2rem' }}>
+          <hr className="section-divider" />
+          <h3 className="section-title">Rotation</h3>
           <div className="control-field control-field--rotation">
             <div className="field-heading">
               <div className="field-heading-left">
@@ -1305,13 +1361,13 @@ const App = () => {
                 id="rotation-toggle"
                 checked={spriteState.rotationEnabled}
                 onCheckedChange={handleRotationToggle}
-            disabled={!ready}
+                disabled={!ready}
                 aria-labelledby="rotation-toggle-label"
               />
             </div>
           </div>
           {spriteState.rotationEnabled && (
-            <div className="rotation-slider-wrapper">
+            <div className="rotation-slider-wrapper" style={{ marginBottom: '1.5rem' }}>
               <ControlSlider
                 id="rotation-amount"
                 label="Rotation Amount"
@@ -1352,6 +1408,8 @@ const App = () => {
             }))}
             tooltip="Select the animation path applied to each sprite layer."
             currentLabel={formatMovementMode(spriteState.movementMode)}
+            locked={lockedMovementMode}
+            onLockToggle={() => setLockedMovementMode(!lockedMovementMode)}
           />
           <ControlSlider
             id="motion-range"
@@ -1377,6 +1435,11 @@ const App = () => {
             disabled={!ready}
             tooltip="Slow every layer down or accelerate the motion-wide choreography."
           />
+        </div>
+
+        <div className="section" style={{ marginTop: '2rem' }}>
+          <hr className="section-divider" />
+          <h3 className="section-title">Rotation</h3>
           <div className="control-field control-field--rotation">
             <div className="field-heading">
               <div className="field-heading-left">
@@ -1400,20 +1463,20 @@ const App = () => {
               />
             </div>
           </div>
-          {spriteState.rotationSpeed > 0 && (
+          {spriteState.rotationAnimated && (
             <div className="rotation-slider-wrapper">
-          <ControlSlider
+              <ControlSlider
                 id="rotation-speed"
                 label="Rotation Speed"
-            min={0}
-            max={100}
+                min={0}
+                max={100}
                 value={Math.round(spriteState.rotationSpeed)}
                 displayValue={`${Math.round(spriteState.rotationSpeed)}%`}
                 onChange={handleRotationSpeedChange}
                 disabled={!ready}
                 tooltip="Control how quickly sprites spin when rotation is enabled."
-          />
-        </div>
+              />
+            </div>
           )}
         </div>
       </>
@@ -1441,7 +1504,28 @@ const App = () => {
             options={PALETTE_OPTIONS}
             tooltip="Select the core palette used for tinting sprites before variance is applied."
             currentLabel={currentPalette.name}
+            locked={lockedSpritePalette}
+            onLockToggle={() => setLockedSpritePalette(!lockedSpritePalette)}
           />
+          <div className="control-field">
+            <div className="field-heading">
+              <div className="field-heading-left">
+                <span className="field-label">Use gradients</span>
+                <TooltipIcon
+                  id="sprite-fill-mode-tip"
+                  text="Enable gradient fills for sprites instead of solid colors."
+                  label="Use gradients"
+                />
+              </div>
+            </div>
+            <Switch
+              checked={spriteState.spriteFillMode === "gradient"}
+              onCheckedChange={(checked) =>
+                controllerRef.current?.setSpriteFillMode(checked ? "gradient" : "solid")
+              }
+              disabled={!ready}
+            />
+          </div>
           <ControlSlider
             id="palette-range"
             label="Sprite palette variance"
@@ -1468,39 +1552,106 @@ const App = () => {
             disabled={!ready}
             tooltip="Shifts all palette colors around the color wheel (0-360°)."
           />
-          <ControlSelect
-            id="background-mode"
-            label="Canvas"
-            value={spriteState.backgroundMode}
-            onChange={handleBackgroundSelect}
-            disabled={!ready}
-            options={BACKGROUND_OPTIONS.map((option) => ({
-              value: option.value,
-              label: option.label,
-            }))}
-            tooltip="Choose the colour applied behind the canvas."
-            currentLabel={
-              BACKGROUND_OPTIONS.find(
-                (option) => option.value === spriteState.backgroundMode,
-              )?.label
-            }
-          />
-          <ControlSlider
-            id="background-hue-shift"
-            label="Canvas hue shift"
-            min={0}
-            max={100}
-            value={Math.round(spriteState.backgroundHueShift ?? 0)}
-            displayValue={`${Math.round(spriteState.backgroundHueShift ?? 0)}%`}
-            onChange={(value) =>
-              controllerRef.current?.setBackgroundHueShift(value)
-            }
-            disabled={!ready || spriteState.backgroundMode === "palette"}
-            tooltip="Shifts the background color around the color wheel (0-360°). Only applies to preset backgrounds, not Palette (auto)."
-          />
         </div>
 
         <div className="section" style={{ marginTop: '2rem' }}>
+          <hr className="section-divider" />
+          <h3 className="section-title">CANVAS</h3>
+          <div className="control-field">
+            <div className="field-heading">
+              <div className="field-heading-left">
+                <span className="field-label">Use gradients</span>
+                <TooltipIcon
+                  id="canvas-fill-mode-tip"
+                  text="Enable gradient fills for canvas background instead of solid color."
+                  label="Use gradients"
+                />
+              </div>
+            </div>
+            <Switch
+              checked={spriteState.canvasFillMode === "gradient"}
+              onCheckedChange={(checked) =>
+                controllerRef.current?.setCanvasFillMode(checked ? "gradient" : "solid")
+              }
+              disabled={!ready}
+            />
+          </div>
+          {spriteState.canvasFillMode === "solid" && (
+            <>
+              <ControlSelect
+                id="background-mode"
+                label="Canvas"
+                value={spriteState.backgroundMode}
+                onChange={handleBackgroundSelect}
+                disabled={!ready}
+                options={BACKGROUND_OPTIONS.map((option) => ({
+                  value: option.value,
+                  label: option.label,
+                }))}
+                tooltip="Choose the colour applied behind the canvas."
+                currentLabel={
+                  BACKGROUND_OPTIONS.find(
+                    (option) => option.value === spriteState.backgroundMode,
+                  )?.label
+                }
+                locked={lockedCanvasPalette}
+                onLockToggle={() => setLockedCanvasPalette(!lockedCanvasPalette)}
+              />
+              <ControlSlider
+                id="background-hue-shift"
+                label="Canvas hue shift"
+                min={0}
+                max={100}
+                value={Math.round(spriteState.backgroundHueShift ?? 0)}
+                displayValue={`${Math.round(spriteState.backgroundHueShift ?? 0)}%`}
+                onChange={(value) =>
+                  controllerRef.current?.setBackgroundHueShift(value)
+                }
+                disabled={!ready || spriteState.backgroundMode === "palette"}
+                tooltip="Shifts the background color around the color wheel (0-360°). Only applies to preset backgrounds, not Palette (auto)."
+              />
+            </>
+          )}
+          {spriteState.canvasFillMode === "gradient" && (
+            <>
+              <ControlSelect
+                id="canvas-gradient"
+                label="Canvas gradient"
+                value={spriteState.canvasGradientId ?? gradientPresets[0].id}
+                onChange={(value) =>
+                  controllerRef.current?.setCanvasGradient(value)
+                }
+                disabled={!ready}
+                options={gradientPresets.map((gradient) => ({
+                  value: gradient.id,
+                  label: gradient.name,
+                }))}
+                tooltip="Select gradient preset for canvas background."
+                currentLabel={
+                  gradientPresets.find(
+                    (g) => g.id === spriteState.canvasGradientId,
+                  )?.name ?? gradientPresets[0].name
+                }
+              />
+              <ControlSlider
+                id="canvas-gradient-direction"
+                label="Canvas gradient direction"
+                min={0}
+                max={360}
+                value={Math.round(spriteState.canvasGradientDirection ?? 0)}
+                displayValue={`${Math.round(spriteState.canvasGradientDirection ?? 0)}°`}
+                onChange={(value) =>
+                  controllerRef.current?.setCanvasGradientDirection(value)
+                }
+                disabled={!ready}
+                tooltip="Angle of canvas gradient direction (0° = horizontal, 90° = vertical)."
+              />
+            </>
+          )}
+        </div>
+
+        <div className="section" style={{ marginTop: '2rem' }}>
+          <hr className="section-divider" />
           <h3 className="section-title">Blend &amp; Opacity</h3>
           <ControlSlider
             id="opacity-range"
@@ -1527,6 +1678,8 @@ const App = () => {
             currentLabel={formatBlendMode(
               spriteState.blendMode as BlendModeOption,
             )}
+            locked={lockedBlendMode}
+            onLockToggle={() => setLockedBlendMode(!lockedBlendMode)}
           />
           <div className="control-field control-field--spaced">
             <div className="field-heading">
@@ -1536,7 +1689,7 @@ const App = () => {
                 </span>
                 <TooltipIcon
                   id="blend-auto-tip"
-                  text="Give every sprite an individual blend pick from the RetroUI-compatible pool."
+                  text="Give every sprite an individual blend mode"
                   label="Random sprite blend"
                 />
               </div>
@@ -1628,7 +1781,7 @@ const App = () => {
                   Palette · {statusPalette}
                 </Badge>
                 <Badge variant="surface" size="sm">
-                  Mode · {statusMode}
+                  Sprites · {statusMode}
                 </Badge>
                 <Badge variant="surface" size="sm">
                   Blend · {statusBlend}
@@ -1815,26 +1968,25 @@ const App = () => {
                   </SelectGroup>
                 </SelectContent>
               </Select>
-              <Select value={themeShape} onValueChange={handleShapeSelect}>
-                <SelectTrigger
-                  className="header-theme-trigger"
-                  aria-label="Theme shape"
-                >
-                  <SelectValue placeholder="Shape">
-                    {themeShape === "rounded" ? "Rounded" : "Box"}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent className="header-theme-menu">
-                  <SelectGroup>
-                    <SelectItem value="box" className="header-theme-item">
-                      Box
-                    </SelectItem>
-                    <SelectItem value="rounded" className="header-theme-item">
-                      Rounded
-                    </SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                className="header-icon-button"
+                onClick={cycleThemeShape}
+                aria-label={`Switch theme shape (current ${themeShape === "rounded" ? "rounded" : "box"})`}
+                title={`Shape: ${themeShape === "rounded" ? "Rounded" : "Box"}`}
+              >
+                {themeShape === "rounded" ? (
+                  <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ display: "block" }} aria-hidden="true">
+                    <rect x={4} y={4} width={16} height={16} rx={3} ry={3} />
+                  </svg>
+                ) : (
+                  <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ display: "block" }} aria-hidden="true">
+                    <rect x={4} y={4} width={16} height={16} />
+                  </svg>
+                )}
+              </Button>
               <Button
                 type="button"
                 size="icon"
@@ -1871,7 +2023,7 @@ const App = () => {
                   >
                     <TabsTriggerList className="retro-tabs">
                       <TabsTrigger>Sprites</TabsTrigger>
-                      <TabsTrigger>Layers</TabsTrigger>
+                      <TabsTrigger>Colours</TabsTrigger>
                       <TabsTrigger>Motion</TabsTrigger>
                       <TabsTrigger>FX</TabsTrigger>
                     </TabsTriggerList>
@@ -1909,7 +2061,7 @@ const App = () => {
                   >
                     <TabsTriggerList className="retro-tabs">
                       <TabsTrigger>Sprites</TabsTrigger>
-                      <TabsTrigger>Layers</TabsTrigger>
+                      <TabsTrigger>Colours</TabsTrigger>
                       {!isWideLayout && (
                         <>
                           <TabsTrigger>Motion</TabsTrigger>

@@ -673,7 +673,7 @@ body {
 
 .app-shell {
   @apply min-h-screen flex flex-col;
-  padding-bottom: theme("spacing.8");
+  padding-bottom: theme("spacing.3");
   gap: theme("spacing.4");
 }
 
@@ -925,10 +925,10 @@ body:has(.app-layout--wide) .app-header {
   }
 
   .app-layout--mobile .retro-tab {
+    height: 2.25rem; /* h-9 = 36px - RetroUI standard */
     padding-inline: theme("spacing.1.5");
     padding-block: theme("spacing.2");
     font-size: 0.6rem;
-    min-height: 44px; /* Ensure touch target size */
   }
 
   /* Adjust canvas card for mobile */
@@ -1031,7 +1031,8 @@ body:has(.app-layout--wide) .app-header {
   .app-footer--mobile {
     @apply flex-col items-center;
     padding-inline: theme("spacing.4");
-    padding-block: theme("spacing.4");
+    padding-top: theme("spacing.2");
+    padding-bottom: theme("spacing.1");
     text-align: center;
     gap: theme("spacing.2");
   }
@@ -1206,7 +1207,7 @@ body:has(.app-layout--wide) .app-header {
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .panel-heading {
@@ -1238,6 +1239,7 @@ body:has(.app-layout--wide) .app-header {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  height: 2.25rem; /* h-9 = 36px - RetroUI standard */
   padding-inline: theme("spacing.4");
   padding-block: theme("spacing.2");
   font-size: 0.68rem;
@@ -1246,13 +1248,15 @@ body:has(.app-layout--wide) .app-header {
   background: var(--panel-bg);
   color: var(--text-muted);
   border: 2px solid var(--panel-border);
+  border-radius: var(--radius-sm);
   box-shadow: 4px 4px 0 var(--panel-shadow);
   cursor: pointer;
   transition:
     color 0.18s ease,
     transform 0.18s ease,
     box-shadow 0.18s ease,
-    border-color 0.18s ease;
+    border-color 0.18s ease,
+    border-radius 0.18s ease;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1288,6 +1292,74 @@ body:has(.app-layout--wide) .app-header {
   color: var(--accent-primary-contrast);
 }
 
+/* Button Group (Segmented Control) */
+.retro-button-group {
+  @apply flex items-stretch;
+  gap: 0;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 2px solid var(--panel-border);
+  box-shadow: 4px 4px 0 var(--panel-shadow);
+  background: var(--panel-bg);
+}
+
+.retro-button-group-item {
+  flex: 1 1 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding-inline: theme("spacing.4");
+  padding-block: theme("spacing.2");
+  font-size: 0.68rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  background: var(--panel-bg);
+  color: var(--text-muted);
+  border: none;
+  border-right: 2px solid var(--panel-border);
+  cursor: pointer;
+  transition:
+    color 0.18s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.retro-button-group-item:last-child {
+  border-right: none;
+}
+
+.retro-button-group-item:hover:not(:disabled),
+.retro-button-group-item:focus-visible:not(:disabled) {
+  color: var(--accent-primary);
+  outline: none;
+}
+
+.retro-button-group-item-active {
+  color: var(--accent-primary-contrast);
+  background: var(--accent-primary);
+  box-shadow: 4px 4px 0 var(--accent-primary-shadow);
+  transform: translateY(-2px);
+}
+
+.retro-button-group-item-active:hover:not(:disabled),
+.retro-button-group-item-active:focus-visible:not(:disabled) {
+  color: var(--accent-primary-contrast);
+}
+
+.retro-button-group-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.retro-button-group-item:active:not(:disabled) {
+  transform: translateY(1px) translateX(1px);
+}
+
 .section {
   @apply flex flex-col;
   gap: theme("spacing.5");
@@ -1295,6 +1367,17 @@ body:has(.app-layout--wide) .app-header {
 
 .section + .section {
   margin-top: theme("spacing.3");
+}
+
+.section-divider {
+  margin: 0;
+  margin-left: calc(-1 * theme("spacing.5"));
+  margin-right: calc(-1 * theme("spacing.5"));
+  margin-bottom: theme("spacing.1");
+  border: none;
+  border-top: 2px solid var(--panel-border);
+  opacity: 0.5;
+  width: calc(100% + 2 * theme("spacing.5"));
 }
 
 .section-title {
@@ -1321,6 +1404,8 @@ body:has(.app-layout--wide) .app-header {
 .control-field {
   @apply flex flex-col;
   gap: theme("spacing.3");
+  overflow: visible;
+  position: relative;
 }
 
 .control-field--spaced {
@@ -1333,6 +1418,34 @@ body:has(.app-layout--wide) .app-header {
 
 .rotation-slider-wrapper {
   margin-top: 0;
+}
+
+.control-select-with-lock {
+  @apply flex items-center;
+  gap: theme("spacing.2");
+}
+
+.control-select-with-lock > :first-child {
+  flex: 1;
+}
+
+.control-lock-button {
+  flex-shrink: 0;
+}
+
+.control-lock-button-locked {
+  color: var(--accent-primary-contrast);
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  box-shadow: 4px 4px 0 var(--accent-primary-shadow);
+  transform: translateY(-2px);
+}
+
+.control-lock-button-locked:hover,
+.control-lock-button-locked:focus-visible {
+  color: var(--accent-primary-contrast);
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
 }
 
 .field-heading {
@@ -1432,7 +1545,14 @@ body:has(.app-layout--wide) .app-header {
 /* Touch-Optimised UI Styling */
 /* Ensure all interactive elements meet 44×44px touch target minimum */
 @media (pointer: coarse) {
-  /* Buttons - increase padding to ensure 44px minimum height */
+  /* Buttons - ensure 44px minimum height for all sizes */
+  button[class*="h-8"],
+  button[class*="h-9"],
+  button[class*="h-10"] {
+    min-height: 44px;
+  }
+
+  /* Text buttons - increase padding to ensure 44px minimum height */
   button[class*="px-4"] {
     min-height: 44px;
     padding-block: theme("spacing.3");
@@ -1443,15 +1563,25 @@ body:has(.app-layout--wide) .app-header {
     padding-block: theme("spacing.3");
   }
 
-  button[class*="px-6"] {
+  button[class*="px-6"],
+  button[class*="px-8"] {
     min-height: 44px;
     padding-block: theme("spacing.3");
   }
 
-  /* Icon buttons already meet 48px, but ensure touch feedback */
-  button[class*="h-12"] {
-    min-width: 48px;
-    min-height: 48px;
+  /* Icon buttons - ensure 44px × 44px touch target */
+  button[class*="h-9"][class*="w-9"] {
+    min-width: 44px;
+    min-height: 44px;
+    height: 44px;
+    width: 44px;
+  }
+  
+  /* Other icon buttons */
+  button[class*="h-9"]:not([class*="px-"]) {
+    min-width: 44px;
+    min-height: 44px;
+    height: 44px;
   }
 
   /* Slider thumb - increase size for easier dragging */
@@ -1488,7 +1618,7 @@ body:has(.app-layout--wide) .app-header {
     transform: translateX(26px);
   }
 
-  /* Dropdown triggers - ensure 44px minimum */
+  /* Dropdown triggers - 44px touch target on mobile */
   .control-dropdown-trigger {
     min-height: 44px;
     height: 44px;
@@ -1505,9 +1635,10 @@ body:has(.app-layout--wide) .app-header {
     font-size: 0.7rem;
   }
 
-  /* Tabs - increase padding for better touch targets */
+  /* Tabs - 44px touch target on mobile */
   .retro-tab {
     min-height: 44px;
+    height: 44px;
     padding-inline: theme("spacing.5");
     padding-block: theme("spacing.3");
     font-size: 0.72rem;
@@ -1612,7 +1743,7 @@ body:has(.app-layout--wide) .app-header {
 
 .control-dropdown-trigger {
   @apply inline-flex items-center justify-between;
-  height: theme("spacing.10");
+  height: 2.25rem; /* h-9 = 36px - RetroUI standard */
   gap: theme("spacing.2");
   padding-inline: theme("spacing.3");
   min-width: 9rem;
@@ -1756,7 +1887,7 @@ body:has(.app-layout--wide) .app-header {
   left: 50%;
   transform: translate(-50%, 8px);
   min-width: 220px;
-  max-width: 320px;
+  max-width: min(320px, calc(100vw - 2rem));
   padding-inline: theme("spacing.3");
   padding-block: theme("spacing.2");
   font-size: 0.68rem;
@@ -1776,6 +1907,9 @@ body:has(.app-layout--wide) .app-header {
     opacity 0.18s ease,
     transform 0.18s ease;
   z-index: 35;
+  /* Prevent tooltip from being clipped */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .tooltip-content::after {
@@ -1995,7 +2129,8 @@ body:has(.app-layout--wide) .app-header {
 .app-footer {
   margin-top: auto;
   padding-inline: theme("spacing.6");
-  padding-block: theme("spacing.4");
+  padding-top: theme("spacing.2");
+  padding-bottom: theme("spacing.1");
   @apply text-[0.7rem] uppercase tracking-[0.18em] text-[var(--text-muted)] flex items-center justify-between flex-wrap;
   gap: theme("spacing.3");
   justify-items: center;
@@ -2025,7 +2160,7 @@ body:has(.app-layout--wide) .app-footer {
   height: auto;
   color: var(--accent-primary);
   transition: color 0.2s ease;
-  transform: translateY(0.05em);
+  transform: translateY(-8px);
   display: inline-block;
 }
 

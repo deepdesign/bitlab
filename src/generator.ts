@@ -6,6 +6,14 @@ import {
   getRandomPalette,
   palettes,
 } from "./data/palettes";
+import {
+  getGradient,
+  getRandomGradient,
+  getGradientsForPalette,
+  gradientPresets,
+  type GradientPreset,
+} from "./data/gradients";
+import { calculateGradientLine } from "./lib/gradientUtils";
 
 const MIN_TILE_SCALE = 0.12;
 const MAX_TILE_SCALE = 5.5; // Allow large sprites, but positioning will be adjusted
@@ -18,16 +26,15 @@ const randomInt = (min: number, max: number) =>
   min + Math.floor(Math.random() * (max - min + 1));
 
 const movementModes = [
-  "sway",
   "pulse",
-  "orbit",
   "drift",
   "ripple",
   "zigzag",
   "cascade",
   "spiral",
   "comet",
-  "wavefront",
+  "linear",
+  "isometric",
 ] as const;
 
 export type MovementMode = (typeof movementModes)[number];
@@ -36,16 +43,15 @@ export type MovementMode = (typeof movementModes)[number];
 // Based on analysis: drift uses 0.02 multiplier (slowest), sway uses 0.13 (fastest)
 // These multipliers ensure all modes feel balanced at 100% animation speed
 const MOVEMENT_SPEED_MULTIPLIERS: Record<MovementMode, number> = {
-  sway: 4.0,        // ~4x slower (~50% of previous max speed)
   drift: 1.625,    // ~1.625x slower - quadrupled speed from 6.5x
   cascade: 2.9,     // ~2.9x slower (0.045 vs 0.13)
   comet: 3.0,       // ~3x slower - reduced speed by 25% from 2.4x
   ripple: 3.25,     // ~3.25x slower (avg 0.04 vs 0.13)
   spiral: 7.3,      // ~7.3x slower (~60% of previous max speed)
-  orbit: 0.9,       // ~0.9x slower (~2x previous max speed)
   zigzag: 2.2,      // ~2.2x slower (0.06 vs 0.13)
   pulse: 2.7,       // ~2.7x slower (~60% of previous max speed)
-  wavefront: 10.0,  // ~10x slower - wavefront uses phased * 0.055 internally, needs significant slowdown
+  linear: 2.0,      // ~2x slower - simple linear movement
+  isometric: 2.5,   // ~2.5x slower - isometric grid movement
 };
 
 // Scale multipliers to improve canvas coverage for modes with large movement radii
@@ -53,20 +59,19 @@ const MOVEMENT_SPEED_MULTIPLIERS: Record<MovementMode, number> = {
 // Increasing sprite size compensates by making fewer sprites fill more visual space
 const MOVEMENT_SCALE_MULTIPLIERS: Record<MovementMode, number> = {
   spiral: 1.4,      // 40% larger sprites to fill space despite wide circular movement
-  orbit: 1.35,      // 35% larger sprites for orbital patterns
   comet: 1.3,       // 30% larger sprites for long comet trails
-  wavefront: 1.25,  // 25% larger sprites for wavefront patterns
   ripple: 1.15,     // 15% larger sprites for ripple effects
   cascade: 1.1,     // 10% larger sprites for cascading patterns
   drift: 1.0,       // No adjustment
   pulse: 1.0,       // No adjustment
-  sway: 1.0,        // No adjustment
   zigzag: 1.0,      // No adjustment
+  linear: 1.0,      // No adjustment
+  isometric: 1.0,   // No adjustment
 };
 
 type PaletteId = (typeof palettes)[number]["id"];
 
-type BlendModeKey = "NONE" | "MULTIPLY" | "SCREEN" | "HARD_LIGHT" | "OVERLAY";
+type BlendModeKey = "NONE" | "MULTIPLY" | "SCREEN" | "HARD_LIGHT" | "OVERLAY" | "SOFT_LIGHT" | "DARKEST" | "LIGHTEST";
 export type BlendModeOption = BlendModeKey;
 
 export type BackgroundMode =
@@ -115,6 +120,7 @@ interface ShapeTile {
   kind: "shape";
   shape: ShapeMode;
   tint: string;
+  paletteColorIndex: number; // Index of the palette color used (before jittering)
   u: number;
   v: number;
   scale: number;
@@ -165,6 +171,15 @@ export interface GeneratorState {
   rotationAmount: number;
   rotationSpeed: number;
   rotationAnimated: boolean;
+  // Gradient settings
+  spriteFillMode: "solid" | "gradient";
+  spriteGradientId: string | null;
+  spriteGradientDirection: number; // 0-360 degrees
+  spriteGradientRandom: boolean;
+  spriteGradientDirectionRandom: boolean;
+  canvasFillMode: "solid" | "gradient";
+  canvasGradientId: string | null;
+  canvasGradientDirection: number; // 0-360 degrees
 }
 
 export interface SpriteControllerOptions {
@@ -204,14 +219,23 @@ export const DEFAULT_STATE: GeneratorState = {
   previousBlendMode: "NONE",
   layerOpacity: 74,
   spriteMode: "star",
-  movementMode: "orbit",
+  movementMode: "drift",
   backgroundMode: "palette",
   backgroundHueShift: 0,
   motionSpeed: 8.5,
-  rotationEnabled: true,
+  rotationEnabled: false,
   rotationAmount: 72,
   rotationSpeed: 48,
-  rotationAnimated: true,
+  rotationAnimated: false,
+  // Gradient defaults
+  spriteFillMode: "solid",
+  spriteGradientId: null,
+  spriteGradientDirection: 0,
+  spriteGradientRandom: false,
+  spriteGradientDirectionRandom: false,
+  canvasFillMode: "solid",
+  canvasGradientId: null,
+  canvasGradientDirection: 0,
 };
 
 const SEED_ALPHABET = "0123456789ABCDEF";
@@ -331,6 +355,9 @@ const blendModePool: BlendModeKey[] = [
   "SCREEN",
   "HARD_LIGHT",
   "OVERLAY",
+  "SOFT_LIGHT",
+  "DARKEST",
+  "LIGHTEST",
 ];
 
 const computeMovementOffsets = (
@@ -368,13 +395,6 @@ const computeMovementOffsets = (
       const offsetY =
         Math.sin(phased * 0.04) * baseUnit * motionScale * 0.25 * layerFactor;
       return { offsetX: 0, offsetY, scaleMultiplier };
-    }
-    case "orbit": {
-      const radius = layerTileSize * 0.12 * motionScale * layerFactor;
-      const angle = phased * (0.05 + layerIndex * 0.01);
-      const offsetX = Math.cos(angle) * radius;
-      const offsetY = Math.sin(angle) * radius;
-      return { offsetX, offsetY, scaleMultiplier: 1 };
     }
     case "drift": {
       const driftX = Math.sin(phased * 0.028 + phase * 0.15) * baseUnit * motionScale * 0.45;
@@ -447,28 +467,75 @@ const computeMovementOffsets = (
       const scaleMultiplier = clampScale(0.65 + tail * motionScale * 0.55);
       return { offsetX, offsetY, scaleMultiplier };
     }
-    case "wavefront": {
-      const travel = phased * 0.055;
-      const waveRadius =
-        layerTileSize * (motionScale * 2.4 + 1.6 + layerIndex * 0.25);
-      const offsetX = Math.cos(travel + phase * 0.25) * waveRadius;
-      const offsetY =
-        Math.sin(travel * 0.65 + layerIndex * 0.3 + phase * 0.15) *
-        waveRadius *
-        0.75;
-      const breathing = 1 + Math.sin(travel * 0.5) * motionScale * 0.35;
-      const scaleMultiplier = clampScale(breathing);
-      return { offsetX, offsetY, scaleMultiplier };
-    }
-    case "sway":
-    default: {
-      const offsetX = Math.sin(phased * 0.13) * baseUnit * motionScale * 0.45;
-      const offsetY =
-        Math.sin((phased + phase * 0.5) * 0.07 + layerIndex * 0.4) *
-        baseUnit *
-        motionScale *
-        0.6;
+    case "linear": {
+      // Determine direction based on phase (deterministic per sprite)
+      // Use phase to pick from all 45-degree angles: 0°, 45°, 90°, 135°, 180°, 225°, 270°, 315°
+      const angleDegrees = [0, 45, 90, 135, 180, 225, 270, 315];
+      const directionIndex = Math.floor((phase * 0.142857) % angleDegrees.length);
+      const angle = (angleDegrees[directionIndex] * Math.PI) / 180;
+      
+      // Parallax effect: speed relative to sprite size
+      // Smaller sprites move slower, larger sprites move faster
+      const sizeRatio = baseUnit / layerTileSize; // 0-1, smaller sprites have smaller ratio
+      const speedMultiplier = 0.3 + sizeRatio * 0.7; // Range: 0.3 to 1.0
+      
+      // Calculate distance based on sprite size and canvas size
+      // Use a fraction of the layer tile size (which represents canvas scale)
+      // Combined with sprite size for sensible travel distance
+      const maxDistance = (layerTileSize * 0.4 * motionScale + baseUnit * 0.3) * speedMultiplier;
+      
+      // Create oscillating motion - use sine wave directly for smooth, consistent speed
+      // Use a slower frequency for smoother oscillation
+      const oscillation = Math.sin(phased * 0.04 + phase * 0.1);
+      
+      // Use sine wave directly - it already has smooth, natural acceleration/deceleration
+      // No additional easing needed to avoid speed bumps
+      const travel = oscillation * maxDistance;
+      
+      // Calculate offset based on angle
+      const offsetX = Math.cos(angle) * travel;
+      const offsetY = Math.sin(angle) * travel;
       return { offsetX, offsetY, scaleMultiplier: 1 };
+    }
+    case "isometric": {
+      // Hexagon is proper mathematical hexagon, pointy-top (vertex up/down)
+      // Geometry is fixed: 6 vertices at 60° intervals starting at -90°
+      // The 4 angled edges (excluding vertical) are at fixed angles:
+      const hexAngledEdges = [
+        Math.PI / 6,                // 30° - edge 0→1 (top-right)
+        (5 * Math.PI) / 6,          // 150° - edge 2→3 (bottom-left)
+        (7 * Math.PI) / 6,          // 210° - edge 3→4 (up-left)
+        (11 * Math.PI) / 6          // 330° = -30° - edge 5→0 (up-right)
+      ];
+      // Pick angle based on phase (deterministic per sprite)
+      const angleIndex = Math.floor((phase * 0.142857) % hexAngledEdges.length);
+      const angle = hexAngledEdges[angleIndex];
+      
+      // Parallax effect: speed relative to sprite size
+      // Smaller sprites move slower, larger sprites move faster
+      const sizeRatio = baseUnit / layerTileSize; // 0-1, smaller sprites have smaller ratio
+      const speedMultiplier = 0.3 + sizeRatio * 0.7; // Range: 0.3 to 1.0
+      
+      // Calculate distance based on sprite size and canvas size
+      const maxDistance = (layerTileSize * 0.4 * motionScale + baseUnit * 0.3) * speedMultiplier;
+      
+      // Create oscillating motion - use sine wave directly for smooth, consistent speed
+      // Remove phase from oscillation to ensure all sprites with same angle move in sync
+      const oscillation = Math.sin(phased * 0.04);
+      
+      // Use sine wave directly - it already has smooth, natural acceleration/deceleration
+      // No additional easing needed to avoid speed bumps
+      const travel = oscillation * maxDistance;
+      const offsetX = Math.cos(angle) * travel;
+      const offsetY = Math.sin(angle) * travel;
+      return { offsetX, offsetY, scaleMultiplier: 1 };
+    }
+    default: {
+      // Default to drift behavior for any unrecognized modes
+      const driftX = Math.sin(phased * 0.028 + phase * 0.15) * baseUnit * motionScale * 0.45;
+      const driftY = Math.cos(phased * 0.024 + phase * 0.12) * baseUnit * motionScale * 0.5;
+      const scaleMultiplier = clampScale(1 + Math.sin(phased * 0.016) * motionScale * 0.16);
+      return { offsetX: driftX, offsetY: driftY, scaleMultiplier };
     }
   }
 };
@@ -566,13 +633,7 @@ const computeSprite = (state: GeneratorState): PreparedSprite => {
     let minBound = lerp(0.05, 0.2, scaleRatio);
     let maxBound = lerp(0.95, 0.8, scaleRatio);
 
-    const isOrbitMode = state.movementMode === "orbit";
     const isSpiralMode = state.movementMode === "spiral";
-
-    if (isOrbitMode) {
-      minBound = lerp(0.04, 0.18, scaleRatio);
-      maxBound = lerp(0.96, 0.82, scaleRatio);
-    }
 
     if (isSpiralMode) {
       minBound = lerp(0.035, 0.17, scaleRatio);
@@ -590,8 +651,8 @@ const computeSprite = (state: GeneratorState): PreparedSprite => {
       let u = clamp((col + 0.5 + jitterX) / gridCols, minBound, maxBound);
       let v = clamp((row + 0.5 + jitterY) / gridRows, minBound, maxBound);
 
-      if (isOrbitMode || isSpiralMode) {
-        const focusStrength = scaleRatio * (isOrbitMode ? 0.14 : 0.12);
+      if (isSpiralMode) {
+        const focusStrength = scaleRatio * 0.12;
         const centreBiasX = (0.5 - u) * focusStrength;
         const centreBiasY = (0.5 - v) * focusStrength;
         u = clamp(u + centreBiasX, minBound, maxBound);
@@ -620,12 +681,18 @@ const computeSprite = (state: GeneratorState): PreparedSprite => {
         ? (blendModePool[Math.floor(rng() * blendModePool.length)] ?? "NONE")
         : state.blendMode;
 
-      const tint =
-        chosenPalette[Math.floor(colorRng() * chosenPalette.length)];
+      const paletteColorIndex = Math.floor(colorRng() * chosenPalette.length);
+      const tint = chosenPalette[paletteColorIndex];
+      
+      // Store the palette color index so we can map to the corresponding gradient
+      // Gradient assignment is now done during rendering, not during computation
+      // This allows toggling gradients without regenerating sprite positions/scales
+      
       tiles.push({
         kind: "shape",
         shape: activeShape,
         tint,
+        paletteColorIndex,
         u,
         v,
         scale,
@@ -679,6 +746,14 @@ export interface SpriteController {
   usePalette: (paletteId: PaletteId) => void;
   setBackgroundMode: (mode: BackgroundMode) => void;
   setBackgroundHueShift: (value: number) => void;
+  setSpriteFillMode: (mode: "solid" | "gradient") => void;
+  setSpriteGradient: (gradientId: string) => void;
+  setSpriteGradientDirection: (degrees: number) => void;
+  setSpriteGradientRandom: (enabled: boolean) => void;
+  setSpriteGradientDirectionRandom: (enabled: boolean) => void;
+  setCanvasFillMode: (mode: "solid" | "gradient") => void;
+  setCanvasGradient: (gradientId: string) => void;
+  setCanvasGradientDirection: (degrees: number) => void;
   applySingleTilePreset: () => void;
   applyNebulaPreset: () => void;
   applyMinimalGridPreset: () => void;
@@ -856,9 +931,42 @@ export const createSpriteController = (
       // Use the average of previous and current speed for this frame to ensure smoothness
       const averageSpeedFactor = (previousSpeedFactor + currentSpeedFactor) / 2;
       scaledAnimationTime += deltaTime * averageSpeedFactor;
-      p.background(prepared.background);
+      
       const ctx = p.drawingContext as CanvasRenderingContext2D;
       ctx.imageSmoothingEnabled = false;
+      
+      // Handle canvas background (gradient or solid)
+      if (state.canvasFillMode === "gradient") {
+        const gradientId = state.canvasGradientId ?? gradientPresets[0].id;
+        const gradientPreset = getGradient(gradientId);
+        if (gradientPreset) {
+          // Calculate gradient line for full canvas
+          const gradientLine = calculateGradientLine(
+            state.canvasGradientDirection,
+            p.width,
+            p.height,
+          );
+          const gradient = ctx.createLinearGradient(
+            gradientLine.x0,
+            gradientLine.y0,
+            gradientLine.x1,
+            gradientLine.y1,
+          );
+          const numColors = gradientPreset.colors.length;
+          gradientPreset.colors.forEach((color, index) => {
+            const stop = numColors > 1 ? index / (numColors - 1) : 0;
+            gradient.addColorStop(stop, color);
+          });
+          ctx.fillStyle = gradient;
+          ctx.fillRect(0, 0, p.width, p.height);
+        } else {
+          // Fallback to solid background
+          p.background(prepared.background);
+        }
+      } else {
+        // Solid background
+        p.background(prepared.background);
+      }
 
       const blendMap: Record<BlendModeKey, p5.BLEND_MODE> = {
         NONE: p.BLEND,
@@ -866,6 +974,9 @@ export const createSpriteController = (
         SCREEN: p.SCREEN,
         HARD_LIGHT: p.HARD_LIGHT ?? p.OVERLAY,
         OVERLAY: p.OVERLAY,
+        SOFT_LIGHT: p.SOFT_LIGHT ?? p.OVERLAY,
+        DARKEST: p.DARKEST ?? p.BLEND,
+        LIGHTEST: p.LIGHTEST ?? p.BLEND,
       };
 
       prepared.layers.forEach((layer, layerIndex) => {
@@ -881,15 +992,16 @@ export const createSpriteController = (
             ? (tile.blendMode ?? layer.blendMode)
             : state.blendMode;
           p.blendMode(blendMap[tileBlendMode] ?? p.BLEND);
-          const normalizedU = ((tile.u % 1) + 1) % 1;
-          const normalizedV = ((tile.v % 1) + 1) % 1;
-          const baseX = offsetX + normalizedU * drawSize;
-          const baseY = offsetY + normalizedV * drawSize;
-
+          
+          // Calculate movement offsets
+          let normalizedU = ((tile.u % 1) + 1) % 1;
+          let normalizedV = ((tile.v % 1) + 1) % 1;
+          let movement = { offsetX: 0, offsetY: 0, scaleMultiplier: 1 };
+          
           if (tile.kind === "shape") {
             const baseShapeSize =
               baseLayerSize * tile.scale * (1 + layerIndex * 0.08);
-            const movement = computeMovementOffsets(state.movementMode, {
+            movement = computeMovementOffsets(state.movementMode, {
               time: scaledAnimationTime, // Use smoothly accumulating scaled time
               phase: tileIndex * 7,
               motionScale,
@@ -898,15 +1010,23 @@ export const createSpriteController = (
               layerTileSize: baseLayerSize,
               speedFactor: 1.0, // Speed is already applied to scaledAnimationTime
             });
+            
+            // Normal wrapping for all modes
+            normalizedU = ((tile.u % 1) + 1) % 1;
+            normalizedV = ((tile.v % 1) + 1) % 1;
+            
+            const baseX = offsetX + normalizedU * drawSize;
+            const baseY = offsetY + normalizedV * drawSize;
             const shapeSize = baseShapeSize * movement.scaleMultiplier;
-            const fillColor = p.color(tile.tint);
             // Use state.layerOpacity directly instead of stored layer.opacity for dynamic updates
             const opacityValue = clamp(state.layerOpacity / 100, 0.12, 1);
-            fillColor.setAlpha(Math.round(opacityValue * 255));
+            const opacityAlpha = Math.round(opacityValue * 255);
 
             p.push();
             const halfSize = shapeSize / 2;
             const allowableOverflow = Math.max(drawSize * 0.35, shapeSize * 0.8);
+            
+            // Clamp positions to canvas bounds with overflow allowance
             const clampedX = clamp(
               baseX + movement.offsetX,
               offsetX + halfSize - allowableOverflow,
@@ -933,10 +1053,194 @@ export const createSpriteController = (
             if (rotationAngle !== 0) {
               p.rotate(rotationAngle);
             }
+            
+            // Determine if we should use canvas context for gradients
+            const useGradient = state.spriteFillMode === "gradient";
+            let gradientObj: CanvasGradient | null = null;
+            
+            if (useGradient) {
+              // Use the palette color index to select the corresponding gradient
+              // This ensures sprite using palette color 'b' uses gradient 'b'
+              const paletteGradients = getGradientsForPalette(state.paletteId);
+              if (paletteGradients.length > 0) {
+                const gradientIndex = tile.paletteColorIndex % paletteGradients.length;
+                const gradientPreset = paletteGradients[gradientIndex];
+                if (gradientPreset) {
+                  // Apply hue shift and variance to gradient colors
+                  const hueShiftDegrees = ((state.hueShift ?? 0) / 100) * 360;
+                  const variance = clamp((state.paletteVariance ?? 68) / 100, 0, 1.5);
+                  
+                  // Apply hue shift and variance to each gradient color
+                  const processedGradientColors = gradientPreset.colors.map((color, colorIndex) => {
+                    // Apply hue shift first
+                    const hueShiftedColor = shiftHue(color, hueShiftDegrees);
+                    // Then apply variance using deterministic RNG based on tile position and color index
+                    const varianceRng = createMulberry32(hashSeed(`${state.seed}-color-${tile.u}-${tile.v}-${colorIndex}`));
+                    return jitterColor(hueShiftedColor, variance, varianceRng);
+                  });
+                  
+                  // Calculate gradient line based on direction
+                  const gradientLine = calculateGradientLine(
+                    state.spriteGradientDirection,
+                    shapeSize,
+                    shapeSize,
+                  );
+                  // Create gradient relative to shape center (we're already translated)
+                  gradientObj = ctx.createLinearGradient(
+                    gradientLine.x0 - shapeSize / 2,
+                    gradientLine.y0 - shapeSize / 2,
+                    gradientLine.x1 - shapeSize / 2,
+                    gradientLine.y1 - shapeSize / 2,
+                  );
+                  // Add color stops with opacity, using processed colors
+                  const numColors = processedGradientColors.length;
+                  processedGradientColors.forEach((color, index) => {
+                    const stop = numColors > 1 ? index / (numColors - 1) : 0;
+                    const colorObj = p.color(color);
+                    colorObj.setAlpha(opacityAlpha);
+                    gradientObj!.addColorStop(stop, colorObj.toString());
+                  });
+                  ctx.fillStyle = gradientObj;
+                }
+              }
+            }
+            
+            if (!useGradient || !gradientObj) {
+              // Solid color fill
+              const fillColor = p.color(tile.tint);
+              fillColor.setAlpha(opacityAlpha);
+              p.fill(fillColor);
+            }
+            
             p.noStroke();
-            p.fill(fillColor);
 
-            switch (tile.shape) {
+            // Draw shapes using canvas context if gradient, otherwise use p5
+            if (useGradient && gradientObj) {
+              ctx.save();
+              ctx.beginPath();
+              
+              switch (tile.shape) {
+                case "rounded": {
+                  const cornerRadius = shapeSize * 0.3;
+                  const x = -shapeSize / 2;
+                  const y = -shapeSize / 2;
+                  ctx.roundRect(x, y, shapeSize, shapeSize, cornerRadius);
+                  break;
+                }
+                case "circle":
+                  ctx.arc(0, 0, shapeSize / 2, 0, Math.PI * 2);
+                  break;
+                case "square":
+                  ctx.rect(-shapeSize / 2, -shapeSize / 2, shapeSize, shapeSize);
+                  break;
+                case "triangle": {
+                  const height = (Math.sqrt(3) / 2) * shapeSize;
+                  const yOffset = height / 3;
+                  ctx.moveTo(-halfSize, yOffset);
+                  ctx.lineTo(halfSize, yOffset);
+                  ctx.lineTo(0, yOffset - height);
+                  ctx.closePath();
+                  break;
+                }
+                case "hexagon": {
+                  const radius = halfSize;
+                  for (let k = 0; k < 6; k += 1) {
+                    const angle = Math.PI * 2 * (k / 6) - Math.PI / 2;
+                    const x = Math.cos(angle) * radius;
+                    const y = Math.sin(angle) * radius;
+                    if (k === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                  }
+                  ctx.closePath();
+                  break;
+                }
+                case "ring": {
+                  const strokeWeight = Math.max(1.5, shapeSize * 0.18);
+                  const wobble =
+                    Math.sin((tileIndex + p.frameCount) * 0.03 + layerIndex) *
+                    0.35;
+                  if (gradientObj) {
+                    ctx.strokeStyle = gradientObj;
+                  } else {
+                    const strokeColor = p.color(tile.tint);
+                    strokeColor.setAlpha(opacityAlpha);
+                    ctx.strokeStyle = strokeColor.toString();
+                  }
+                  ctx.lineWidth = strokeWeight;
+                  ctx.rotate(wobble);
+                  ctx.beginPath();
+                  ctx.arc(0, 0, shapeSize / 2, 0, Math.PI * 2);
+                  ctx.stroke();
+                  break;
+                }
+                case "diamond": {
+                  ctx.moveTo(0, -halfSize);
+                  ctx.lineTo(halfSize, 0);
+                  ctx.lineTo(0, halfSize);
+                  ctx.lineTo(-halfSize, 0);
+                  ctx.closePath();
+                  break;
+                }
+                case "star": {
+                  const outer = halfSize;
+                  const inner = outer * 0.45;
+                  for (let k = 0; k < 10; k += 1) {
+                    const angle = Math.PI * 2 * (k / 10) - Math.PI / 2;
+                    const radius = k % 2 === 0 ? outer : inner;
+                    const x = Math.cos(angle) * radius;
+                    const y = Math.sin(angle) * radius;
+                    if (k === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                  }
+                  ctx.closePath();
+                  break;
+                }
+                case "line": {
+                  const length = shapeSize * 36;
+                  const thickness = Math.max(2, shapeSize * 0.12);
+                  ctx.rect(-length / 2, -thickness / 2, length, thickness);
+                  break;
+                }
+                case "pentagon": {
+                  const radius = halfSize;
+                  for (let k = 0; k < 5; k += 1) {
+                    const angle = Math.PI * 2 * (k / 5) - Math.PI / 2;
+                    const x = Math.cos(angle) * radius;
+                    const y = Math.sin(angle) * radius;
+                    if (k === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                  }
+                  ctx.closePath();
+                  break;
+                }
+                case "asterisk": {
+                  const barThickness = Math.max(2, shapeSize * 0.18);
+                  const barLength = shapeSize;
+                  ctx.save();
+                  ctx.rect(-barThickness / 2, -barLength / 2, barThickness, barLength);
+                  ctx.rect(-barLength / 2, -barThickness / 2, barLength, barThickness);
+                  ctx.rotate(Math.PI / 4);
+                  ctx.rect(-barThickness / 2, -barLength / 2, barThickness, barLength);
+                  ctx.rect(-barLength / 2, -barThickness / 2, barLength, barThickness);
+                  ctx.restore();
+                  break;
+                }
+                case "cross": {
+                  const barThickness = Math.max(2, shapeSize * 0.35);
+                  const barLength = shapeSize;
+                  ctx.rect(-barThickness / 2, -barLength / 2, barThickness, barLength);
+                  ctx.rect(-barLength / 2, -barThickness / 2, barLength, barThickness);
+                  break;
+                }
+                default:
+                  ctx.arc(0, 0, shapeSize / 2, 0, Math.PI * 2);
+              }
+              
+              ctx.fill();
+              ctx.restore();
+            } else {
+              // Use p5.js for solid colors
+              switch (tile.shape) {
               case "rounded": {
                 const cornerRadius = shapeSize * 0.3;
                 p.rectMode(p.CENTER);
@@ -979,7 +1283,9 @@ export const createSpriteController = (
                   Math.sin((tileIndex + p.frameCount) * 0.03 + layerIndex) *
                   0.35;
                 p.noFill();
-                p.stroke(fillColor);
+                const strokeColor = p.color(tile.tint);
+                strokeColor.setAlpha(opacityAlpha);
+                p.stroke(strokeColor);
                 p.strokeWeight(strokeWeight);
                 p.rotate(wobble);
                 p.circle(0, 0, shapeSize);
@@ -1047,6 +1353,7 @@ export const createSpriteController = (
               }
               default:
                 p.circle(0, 0, shapeSize);
+              }
             }
 
             p.pop();
@@ -1085,6 +1392,12 @@ export const createSpriteController = (
     },
     randomizeAll: () => {
       updateSeed();
+      // Preserve rotation settings
+      const preserveRotationEnabled = state.rotationEnabled;
+      const preserveRotationAnimated = state.rotationAnimated;
+      const preserveRotationAmount = state.rotationAmount;
+      const preserveRotationSpeed = state.rotationSpeed;
+      
       const nextMode =
         spriteModePool[Math.floor(Math.random() * spriteModePool.length)];
       state.spriteMode = nextMode;
@@ -1099,13 +1412,22 @@ export const createSpriteController = (
         movementModes[Math.floor(Math.random() * movementModes.length)];
       state.backgroundMode = "palette";
       state.backgroundHueShift = 0;
-      const rotationActive = Math.random() > 0.35;
-      state.rotationEnabled = rotationActive;
-      state.rotationAmount = rotationActive
-        ? randomInt(28, 145)
-        : randomInt(0, 35);
-      state.rotationSpeed = rotationActive ? randomInt(18, 72) : 0;
-      state.rotationAnimated = rotationActive;
+      
+      // Preserve rotation settings: if both are off, keep off; if either is on, keep on
+      if (!preserveRotationEnabled && !preserveRotationAnimated) {
+        // Both off - keep off
+        state.rotationEnabled = false;
+        state.rotationAnimated = false;
+        state.rotationAmount = preserveRotationAmount;
+        state.rotationSpeed = preserveRotationSpeed;
+      } else {
+        // At least one is on - keep on and preserve slider position
+        state.rotationEnabled = preserveRotationEnabled;
+        state.rotationAnimated = preserveRotationAnimated;
+        state.rotationAmount = preserveRotationAmount;
+        state.rotationSpeed = preserveRotationSpeed;
+      }
+      
       updateSprite();
     },
     randomizeColors: () => {
@@ -1123,17 +1445,32 @@ export const createSpriteController = (
       updateSprite();
     },
     randomizeMotion: () => {
+      // Preserve rotation settings
+      const preserveRotationEnabled = state.rotationEnabled;
+      const preserveRotationAnimated = state.rotationAnimated;
+      const preserveRotationAmount = state.rotationAmount;
+      const preserveRotationSpeed = state.rotationSpeed;
+      
       state.motionIntensity = randomInt(40, 98);
       state.movementMode =
         movementModes[Math.floor(Math.random() * movementModes.length)];
       state.motionSpeed = randomInt(5, 12);
-      const rotationActive = Math.random() > 0.45;
-      state.rotationEnabled = rotationActive;
-      state.rotationAmount = rotationActive
-        ? randomInt(24, 140)
-        : Math.min(state.rotationAmount, 20);
-      state.rotationSpeed = rotationActive ? randomInt(15, 68) : 0;
-      state.rotationAnimated = rotationActive;
+      
+      // Preserve rotation settings: if both are off, keep off; if either is on, keep on
+      if (!preserveRotationEnabled && !preserveRotationAnimated) {
+        // Both off - keep off
+        state.rotationEnabled = false;
+        state.rotationAnimated = false;
+        state.rotationAmount = preserveRotationAmount;
+        state.rotationSpeed = preserveRotationSpeed;
+      } else {
+        // At least one is on - keep on and preserve slider position
+        state.rotationEnabled = preserveRotationEnabled;
+        state.rotationAnimated = preserveRotationAnimated;
+        state.rotationAmount = preserveRotationAmount;
+        state.rotationSpeed = preserveRotationSpeed;
+      }
+      
       updateSprite();
     },
     randomizeBlendMode: () => {
@@ -1210,9 +1547,7 @@ export const createSpriteController = (
       applyState({ spriteMode: mode });
     },
     setMovementMode: (mode: MovementMode) => {
-      if (!movementModes.includes(mode)) {
-        return;
-      }
+      // Movement mode is applied during rendering, no regeneration needed
       applyState({ movementMode: mode }, { recompute: false });
     },
     setRotationEnabled: (value: boolean) => {
@@ -1250,6 +1585,38 @@ export const createSpriteController = (
       // Background hue shift is stored as 0-100 (maps to 0-360 degrees)
       applyState({ backgroundHueShift: clamp(value, 0, 100) });
     },
+    setSpriteFillMode: (mode: "solid" | "gradient") => {
+      // Fill mode is applied during rendering, no regeneration needed
+      applyState({ spriteFillMode: mode }, { recompute: false });
+    },
+    setSpriteGradient: (gradientId: string) => {
+      // Changing gradient requires regeneration if random is disabled
+      applyState({ spriteGradientId: gradientId }, { recompute: !state.spriteGradientRandom });
+    },
+    setSpriteGradientDirection: (degrees: number) => {
+      // Direction is applied in render, no regeneration needed
+      applyState({ spriteGradientDirection: clamp(degrees, 0, 360) }, { recompute: false });
+    },
+    setSpriteGradientRandom: (enabled: boolean) => {
+      // Enabling/disabling random requires regeneration
+      applyState({ spriteGradientRandom: enabled });
+    },
+    setSpriteGradientDirectionRandom: (enabled: boolean) => {
+      // Enabling/disabling random direction requires regeneration
+      applyState({ spriteGradientDirectionRandom: enabled });
+    },
+    setCanvasFillMode: (mode: "solid" | "gradient") => {
+      // Canvas fill mode is applied in render, no regeneration needed
+      applyState({ canvasFillMode: mode }, { recompute: false });
+    },
+    setCanvasGradient: (gradientId: string) => {
+      // Canvas gradient is applied in render, no regeneration needed
+      applyState({ canvasGradientId: gradientId }, { recompute: false });
+    },
+    setCanvasGradientDirection: (degrees: number) => {
+      // Canvas gradient direction is applied in render, no regeneration needed
+      applyState({ canvasGradientDirection: clamp(degrees, 0, 360) }, { recompute: false });
+    },
     applySingleTilePreset: () => {
       updateSeed();
       applyState({
@@ -1271,7 +1638,7 @@ export const createSpriteController = (
         scaleBase: 75,
         scaleSpread: 95,
         paletteVariance: 86,
-        movementMode: "orbit",
+        movementMode: "drift",
         motionIntensity: 74,
         motionSpeed: 11,
         blendMode: "SCREEN",

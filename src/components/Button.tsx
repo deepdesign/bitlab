@@ -17,10 +17,10 @@ const buttonVariants = cva(
         link: "bg-transparent hover:underline",
       },
       size: {
-        sm: "px-3 py-1 text-sm shadow hover:shadow-none",
-        md: "px-4 py-1.5 text-base",
-        lg: "px-6 lg:px-8 py-2 lg:py-3 text-md lg:text-lg",
-        icon: "h-12 w-12 p-0 items-center justify-center",
+        sm: "h-8 px-3 text-xs shadow hover:shadow-none",
+        md: "h-9 px-4 py-2",
+        lg: "h-10 px-8",
+        icon: "h-9 w-9 p-0 items-center justify-center",
       },
     },
     defaultVariants: {
