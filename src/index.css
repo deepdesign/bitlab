@@ -685,7 +685,7 @@ body {
 }
 
 .app-loading-logo {
-  width: clamp(80px, 12vw, 128px);
+  width: clamp(64px, 8vw, 104px);
   height: auto;
   animation:
     bitlab-loading-pulse 1.9s ease-in-out infinite,
