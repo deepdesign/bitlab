@@ -665,6 +665,7 @@ const App = () => {
   const [lockedSpriteMode, setLockedSpriteMode] = useState(false);
   const hudTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showStatusInfo, setShowStatusInfo] = useState(false);
+  const [showLoader, setShowLoader] = useState(true);
   
   const isStudioLayout = useMediaQuery("(min-width: 1760px)");
   const [isWideLayout, setIsWideLayout] = useState(false);
@@ -760,6 +761,18 @@ const App = () => {
   const ThemeModeIconComponent = ThemeModeIcon;
 
   const ready = spriteState !== null && controllerRef.current !== null;
+
+  useEffect(() => {
+    if (!spriteState || !showLoader) {
+      return;
+    }
+    if (typeof window === "undefined") {
+      setShowLoader(false);
+      return;
+    }
+    const timeoutId = window.setTimeout(() => setShowLoader(false), 450);
+    return () => window.clearTimeout(timeoutId);
+  }, [spriteState, showLoader]);
 
   // Calculate current canvas size for export modal
   // Use state to track canvas size so it updates when canvas is resized
@@ -916,10 +929,6 @@ const App = () => {
     if (controller.getState().paletteId === paletteId) {
       controller.usePalette(paletteId);
     }
-  }, []);
-
-  const handleBackgroundSelect = useCallback((mode: string) => {
-    controllerRef.current?.setBackgroundMode(mode as BackgroundMode);
   }, []);
 
   const handleBlendSelect = useCallback((mode: BlendModeOption) => {
@@ -1471,6 +1480,23 @@ const App = () => {
       return null;
     }
     const blendAutoLabelId = "blend-auto-label";
+    const isCanvasGradient = spriteState.canvasFillMode === "gradient";
+    const currentCanvasLabel =
+      CANVAS_PALETTE_OPTIONS.find(
+        (option) => option.value === spriteState.backgroundMode,
+      )?.label ?? CANVAS_PALETTE_OPTIONS[0].label;
+
+    const handleCanvasPaletteChange = (value: string) => {
+      if (!controllerRef.current) {
+        return;
+      }
+      if (isCanvasGradient) {
+        controllerRef.current.setBackgroundMode(value as BackgroundMode);
+        controllerRef.current.setCanvasGradientMode(value as BackgroundMode);
+      } else {
+        controllerRef.current.setBackgroundMode(value as BackgroundMode);
+      }
+    };
 
     return (
       <>
@@ -1540,142 +1566,69 @@ const App = () => {
         <div className="section" style={{ marginTop: '2rem' }}>
           <hr className="section-divider" />
           <h3 className="section-title">CANVAS</h3>
-          {(() => {
-            const isCanvasGradient = spriteState.canvasFillMode === "gradient";
-            return !isCanvasGradient ? (
-            <>
-              <ControlSelect
-                id="background-mode"
-                label="Canvas"
-                value={spriteState.backgroundMode}
-                onChange={handleBackgroundSelect}
-                disabled={!ready}
-                options={CANVAS_PALETTE_OPTIONS}
-                tooltip="Choose the colour applied behind the canvas."
-                currentLabel={
-                  CANVAS_PALETTE_OPTIONS.find(
-                    (option) => option.value === spriteState.backgroundMode,
-                  )?.label
+          <ControlSelect
+            id={isCanvasGradient ? "canvas-gradient" : "background-mode"}
+            label="Canvas"
+            value={spriteState.backgroundMode}
+            onChange={handleCanvasPaletteChange}
+            disabled={!ready}
+            options={CANVAS_PALETTE_OPTIONS}
+            tooltip={
+              isCanvasGradient
+                ? "Choose the theme for the canvas gradient background."
+                : "Choose the colour applied behind the canvas."
+            }
+            currentLabel={currentCanvasLabel}
+            locked={lockedCanvasPalette}
+            onLockToggle={() => setLockedCanvasPalette(!lockedCanvasPalette)}
+          />
+          <div className="control-field">
+            <div className="switch-row" style={{ gap: "0.75rem" }}>
+              <Switch
+                checked={isCanvasGradient}
+                onCheckedChange={(checked) =>
+                  controllerRef.current?.setCanvasFillMode(
+                    checked ? "gradient" : "solid",
+                  )
                 }
-                locked={lockedCanvasPalette}
-                onLockToggle={() => setLockedCanvasPalette(!lockedCanvasPalette)}
+                disabled={!ready}
               />
-              <div className="control-field">
-                <div className="switch-row" style={{ gap: "0.75rem" }}>
-                  <Switch
-                    checked={isCanvasGradient}
-                    onCheckedChange={(checked) =>
-                      controllerRef.current?.setCanvasFillMode(checked ? "gradient" : "solid")
-                    }
-                    disabled={!ready}
-                  />
-                  <div className="field-heading-left">
-                    <span className="field-label">Use gradients</span>
-                    <TooltipIcon
-                      id="canvas-fill-mode-tip"
-                      text="Enable gradient fills for canvas background instead of solid color."
-                      label="Use gradients"
-                    />
-                  </div>
-                </div>
+              <div className="field-heading-left">
+                <span className="field-label">Use gradients</span>
+                <TooltipIcon
+                  id="canvas-fill-mode-tip"
+                  text="Enable gradient fills for canvas background instead of solid color."
+                  label="Use gradients"
+                />
               </div>
-              <ControlSlider
-                id="background-hue-shift"
-                label="Canvas hue shift"
-                min={0}
-                max={100}
-                value={Math.round(spriteState.backgroundHueShift ?? 0)}
-                displayValue={`${Math.round(spriteState.backgroundHueShift ?? 0)}%`}
-                onChange={(value) =>
-                  controllerRef.current?.setBackgroundHueShift(value)
-                }
-                disabled={!ready}
-                tooltip="Shifts the canvas colors around the color wheel (0-360°)."
-              />
-              <ControlSlider
-                id="background-brightness"
-                label="Canvas brightness"
-                min={0}
-                max={100}
-                value={Math.round(spriteState.backgroundBrightness ?? 50)}
-                displayValue={`${Math.round(spriteState.backgroundBrightness ?? 50)}%`}
-                onChange={(value) =>
-                  controllerRef.current?.setBackgroundBrightness(value)
-                }
-                disabled={!ready}
-                tooltip="Adjusts the canvas brightness (0% = darkest, 100% = brightest)."
-              />
-            </>
-            ) : (
-            <>
-              <ControlSelect
-                id="canvas-gradient"
-                label="Canvas"
-                value={spriteState.backgroundMode}
-                onChange={(value) => {
-                  controllerRef.current?.setBackgroundMode(value as BackgroundMode);
-                  // Also update gradient mode to stay in sync
-                  controllerRef.current?.setCanvasGradientMode(value as BackgroundMode);
-                }}
-                disabled={!ready}
-                options={CANVAS_PALETTE_OPTIONS}
-                tooltip="Choose the theme for the canvas gradient background (same options as solid mode)."
-                currentLabel={
-                  CANVAS_PALETTE_OPTIONS.find(
-                    (option) => option.value === spriteState.backgroundMode,
-                  )?.label ?? CANVAS_PALETTE_OPTIONS[0].label
-                }
-                locked={lockedCanvasPalette}
-                onLockToggle={() => setLockedCanvasPalette(!lockedCanvasPalette)}
-              />
-              <div className="control-field">
-                <div className="switch-row" style={{ gap: "0.75rem" }}>
-                  <Switch
-                    checked={isCanvasGradient}
-                    onCheckedChange={(checked) =>
-                      controllerRef.current?.setCanvasFillMode(checked ? "gradient" : "solid")
-                    }
-                    disabled={!ready}
-                  />
-                  <div className="field-heading-left">
-                    <span className="field-label">Use gradients</span>
-                    <TooltipIcon
-                      id="canvas-fill-mode-tip"
-                      text="Enable gradient fills for canvas background instead of solid color."
-                      label="Use gradients"
-                    />
-                  </div>
-                </div>
-              </div>
-              <ControlSlider
-                id="background-hue-shift"
-                label="Canvas hue shift"
-                min={0}
-                max={100}
-                value={Math.round(spriteState.backgroundHueShift ?? 0)}
-                displayValue={`${Math.round(spriteState.backgroundHueShift ?? 0)}%`}
-                onChange={(value) =>
-                  controllerRef.current?.setBackgroundHueShift(value)
-                }
-                disabled={!ready}
-                tooltip="Shifts the canvas colors around the color wheel (0-360°)."
-              />
-              <ControlSlider
-                id="background-brightness"
-                label="Canvas brightness"
-                min={0}
-                max={100}
-                value={Math.round(spriteState.backgroundBrightness ?? 50)}
-                displayValue={`${Math.round(spriteState.backgroundBrightness ?? 50)}%`}
-                onChange={(value) =>
-                  controllerRef.current?.setBackgroundBrightness(value)
-                }
-                disabled={!ready}
-                tooltip="Adjusts the canvas brightness (0% = darkest, 100% = brightest)."
-              />
-            </>
-            );
-          })()}
+            </div>
+          </div>
+          <ControlSlider
+            id="background-hue-shift"
+            label="Canvas hue shift"
+            min={0}
+            max={100}
+            value={Math.round(spriteState.backgroundHueShift ?? 0)}
+            displayValue={`${Math.round(spriteState.backgroundHueShift ?? 0)}%`}
+            onChange={(value) =>
+              controllerRef.current?.setBackgroundHueShift(value)
+            }
+            disabled={!ready}
+            tooltip="Shifts the canvas colors around the color wheel (0-360°)."
+          />
+          <ControlSlider
+            id="background-brightness"
+            label="Canvas brightness"
+            min={0}
+            max={100}
+            value={Math.round(spriteState.backgroundBrightness ?? 50)}
+            displayValue={`${Math.round(spriteState.backgroundBrightness ?? 50)}%`}
+            onChange={(value) =>
+              controllerRef.current?.setBackgroundBrightness(value)
+            }
+            disabled={!ready}
+            tooltip="Adjusts the canvas brightness (0% = darkest, 100% = brightest)."
+          />
         </div>
 
         <div className="section" style={{ marginTop: '2rem' }}>
@@ -1939,6 +1892,18 @@ const App = () => {
   );
 
   return (
+    <>
+      <div
+        className={`app-loading-overlay${
+          showLoader ? "" : " app-loading-overlay--hidden"
+        }`}
+      >
+        <img
+          className="app-loading-logo"
+          src="/bitlab-b-logo-white.svg"
+          alt="Loading BitLab"
+        />
+      </div>
     <div className="app-shell">
       <header className={`app-header${isMobile ? ' app-header--mobile' : ''}`}>
         {isMobile ? (
@@ -2137,6 +2102,7 @@ const App = () => {
       )}
 
     </div>
+    </>
   );
 };
 
