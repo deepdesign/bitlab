@@ -874,6 +874,7 @@ html[data-theme="dark"][data-theme-color="rose"] body {
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
+  margin-top: -8px;
 }
 
 .app-frame--footer {
@@ -920,6 +921,7 @@ body:has(.app-layout--wide) .app-header {
   justify-self: start;
   display: flex;
   align-items: center;
+  margin-top: 8px;
 }
 
 .app-logo-svg {
@@ -1308,7 +1310,7 @@ body:has(.app-layout--wide) .app-header {
  */
 .app-layout {
   @apply w-full flex items-start justify-start;
-  gap: theme("spacing.6"); /* 24px gap between columns */
+  gap: theme("spacing.5"); /* 20px gap between columns to mirror card padding */
   flex-wrap: nowrap;
   align-items: flex-start;
   max-width: 100%;
@@ -1412,7 +1414,7 @@ body:has(.app-layout--wide) .app-header {
 .canvas-card {
   @apply flex flex-col;
   padding-inline: theme("spacing.5");
-  padding-block: theme("spacing.4");
+  padding-block: theme("spacing.5");
   gap: theme("spacing.4");
   background: var(--panel-bg);
   width: 100%;
