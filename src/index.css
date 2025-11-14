@@ -64,7 +64,6 @@
 
   --bg-base: #050509;
   --bg-top: #0b0b1d;
-  --bg-radial: rgba(61, 66, 131, 0.35);
   --text-primary: #f4f4f8;
   --text-muted: rgba(198, 201, 255, 0.7);
   --text-subtle: rgba(198, 201, 255, 0.45);
@@ -138,6 +137,7 @@
   --control-column-width-narrow: 280px;
   --layout-max-width-split: calc(var(--control-column-width-narrow) + 24px + 960px + 24px + var(--control-column-width-narrow));
   --layout-max-width-split-with-padding: calc(var(--layout-max-width-split) + 48px);
+  --layout-min-width-compact: calc(var(--control-column-width) + 24px + 720px + 48px);
 
   --btn-primary-bg: var(--accent-primary);
   --btn-primary-text: var(--accent-primary-contrast);
@@ -168,7 +168,6 @@
   color-scheme: light;
   --bg-base: #f8f7ff;
   --bg-top: #ffffff;
-  --bg-radial: rgba(255, 255, 255, 0.7);
   --text-primary: #1b1024;
   --text-muted: rgba(42, 35, 68, 0.65);
   --text-subtle: rgba(42, 35, 68, 0.45);
@@ -275,7 +274,6 @@
 [data-theme-color="mint"][data-theme="dark"] {
   --bg-base: #041b17;
   --bg-top: #0d2f29;
-  --bg-radial: rgba(105, 255, 210, 0.22);
   --text-primary: #e9fff9;
   --text-muted: rgba(144, 234, 212, 0.78);
   --text-subtle: rgba(144, 234, 212, 0.48);
@@ -312,7 +310,6 @@
 [data-theme-color="mint"][data-theme="light"] {
   --bg-base: #edfff8;
   --bg-top: #ffffff;
-  --bg-radial: rgba(105, 255, 210, 0.35);
   --text-primary: #103c33;
   --text-muted: rgba(31, 94, 80, 0.7);
   --text-subtle: rgba(31, 94, 80, 0.45);
@@ -349,7 +346,6 @@
 [data-theme-color="violet"][data-theme="dark"] {
   --bg-base: #120322;
   --bg-top: #21063b;
-  --bg-radial: rgba(201, 156, 255, 0.25);
   --text-primary: #f4edff;
   --text-muted: rgba(211, 189, 255, 0.75);
   --text-subtle: rgba(211, 189, 255, 0.45);
@@ -386,7 +382,6 @@
 [data-theme-color="violet"][data-theme="light"] {
   --bg-base: #f6f2ff;
   --bg-top: #ffffff;
-  --bg-radial: rgba(201, 156, 255, 0.35);
   --text-primary: #1f1435;
   --text-muted: rgba(66, 54, 102, 0.68);
   --text-subtle: rgba(66, 54, 102, 0.45);
@@ -423,7 +418,6 @@
 [data-theme-color="ember"][data-theme="dark"] {
   --bg-base: #140704;
   --bg-top: #2a110a;
-  --bg-radial: rgba(255, 107, 61, 0.28);
   --text-primary: #ffe9df;
   --text-muted: rgba(255, 188, 158, 0.78);
   --text-subtle: rgba(255, 188, 158, 0.48);
@@ -460,7 +454,6 @@
 [data-theme-color="ember"][data-theme="light"] {
   --bg-base: #fff5ef;
   --bg-top: #ffffff;
-  --bg-radial: rgba(255, 132, 92, 0.32);
   --text-primary: #2c140d;
   --text-muted: rgba(92, 50, 34, 0.72);
   --text-subtle: rgba(92, 50, 34, 0.48);
@@ -496,8 +489,7 @@
 
 [data-theme-color="lagoon"][data-theme="dark"] {
   --bg-base: #04131b;
-  --bg-top: #0b2130;
-  --bg-radial: rgba(58, 215, 255, 0.26);
+  --bg-top: #06141d;
   --text-primary: #e7f9ff;
   --text-muted: rgba(164, 228, 249, 0.78);
   --text-subtle: rgba(164, 228, 249, 0.48);
@@ -534,7 +526,6 @@
 [data-theme-color="lagoon"][data-theme="light"] {
   --bg-base: #edfaff;
   --bg-top: #ffffff;
-  --bg-radial: rgba(58, 215, 255, 0.3);
   --text-primary: #102a33;
   --text-muted: rgba(44, 102, 120, 0.7);
   --text-subtle: rgba(44, 102, 120, 0.46);
@@ -570,8 +561,7 @@
 
 [data-theme-color="rose"][data-theme="dark"] {
   --bg-base: #190615;
-  --bg-top: #2a0b22;
-  --bg-radial: rgba(255, 124, 200, 0.24);
+  --bg-top: #1f0718;
   --text-primary: #ffe9f7;
   --text-muted: rgba(255, 176, 226, 0.78);
   --text-subtle: rgba(255, 176, 226, 0.48);
@@ -608,7 +598,6 @@
 [data-theme-color="rose"][data-theme="light"] {
   --bg-base: #fff3fb;
   --bg-top: #ffffff;
-  --bg-radial: rgba(255, 124, 200, 0.28);
   --text-primary: #2c1325;
   --text-muted: rgba(94, 52, 78, 0.7);
   --text-subtle: rgba(94, 52, 78, 0.46);
@@ -659,12 +648,38 @@
 body {
   margin: 0;
   @apply min-h-screen;
-  background:
-    radial-gradient(circle at top, var(--bg-radial), transparent 55%),
-    linear-gradient(180deg, var(--bg-top) 0%, var(--bg-base) 100%);
+  background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-base) 100%);
   color: var(--text-primary);
   display: flex;
   justify-content: center;
+}
+
+html[data-theme="light"] body {
+  background: var(--bg-base);
+}
+
+html[data-theme="dark"][data-theme-color="amber"] body {
+  background: var(--bg-top);
+}
+
+html[data-theme="dark"][data-theme-color="mint"] body {
+  background: var(--bg-top);
+}
+
+html[data-theme="dark"][data-theme-color="violet"] body {
+  background: var(--bg-top);
+}
+
+html[data-theme="dark"][data-theme-color="ember"] body {
+  background: var(--bg-top);
+}
+
+html[data-theme="dark"][data-theme-color="lagoon"] body {
+  background: var(--bg-top);
+}
+
+html[data-theme="dark"][data-theme-color="rose"] body {
+  background: var(--bg-top);
 }
 
 .app-loading-overlay {
@@ -684,36 +699,146 @@ body {
   pointer-events: none;
 }
 
+.app-loading-logo-stack {
+  position: relative;
+  width: 96px;
+  aspect-ratio: 60 / 45;
+}
+
 .app-loading-logo {
-  width: clamp(64px, 8vw, 104px);
-  height: auto;
-  animation:
-    bitlab-loading-pulse 1.9s ease-in-out infinite,
-    bitlab-loading-hue 4.5s linear infinite;
+  position: absolute;
+  inset: 0;
+  display: block;
+  mix-blend-mode: hard-light;
+  width: 100%;
+  height: 100%;
+  background: var(--loader-color);
+  mask: url("/bitlab-b-logo-white.svg") center / contain no-repeat;
+  -webkit-mask: url("/bitlab-b-logo-white.svg") center / contain no-repeat;
+  filter: drop-shadow(
+    0 14px 32px color-mix(in srgb, var(--loader-color) 60%, transparent)
+  );
+  transform-origin: center;
+  --loader-range: 6;
 }
 
-@keyframes bitlab-loading-pulse {
+.app-loading-logo--one {
+  --loader-color: #ff3cac;
+  animation: app-loader-top 2400ms steps(32, end) infinite;
+}
+
+.app-loading-logo--two {
+  --loader-color: #4cc9f0;
+  animation: app-loader-mid 2400ms steps(20, end) infinite;
+}
+
+.app-loading-logo--three {
+  --loader-color: #9ef6ff;
+  animation: app-loader-bottom 2400ms steps(32, end) infinite;
+}
+
+@keyframes app-loader-top {
   0%,
-  100% {
-    transform: scale(1);
+  8% {
+    transform: translate(0, 0);
   }
-  50% {
-    transform: scale(1.08);
+  10% {
+    transform: translate(calc(var(--loader-range) * 1px), calc(var(--loader-range) * -0.35px));
+  }
+  14% {
+    transform: translate(calc(var(--loader-range) * -1px), calc(var(--loader-range) * 0.5px));
+  }
+  18% {
+    transform: translate(calc(var(--loader-range) * 0.66px), calc(var(--loader-range) * -0.2px));
+  }
+  22% {
+    transform: translate(calc(var(--loader-range) * -0.85px), calc(var(--loader-range) * 0.35px));
+  }
+  30%,
+  60% {
+    transform: translate(0, 0);
+  }
+  66% {
+    transform: translate(calc(var(--loader-range) * 0.9px), calc(var(--loader-range) * -0.4px));
+  }
+  72% {
+    transform: translate(calc(var(--loader-range) * -0.75px), calc(var(--loader-range) * 0.28px));
+  }
+  80% {
+    transform: translate(calc(var(--loader-range) * 1px), calc(var(--loader-range) * -0.33px));
+  }
+  88% {
+    transform: translate(calc(var(--loader-range) * -0.65px), calc(var(--loader-range) * 0.25px));
+  }
+  100% {
+    transform: translate(0, 0);
   }
 }
 
-@keyframes bitlab-loading-hue {
-  0% {
-    filter: hue-rotate(0deg) drop-shadow(0 0 20px rgba(255, 212, 71, 0.4));
-  }
-  50% {
-    filter: hue-rotate(180deg) drop-shadow(0 0 24px rgba(255, 212, 71, 0.35));
-  }
+@keyframes app-loader-mid {
+  0%,
+  12%,
+  62%,
   100% {
-    filter: hue-rotate(360deg) drop-shadow(0 0 20px rgba(255, 212, 71, 0.4));
+    transform: translate(0, 0);
+  }
+  16% {
+    transform: translate(calc(var(--loader-range) * -0.2px), 0);
+  }
+  20% {
+    transform: translate(calc(var(--loader-range) * 0.25px), 0);
+  }
+  28% {
+    transform: translate(calc(var(--loader-range) * -0.18px), 0);
+  }
+  34% {
+    transform: translate(calc(var(--loader-range) * 0.2px), 0);
+  }
+  68% {
+    transform: translate(calc(var(--loader-range) * -0.22px), 0);
+  }
+  74% {
+    transform: translate(calc(var(--loader-range) * 0.18px), 0);
   }
 }
 
+@keyframes app-loader-bottom {
+  0%,
+  8% {
+    transform: translate(0, 0);
+  }
+  10% {
+    transform: translate(calc(var(--loader-range) * -1px), calc(var(--loader-range) * 0.35px));
+  }
+  14% {
+    transform: translate(calc(var(--loader-range) * 1px), calc(var(--loader-range) * -0.5px));
+  }
+  18% {
+    transform: translate(calc(var(--loader-range) * -0.66px), calc(var(--loader-range) * 0.2px));
+  }
+  22% {
+    transform: translate(calc(var(--loader-range) * 0.85px), calc(var(--loader-range) * -0.35px));
+  }
+  30%,
+  60% {
+    transform: translate(0, 0);
+  }
+  66% {
+    transform: translate(calc(var(--loader-range) * -0.9px), calc(var(--loader-range) * 0.4px));
+  }
+  72% {
+    transform: translate(calc(var(--loader-range) * 0.75px), calc(var(--loader-range) * -0.28px));
+  }
+  80% {
+    transform: translate(calc(var(--loader-range) * -1px), calc(var(--loader-range) * 0.33px));
+  }
+  88% {
+    transform: translate(calc(var(--loader-range) * 0.65px), calc(var(--loader-range) * -0.25px));
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
 
 #app {
   width: 100%;
@@ -723,6 +848,37 @@ body {
   @apply min-h-screen flex flex-col;
   padding-bottom: theme("spacing.3");
   gap: theme("spacing.4");
+}
+
+.app-frame {
+  width: min(100%, var(--layout-max-width-split-with-padding));
+  margin-inline: auto;
+  position: relative;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+.app-frame--header {
+  flex-shrink: 0;
+}
+
+.app-frame--compact {
+  width: clamp(
+    var(--layout-min-width-compact),
+    100%,
+    calc(960px + var(--control-column-width) + theme("spacing.6") * 2)
+  );
+}
+
+.app-frame--main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-frame--footer {
+  flex-shrink: 0;
+  margin-top: auto;
 }
 
 .app-header {
@@ -742,7 +898,7 @@ body {
  * Total with padding: 1704 + 48 = 1752px
  */
 body:has(.app-layout--wide) .app-header {
-  max-width: var(--layout-max-width-split-with-padding);
+  max-width: 100%;
 }
 
 .header-toolbar {
@@ -961,6 +1117,7 @@ body:has(.app-layout--wide) .app-header {
 
   /* Even margins on cards */
   .app-layout--mobile .control-card,
+  .app-layout--mobile .canvas-card-shell,
   .app-layout--mobile .canvas-card,
   .app-layout--mobile .motion-card {
     margin-inline: 0;
@@ -981,6 +1138,7 @@ body:has(.app-layout--wide) .app-header {
   }
 
   /* Adjust canvas card for mobile */
+  .app-layout--mobile .canvas-card-shell,
   .app-layout--mobile .canvas-card {
     width: 100%;
     max-width: 100%;
@@ -1138,6 +1296,9 @@ body:has(.app-layout--wide) .app-header {
   box-sizing: border-box;
   overflow: visible;
   overflow-x: hidden;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Layout Container
@@ -1152,6 +1313,8 @@ body:has(.app-layout--wide) .app-header {
   align-items: flex-start;
   max-width: 100%;
   box-sizing: border-box;
+  overflow: visible;
+  flex: 1 1 auto;
 }
 
 .app-layout--studio {
@@ -1220,19 +1383,20 @@ body:has(.app-layout--wide) .app-header {
  * Flex properties:
  *   flex: 1 - Grows to fill available space, but constrained by max-width
  *   flex-basis: 0 - Starts from zero, allowing smooth growth
- *   min-width: 750px - Ensures status bar fits on one row
+ *   min-width: 720px - Ensures status bar fits on one row
  *   max-width: 960px - Prevents column from growing beyond canvas max size
  *                      This keeps the motion column close to the canvas
  * 
- * The canvas-card inside uses clamp(750px, 70vw, 960px) for smooth scaling
- * between minimum (750px) and maximum (960px) sizes
+ * The canvas-card inside uses clamp(720px, 70vw, 960px) for smooth scaling
+ * between minimum (720px) and maximum (960px) sizes
  */
 .display-column {
   @apply flex flex-1 flex-col items-start;
   gap: theme("spacing.6");
-  min-width: 750px; /* Minimum width ensures status bar fits on one row */
+  min-width: 720px; /* Minimum width ensures status bar fits on one row */
   max-width: 960px; /* Maximum width prevents column from growing beyond canvas max */
   flex-basis: 0; /* Start from zero for smooth flex growth */
+  overflow: visible;
   /* Canvas-card inside handles its own sizing with clamp() for smooth scaling */
 }
 
@@ -1251,9 +1415,6 @@ body:has(.app-layout--wide) .app-header {
   padding-block: theme("spacing.4");
   gap: theme("spacing.4");
   background: var(--panel-bg);
-  border: 2px solid var(--panel-border);
-  border-radius: var(--radius-md);
-  box-shadow: 6px 6px 0 var(--panel-shadow);
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
@@ -2019,21 +2180,38 @@ body:has(.app-layout--wide) .app-header {
 
 /* Canvas Card
  * 
- * Smooth scaling between minimum (750px) and maximum (960px) sizes
+ * Smooth scaling between minimum (720px) and maximum (960px) sizes
  * 
- * Sizing formula: min(100%, clamp(750px, 70vw, 960px))
+ * Sizing formula: min(100%, clamp(720px, 70vw, 960px))
  * 
  * - min(100%, ...) ensures card never exceeds its container (display-column)
- * - clamp(750px, 70vw, 960px) provides smooth scaling:
- *   * Minimum: 750px (ensures status bar fits on one row)
+ * - clamp(720px, 70vw, 960px) provides smooth scaling:
+ *   * Minimum: 720px (ensures status bar fits on one row)
  *   * Scales proportionally: 70% of viewport width
  *   * Maximum: 960px (optimal canvas size)
  * 
  * The 70vw allows the canvas to scale smoothly as the viewport changes,
  * while the min/max constraints ensure it never gets too small or too large.
  */
+.canvas-card-shell {
+  width: min(100%, clamp(720px, 70vw, 960px));
+  max-width: 100%;
+  position: relative;
+  overflow: visible;
+  margin-bottom: theme("spacing.2");
+}
+
 .canvas-card {
-  width: min(100%, clamp(750px, 70vw, 960px));
+  width: 100%;
+  display: block;
+  position: relative;
+}
+
+.canvas-card__content {
+  display: flex;
+  flex-direction: column;
+  gap: theme("spacing.4");
+  padding: 0 !important;
 }
 
 .canvas-wrapper {
@@ -2041,10 +2219,10 @@ body:has(.app-layout--wide) .app-header {
   width: 100%;
   max-width: 100%;
   padding-top: 100%;
-  background: var(--card-bg);
-  box-shadow: inset 0 0 48px var(--card-shadow);
-  border-radius: calc(var(--radius-lg) - 10px);
-  overflow: hidden;
+  background: transparent;
+  box-shadow: none;
+  border-radius: calc(var(--radius-md) - 4px);
+  overflow: visible;
   box-sizing: border-box;
   /* Remove min-width/max-width constraints - wrapper should fit within card's content area */
   /* Card has padding-inline: theme("spacing.5") = 20px each side = 40px total */
@@ -2055,6 +2233,8 @@ body:has(.app-layout--wide) .app-header {
   position: absolute;
   inset: 0;
   display: block;
+  border-radius: calc(var(--radius-md) - 8px);
+  overflow: hidden;
 }
 
 .sketch-container canvas {
@@ -2130,6 +2310,40 @@ body:has(.app-layout--wide) .app-header {
   flex: 1;
   flex-wrap: nowrap;
   white-space: nowrap;
+  position: relative;
+}
+
+.status-bar-badges-measure {
+  position: absolute;
+  visibility: hidden;
+  pointer-events: none;
+  opacity: 0;
+  display: inline-flex;
+  gap: theme("spacing.3");
+  white-space: nowrap;
+}
+
+.status-bar-summary-wrapper {
+  position: relative;
+  display: inline-flex;
+  overflow: visible;
+}
+
+.status-bar-summary-popover {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 0;
+  display: inline-flex;
+  flex-direction: column;
+  gap: theme("spacing.2");
+  padding: theme("spacing.3");
+  background: rgba(15, 16, 32, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 12px 32px rgba(10, 12, 28, 0.4);
+  z-index: 2000;
+  min-width: 180px;
+  transform: none;
 }
 
 .status-bar-right {
@@ -2177,7 +2391,6 @@ body:has(.app-layout--wide) .app-header {
 }
 
 .app-footer {
-  margin-top: auto;
   padding-inline: theme("spacing.6");
   padding-top: theme("spacing.2");
   padding-bottom: theme("spacing.1");
@@ -2198,7 +2411,7 @@ body:has(.app-layout--wide) .app-header {
  * Total with padding: 1704 + 48 = 1752px
  */
 body:has(.app-layout--wide) .app-footer {
-  max-width: var(--layout-max-width-split-with-padding);
+  max-width: 100%;
 }
 
 .footer-brand {

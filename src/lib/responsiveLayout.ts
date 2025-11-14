@@ -12,7 +12,7 @@
  * ### Merged Layout (Narrow Viewport)
  * - Single left column containing all 4 tabs (Sprites, Layers, Motion, FX)
  * - Column width: CONTROL_COLUMN_WIDTH_MERGED (420px)
- * - Canvas scales smoothly between min (750px) and max (960px)
+ * - Canvas scales smoothly between min (720px) and max (960px)
  * 
  * ### Split Layout (Wide Viewport)
  * - Left column: Sprites + Layers tabs (CONTROL_COLUMN_WIDTH_SPLIT = 348px)
@@ -44,9 +44,9 @@
  * ## Canvas Sizing
  * 
  * The canvas scales smoothly using CSS clamp():
- *   width: min(100%, clamp(750px, 70vw, 960px))
+ *   width: min(100%, clamp(720px, 70vw, 960px))
  * 
- * - Minimum: 750px (ensures status bar fits on one row)
+ * - Minimum: 720px (ensures status bar fits on one row)
  * - Maximum: 960px (optimal canvas size)
  * - Scales proportionally with viewport (70vw) between min/max
  * 
@@ -82,7 +82,7 @@ export const MOTION_COLUMN_WIDTH = 280;
  */
 export const CANVAS_CONFIG = {
   /** Minimum canvas width - ensures status bar fits on one row */
-  MIN_WIDTH: 750,
+  MIN_WIDTH: 720,
   /** Maximum canvas width - optimal size for display */
   MAX_WIDTH: 960,
   /** Viewport width percentage for smooth scaling between min/max */

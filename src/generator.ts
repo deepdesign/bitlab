@@ -805,9 +805,9 @@ export const createSpriteController = (
       // Canvas should match the card's intended size, accounting for padding and border
       const cardPadding = 40; // 20px each side = 40px total (spacing.5)
       const cardBorder = 4; // 2px each side = 4px total
-      const containerWidth = container.clientWidth || 750;
-      // Calculate canvas size: container width + padding + border, clamped between min (750px) and max (960px)
-      const size = Math.min(960, Math.max(750, containerWidth + cardPadding + cardBorder));
+      const containerWidth = container.clientWidth || 720;
+      // Calculate canvas size: container width + padding + border, clamped between min (720px) and max (960px)
+      const size = Math.min(960, Math.max(720, containerWidth + cardPadding + cardBorder));
       canvas = p.createCanvas(size, size);
       canvas.parent(container);
       p.pixelDensity(1);
@@ -841,12 +841,12 @@ export const createSpriteController = (
         //   clientWidth = cardWidth - border - padding = 960 - 4 - 40 = 916px
         // To get the intended canvas size (960px), we add padding back: 916 + 40 = 956px
         // But we want 960px, so we need to add border too: 916 + 40 + 4 = 960px
-        // Status bar needs ~750px minimum to fit all elements (5 badges + 3 buttons) on one row
+        // Status bar needs ~720px minimum to fit all elements (5 badges + 3 buttons) on one row
         const cardPadding = 40; // 20px each side = 40px total (spacing.5)
         const cardBorder = 4; // 2px each side = 4px total
-        const containerWidth = container.clientWidth || 750;
-        // Calculate canvas size: container width + padding + border, clamped between min (750px) and max (960px)
-        size = Math.min(960, Math.max(750, containerWidth + cardPadding + cardBorder));
+        const containerWidth = container.clientWidth || 720;
+        // Calculate canvas size: container width + padding + border, clamped between min (720px) and max (960px)
+        size = Math.min(960, Math.max(720, containerWidth + cardPadding + cardBorder));
       }
       
       p.resizeCanvas(size, size);

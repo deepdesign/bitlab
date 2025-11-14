@@ -43,7 +43,7 @@ import { MobileMenu } from "./components/MobileMenu";
 import { Badge } from "./components/retroui/Badge";
 import { Moon, Monitor, Sun, Maximize2, X, RefreshCw, Bookmark, Camera, HelpCircle, Lock, Unlock } from "lucide-react";
 import { palettes } from "./data/palettes";
-import { shouldSplitColumns, getAppMainPadding } from "./lib/responsiveLayout";
+// import { shouldSplitColumns, getAppMainPadding } from "./lib/responsiveLayout";
 import { useIsMobile } from "./hooks/useIsMobile";
 const BLEND_MODES: BlendModeOption[] = [
   "NONE",
@@ -658,6 +658,8 @@ const App = () => {
   const [showExportModal, setShowExportModal] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [hudVisible, setHudVisible] = useState(true);
+  const [isBadgeCompact, setIsBadgeCompact] = useState(false);
+  const [isBadgePopoverOpen, setIsBadgePopoverOpen] = useState(false);
   const [lockedMovementMode, setLockedMovementMode] = useState(false);
   const [lockedSpritePalette, setLockedSpritePalette] = useState(false);
   const [lockedCanvasPalette, setLockedCanvasPalette] = useState(false);
@@ -666,11 +668,23 @@ const App = () => {
   const hudTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showStatusInfo, setShowStatusInfo] = useState(false);
   const [showLoader, setShowLoader] = useState(true);
+  const [forceLoader, setForceLoader] = useState(false);
   
   const isStudioLayout = useMediaQuery("(min-width: 1760px)");
-  const [isWideLayout, setIsWideLayout] = useState(false);
+  // NOTE: 03/02/2025 – Responsive split/merge logic is currently disabled to
+  // simplify the layout while we concentrate on other features. The previous
+  // implementation relied on viewport measurements and observers to decide
+  // when to split the columns. Should we need that behaviour again, the old
+  // state and effects can be restored from version control.
+  const isWideLayout = false;
   const canvasWrapperRef = useRef<HTMLDivElement | null>(null);
   const layoutRef = useRef<HTMLDivElement | null>(null);
+  const statusBarRef = useRef<HTMLDivElement | null>(null);
+  const statusBarLeftRef = useRef<HTMLDivElement | null>(null);
+  const statusBarRightRef = useRef<HTMLDivElement | null>(null);
+  const badgeMeasureRef = useRef<HTMLDivElement | null>(null);
+  const badgeTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const badgePopoverRef = useRef<HTMLDivElement | null>(null);
   
   // Mobile device detection
   const isMobile = useIsMobile();
@@ -684,45 +698,34 @@ const App = () => {
    * This prevents the "snapping" behavior where columns split before the
    * canvas reaches its maximum size.
    */
-  const checkLayout = useCallback(() => {
-    if (typeof window === "undefined") return;
-
-    const viewportWidth = window.innerWidth;
-    const appMainPadding = getAppMainPadding();
-    const shouldSplit = shouldSplitColumns(viewportWidth, appMainPadding);
-    
-    setIsWideLayout(shouldSplit);
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    // Initial check
-    checkLayout();
-    
-    // Check on resize
-    window.addEventListener('resize', checkLayout);
-    
-    return () => {
-      window.removeEventListener('resize', checkLayout);
-    };
-  }, [checkLayout]);
-
-  // Set up ResizeObserver on layout container for more accurate detection
-  useEffect(() => {
-    if (!layoutRef.current || typeof ResizeObserver === 'undefined') return;
-
-    const resizeObserver = new ResizeObserver(() => {
-      // Small delay to ensure layout has updated
-      setTimeout(checkLayout, 0);
-    });
-    
-    resizeObserver.observe(layoutRef.current);
-    
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, [checkLayout]);
+  // Responsive column splitting disabled – see note above.
+  // const checkLayout = useCallback(() => {
+  //   if (typeof window === "undefined") return;
+  //   const viewportWidth = window.innerWidth;
+  //   const appMainPadding = getAppMainPadding();
+  //   const shouldSplit = shouldSplitColumns(viewportWidth, appMainPadding);
+  //   setIsWideLayout(shouldSplit);
+  // }, []);
+  //
+  // useEffect(() => {
+  //   if (typeof window === "undefined") return;
+  //   checkLayout();
+  //   window.addEventListener("resize", checkLayout);
+  //   return () => {
+  //     window.removeEventListener("resize", checkLayout);
+  //   };
+  // }, [checkLayout]);
+  //
+  // useEffect(() => {
+  //   if (!layoutRef.current || typeof ResizeObserver === "undefined") return;
+  //   const resizeObserver = new ResizeObserver(() => {
+  //     setTimeout(checkLayout, 0);
+  //   });
+  //   resizeObserver.observe(layoutRef.current);
+  //   return () => {
+  //     resizeObserver.disconnect();
+  //   };
+  // }, [checkLayout]);
 
   const cycleThemeMode = useCallback(() => {
     setThemeMode((prev) => {
@@ -762,8 +765,105 @@ const App = () => {
 
   const ready = spriteState !== null && controllerRef.current !== null;
 
+  useLayoutEffect(() => {
+    if (!statusBarRef.current) {
+      return;
+    }
+
+    const computeCompact = () => {
+      const bar = statusBarRef.current;
+      const right = statusBarRightRef.current;
+      const measure = badgeMeasureRef.current;
+      if (!bar || !right || !measure) {
+        return;
+      }
+      const available =
+        bar.clientWidth -
+        right.offsetWidth -
+        parseFloat(
+          getComputedStyle(bar).columnGap || getComputedStyle(bar).gap || "0",
+        ) -
+        8; // small buffer
+      const required = measure.offsetWidth;
+      setIsBadgeCompact(required > available);
+    };
+
+    const observers: ResizeObserver[] = [];
+
+    const elements = [
+      statusBarRef.current,
+      statusBarRightRef.current,
+      badgeMeasureRef.current,
+    ].filter(Boolean) as Element[];
+
+    elements.forEach((element) => {
+      const observer = new ResizeObserver(() => computeCompact());
+      observer.observe(element);
+      observers.push(observer);
+    });
+
+    computeCompact();
+
+    return () => {
+      observers.forEach((observer) => observer.disconnect());
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isBadgeCompact) {
+      setIsBadgePopoverOpen(false);
+    }
+  }, [isBadgeCompact]);
+
+  useEffect(() => {
+    if (!isBadgePopoverOpen) {
+      return;
+    }
+    const handleClickAway = (event: MouseEvent) => {
+      const trigger = badgeTriggerRef.current;
+      const popover = badgePopoverRef.current;
+      if (!trigger || !popover) {
+        return;
+      }
+      const target = event.target as Node;
+      if (
+        trigger.contains(target) ||
+        popover.contains(target)
+      ) {
+        return;
+      }
+      setIsBadgePopoverOpen(false);
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsBadgePopoverOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickAway);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickAway);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isBadgePopoverOpen]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const params = new URLSearchParams(window.location.search);
+    const debugLoader = params.get("debugLoader");
+    if (debugLoader === "1") {
+      setForceLoader(true);
+      setShowLoader(true);
+    }
+  }, []);
+
   useEffect(() => {
     if (!spriteState || !showLoader) {
+      return;
+    }
+    if (forceLoader) {
       return;
     }
     if (typeof window === "undefined") {
@@ -772,11 +872,11 @@ const App = () => {
     }
     const timeoutId = window.setTimeout(() => setShowLoader(false), 450);
     return () => window.clearTimeout(timeoutId);
-  }, [spriteState, showLoader]);
+  }, [spriteState, showLoader, forceLoader]);
 
   // Calculate current canvas size for export modal
   // Use state to track canvas size so it updates when canvas is resized
-  const [currentCanvasSize, setCurrentCanvasSize] = useState({ width: 750, height: 750 });
+  const [currentCanvasSize, setCurrentCanvasSize] = useState({ width: 720, height: 720 });
   
   // Function to update canvas size from the actual canvas element
   const updateCanvasSize = useCallback(() => {
@@ -804,20 +904,20 @@ const App = () => {
   // Update canvas size when controller or spriteState changes, and watch for canvas resize
   useEffect(() => {
     if (!controllerRef.current) {
-      setCurrentCanvasSize({ width: 750, height: 750 });
+      setCurrentCanvasSize({ width: 720, height: 720 });
       return;
     }
     
     const p5Instance = controllerRef.current.getP5Instance();
     if (!p5Instance) {
-      setCurrentCanvasSize({ width: 750, height: 750 });
+      setCurrentCanvasSize({ width: 720, height: 720 });
       return;
     }
     
     // p5.js stores canvas as a property, but TypeScript types don't include it
     const canvas = (p5Instance as any).canvas as HTMLCanvasElement | null;
     if (!canvas) {
-      setCurrentCanvasSize({ width: 750, height: 750 });
+      setCurrentCanvasSize({ width: 720, height: 720 });
       return;
     }
     
@@ -857,14 +957,12 @@ const App = () => {
   }, [spriteState, controllerRef.current, updateCanvasSize]);
   
   // Also update canvas size when layout changes (columns split/merge)
-  useEffect(() => {
-    // Small delay to ensure layout has updated and canvas has resized
-    const timeoutId = setTimeout(() => {
-      updateCanvasSize();
-    }, 100);
-    
-    return () => clearTimeout(timeoutId);
-  }, [isWideLayout, updateCanvasSize]);
+  // useEffect(() => {
+  //   const timeoutId = setTimeout(() => {
+  //     updateCanvasSize();
+  //   }, 100);
+  //   return () => clearTimeout(timeoutId);
+  // }, [isWideLayout, updateCanvasSize]);
 
   const currentPalette = useMemo(() => {
     return (
@@ -1722,6 +1820,7 @@ const App = () => {
         onMouseLeave={handleHUDMouseLeave}
         data-fullscreen={isFullscreen}
         data-hud-visible={hudVisible}
+        ref={statusBarRef}
         style={isFullscreen ? { 
           position: 'relative',
           pointerEvents: 'auto',
@@ -1742,7 +1841,28 @@ const App = () => {
           backdropFilter: 'blur(8px)',
         } : undefined}
       >
-      <div className="status-bar-left">
+      <div className="status-bar-left" ref={statusBarLeftRef}>
+        <div
+          ref={badgeMeasureRef}
+          aria-hidden="true"
+          className="status-bar-badges-measure"
+        >
+          <Badge variant="surface" size="sm">
+            Palette · {statusPalette}
+          </Badge>
+          <Badge variant="surface" size="sm">
+            Sprite · {statusMode}
+          </Badge>
+          <Badge variant="surface" size="sm">
+            Blend · {statusBlend}
+          </Badge>
+          <Badge variant="surface" size="sm">
+            Motion · {statusMotion}
+          </Badge>
+          <Badge variant="surface" size="sm">
+            {frameRate.toFixed(0)} FPS
+          </Badge>
+        </div>
         {isMobile ? (
           <>
             <Button
@@ -1778,25 +1898,68 @@ const App = () => {
           </>
         ) : (
           <>
-            <Badge variant="surface" size="sm">
-              Palette · {statusPalette}
-            </Badge>
-            <Badge variant="surface" size="sm">
-              Sprite · {statusMode}
-            </Badge>
-            <Badge variant="surface" size="sm">
-              Blend · {statusBlend}
-            </Badge>
-            <Badge variant="surface" size="sm">
-              Motion · {statusMotion}
-            </Badge>
-            <Badge variant="surface" size="sm">
-              {frameRate.toFixed(0)} FPS
-            </Badge>
+            {isBadgeCompact ? (
+              <div className="status-bar-summary-wrapper">
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="outline"
+                  aria-label="Show status summary"
+                  title="Show status summary"
+                  onClick={() =>
+                    setIsBadgePopoverOpen((previous) => !previous)
+                  }
+                  ref={badgeTriggerRef}
+                >
+                  <HelpCircle className="status-bar-icon" />
+                </Button>
+                {isBadgePopoverOpen && (
+                  <div
+                    className="status-bar-summary-popover"
+                    role="dialog"
+                    ref={badgePopoverRef}
+                  >
+                    <Badge variant="surface" size="sm">
+                      Palette · {statusPalette}
+                    </Badge>
+                    <Badge variant="surface" size="sm">
+                      Sprite · {statusMode}
+                    </Badge>
+                    <Badge variant="surface" size="sm">
+                      Blend · {statusBlend}
+                    </Badge>
+                    <Badge variant="surface" size="sm">
+                      Motion · {statusMotion}
+                    </Badge>
+                    <Badge variant="surface" size="sm">
+                      {frameRate.toFixed(0)} FPS
+                    </Badge>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                <Badge variant="surface" size="sm">
+                  Palette · {statusPalette}
+                </Badge>
+                <Badge variant="surface" size="sm">
+                  Sprite · {statusMode}
+                </Badge>
+                <Badge variant="surface" size="sm">
+                  Blend · {statusBlend}
+                </Badge>
+                <Badge variant="surface" size="sm">
+                  Motion · {statusMotion}
+                </Badge>
+                <Badge variant="surface" size="sm">
+                  {frameRate.toFixed(0)} FPS
+                </Badge>
+              </>
+            )}
           </>
         )}
         </div>
-      <div className="status-bar-right">
+      <div className="status-bar-right" ref={statusBarRightRef}>
         <Button
           type="button"
           size="icon"
@@ -1855,40 +2018,49 @@ const App = () => {
   };
 
   const renderDisplayContent = () => (
-    <Card className={`panel canvas-card ${isFullscreen ? "canvas-card--fullscreen" : ""}`}>
-      <div className="canvas-wrapper" ref={canvasWrapperRef}>
-        <div
-          className="sketch-container"
-          ref={sketchContainerRef}
-          aria-live="polite"
-        />
-        {/* Fullscreen HUD - MUST be inside canvas-wrapper (the actual fullscreen element) */}
-        {isFullscreen && (
-          <div 
-            id="fullscreen-hud"
-            style={{ 
-              position: 'fixed',
-              bottom: '24px',
-              left: '50%',
-              transform: hudVisible ? 'translateX(-50%)' : 'translateX(-50%) translateY(20px)',
-              pointerEvents: hudVisible ? 'auto' : 'none',
-              opacity: hudVisible ? 1 : 0,
-              visibility: hudVisible ? 'visible' : 'hidden',
-              display: 'flex',
-              zIndex: 2147483648,
-              transition: 'opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease',
-              width: '800px',
-              minWidth: '800px',
-              gap: '16px',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {renderStatusBar()}
-        </div>
-        )}
-        </div>
-      {!isFullscreen && renderStatusBar()}
+    <div className="canvas-card-shell">
+      <Card
+        className={`canvas-card ${isFullscreen ? "canvas-card--fullscreen" : ""}`}
+      >
+        <Card.Content className="canvas-card__content">
+          <div className="canvas-wrapper" ref={canvasWrapperRef}>
+            <div
+              className="sketch-container"
+              ref={sketchContainerRef}
+              aria-live="polite"
+            />
+            {/* Fullscreen HUD - MUST be inside canvas-wrapper (the actual fullscreen element) */}
+            {isFullscreen && (
+              <div
+                id="fullscreen-hud"
+                style={{
+                  position: "fixed",
+                  bottom: "24px",
+                  left: "50%",
+                  transform: hudVisible
+                    ? "translateX(-50%)"
+                    : "translateX(-50%) translateY(20px)",
+                  pointerEvents: hudVisible ? "auto" : "none",
+                  opacity: hudVisible ? 1 : 0,
+                  visibility: hudVisible ? "visible" : "hidden",
+                  display: "flex",
+                  zIndex: 2147483648,
+                  transition:
+                    "opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease",
+                  width: "800px",
+                  minWidth: "800px",
+                  gap: "16px",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {renderStatusBar()}
+              </div>
+            )}
+          </div>
+          {!isFullscreen && renderStatusBar()}
+        </Card.Content>
       </Card>
+    </div>
   );
 
   return (
@@ -1898,15 +2070,17 @@ const App = () => {
           showLoader ? "" : " app-loading-overlay--hidden"
         }`}
       >
-        <img
-          className="app-loading-logo"
-          src="/bitlab-b-logo-white.svg"
-          alt="Loading BitLab"
-        />
+        <div className="app-loading-logo-stack" aria-hidden="true">
+          <span className="app-loading-logo app-loading-logo--one" />
+          <span className="app-loading-logo app-loading-logo--two" />
+          <span className="app-loading-logo app-loading-logo--three" />
+        </div>
+        <span className="sr-only">Loading BitLab</span>
       </div>
     <div className="app-shell">
-      <header className={`app-header${isMobile ? ' app-header--mobile' : ''}`}>
-        {isMobile ? (
+      <div className="app-frame app-frame--compact app-frame--header">
+        <header className={`app-header${isMobile ? " app-header--mobile" : ""}`}>
+          {isMobile ? (
           <div className="app-header-mobile-row">
             <button type="button" className="app-logo-button app-logo-button--mobile" aria-label="BitLab">
               <BitlabLogo className="app-logo-svg" />
@@ -1994,14 +2168,16 @@ const App = () => {
               </div>
             </div>
           </>
-        )}
-      </header>
+          )}
+        </header>
+      </div>
 
-      <main className="app-main">
-        <div
-          ref={layoutRef}
-          className={`app-layout${isStudioLayout ? " app-layout--studio" : ""}${isWideLayout ? " app-layout--wide" : ""}${isMobile ? " app-layout--mobile" : ""}`}
-        >
+      <div className="app-frame app-frame--compact app-frame--main">
+        <main className="app-main">
+          <div
+            ref={layoutRef}
+            className={`app-layout${isStudioLayout ? " app-layout--studio" : ""}${isWideLayout ? " app-layout--wide" : ""}${isMobile ? " app-layout--mobile" : ""}`}
+          >
           {isMobile ? (
             // Mobile layout: Canvas first, then controls
             <>
@@ -2070,19 +2246,22 @@ const App = () => {
               )}
             </>
           )}
-        </div>
-      </main>
-      <footer className={`app-footer${isMobile ? ' app-footer--mobile' : ''}`}>
-        <div className="footer-brand">
-          {!isMobile && <BitlabLogo className="footer-logo" />}
-        </div>
-        <span className="footer-text">
-          © {new Date().getFullYear()} BitLab · Generative Playground ·{" "}
-          <a href="https://jamescutts.me/" target="_blank" rel="noreferrer">
-            jamescutts.me
-          </a>
-        </span>
-      </footer>
+          </div>
+        </main>
+      </div>
+      <div className="app-frame app-frame--compact app-frame--footer">
+        <footer className={`app-footer${isMobile ? " app-footer--mobile" : ""}`}>
+          <div className="footer-brand">
+            {!isMobile && <BitlabLogo className="footer-logo" />}
+          </div>
+          <span className="footer-text">
+            © {new Date().getFullYear()} BitLab · Generative Playground ·{" "}
+            <a href="https://jamescutts.me/" target="_blank" rel="noreferrer">
+              jamescutts.me
+            </a>
+          </span>
+        </footer>
+      </div>
 
       {showPresetManager && (
         <PresetManager

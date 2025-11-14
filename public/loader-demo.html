@@ -1,0 +1,1189 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>BitLab Loader Demo</title>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+    />
+    <style>
+      :root {
+        color-scheme: dark;
+        /* Vivid picks from sprite palette library */
+        --loader-color-one: #ff3cac; /* Neon Pop */
+        --loader-color-two: #ffd447; /* Arcade Neon Yellow */
+        --loader-color-three: #2ec4b6; /* Synthwave */
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #0b0b1d;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+      }
+
+      .loader-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 64px;
+      }
+
+      .loader-wrapper {
+        width: 160px;
+        height: 170px;
+        padding: 18px 22px 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        font-family: "Press Start 2P", system-ui, sans-serif;
+        letter-spacing: 1px;
+      }
+
+      .loader-wrapper--white {
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 12px 32px rgba(5, 5, 9, 0.12);
+        padding: 18px 22px 48px;
+      }
+
+      .loader-label {
+        position: absolute;
+        top: 6px;
+        left: 10px;
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.65);
+        pointer-events: none;
+      }
+
+      .loader-description {
+        position: absolute;
+        bottom: -48px;
+        left: 0;
+        right: 0;
+        margin: 0 auto;
+        width: 150px;
+        text-align: left;
+        font-size: 6px;
+        line-height: 1.4;
+        letter-spacing: 0.35px;
+        color: rgba(255, 255, 255, 0.28);
+        font-family: "Press Start 2P", system-ui, sans-serif;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .loader-wrapper--white .loader-label {
+        color: rgba(255, 255, 255, 0.65);
+      }
+
+      .loader-wrapper--white .loader-description {
+        color: rgba(255, 255, 255, 0.28);
+        bottom: -64px;
+      }
+
+      .loader-stack {
+        position: relative;
+        display: inline-block;
+        width: 96px;
+        aspect-ratio: 60 / 45;
+      }
+
+      .loader-logo {
+        position: absolute;
+        inset: 0;
+        color: var(--loader-color);
+        mix-blend-mode: hard-light;
+        transform-origin: center;
+        will-change: transform;
+        --e-range: 4;
+      }
+
+      .loader-logo svg {
+        width: 100%;
+        height: auto;
+        fill: currentColor;
+      }
+
+      @keyframes logo-a-top {
+        0%,
+        10% {
+          transform: translate(0, 0);
+        }
+        12% {
+          transform: translate(8px, -3px);
+        }
+        16% {
+          transform: translate(-8px, 3px);
+        }
+        20% {
+          transform: translate(8px, -1px);
+        }
+        24% {
+          transform: translate(-8px, 2px);
+        }
+        30%,
+        60% {
+          transform: translate(0, 0);
+        }
+        66% {
+          transform: translate(7px, -4px);
+        }
+        72% {
+          transform: translate(-7px, 3px);
+        }
+        80% {
+          transform: translate(8px, -3px);
+        }
+        88% {
+          transform: translate(-7px, 2px);
+        }
+        100% {
+          transform: translate(0, 0);
+        }
+      }
+
+      @keyframes logo-a-bottom {
+        0%,
+        10% {
+          transform: translate(0, 0);
+        }
+        12% {
+          transform: translate(-8px, 3px);
+        }
+        16% {
+          transform: translate(8px, -3px);
+        }
+        20% {
+          transform: translate(-8px, 1px);
+        }
+        24% {
+          transform: translate(8px, -2px);
+        }
+        30%,
+        60% {
+          transform: translate(0, 0);
+        }
+        66% {
+          transform: translate(-7px, 4px);
+        }
+        72% {
+          transform: translate(7px, -3px);
+        }
+        80% {
+          transform: translate(-8px, 3px);
+        }
+        88% {
+          transform: translate(7px, -2px);
+        }
+        100% {
+          transform: translate(0, 0);
+        }
+      }
+
+      @keyframes logo-a-mid {
+        0%,
+        8% {
+          transform: translate(0, 0) scale(1);
+        }
+        12% {
+          transform: translate(-1px, 0) scale(1.02);
+        }
+        18% {
+          transform: translate(1px, 0) scale(0.99);
+        }
+        24%,
+        58% {
+          transform: translate(0, 0) scale(1);
+        }
+        64% {
+          transform: translate(-0.5px, 0) scale(1.02);
+        }
+        70% {
+          transform: translate(0.5px, 0) scale(0.98);
+        }
+        100% {
+          transform: translate(0, 0) scale(1);
+        }
+      }
+
+      @keyframes logo-b-top {
+        0%,
+        8% {
+          transform: translate(0, 0);
+        }
+        10% {
+          transform: translate(6px, -2px);
+        }
+        14% {
+          transform: translate(-6px, 3px);
+        }
+        18% {
+          transform: translate(4px, -1px);
+        }
+        22% {
+          transform: translate(-5px, 2px);
+        }
+        30%,
+        60% {
+          transform: translate(0, 0);
+        }
+        64% {
+          transform: translate(5px, -3px);
+        }
+        70% {
+          transform: translate(-4px, 2px);
+        }
+        76% {
+          transform: translate(6px, -1px);
+        }
+        84% {
+          transform: translate(-5px, 3px);
+        }
+        100% {
+          transform: translate(0, 0);
+        }
+      }
+
+      @keyframes logo-b-bottom {
+        0%,
+        8% {
+          transform: translate(0, 0);
+        }
+        10% {
+          transform: translate(-6px, 2px);
+        }
+        14% {
+          transform: translate(6px, -3px);
+        }
+        18% {
+          transform: translate(-4px, 1px);
+        }
+        22% {
+          transform: translate(5px, -2px);
+        }
+        30%,
+        60% {
+          transform: translate(0, 0);
+        }
+        64% {
+          transform: translate(-5px, 3px);
+        }
+        70% {
+          transform: translate(4px, -2px);
+        }
+        76% {
+          transform: translate(-6px, 1px);
+        }
+        84% {
+          transform: translate(5px, -3px);
+        }
+        100% {
+          transform: translate(0, 0);
+        }
+      }
+
+      @keyframes logo-b-mid {
+        0%,
+        12% {
+          transform: translate(0, 0);
+        }
+        16% {
+          transform: translate(-1px, 0);
+        }
+        20% {
+          transform: translate(2px, 0);
+        }
+        28%,
+        62% {
+          transform: translate(0, 0);
+        }
+        68% {
+          transform: translate(-1px, 0);
+        }
+        74% {
+          transform: translate(1px, 0);
+        }
+        100% {
+          transform: translate(0, 0);
+        }
+      }
+
+      @keyframes logo-c-top {
+        0%,
+        8% {
+          transform: translate(0, 0);
+        }
+        10% {
+          transform: translate(4px, -2px);
+        }
+        16% {
+          transform: translate(-4px, 2px);
+        }
+        22% {
+          transform: translate(3px, -1px);
+        }
+        28%,
+        60% {
+          transform: translate(0, 0);
+        }
+        68% {
+          transform: translate(-4px, 1px);
+        }
+        76% {
+          transform: translate(4px, -2px);
+        }
+        100% {
+          transform: translate(0, 0);
+        }
+      }
+
+      @keyframes logo-c-bottom {
+        0%,
+        8% {
+          transform: translate(0, 0);
+        }
+        10% {
+          transform: translate(-4px, 2px);
+        }
+        16% {
+          transform: translate(4px, -2px);
+        }
+        22% {
+          transform: translate(-3px, 1px);
+        }
+        28%,
+        60% {
+          transform: translate(0, 0);
+        }
+        68% {
+          transform: translate(4px, -1px);
+        }
+        76% {
+          transform: translate(-4px, 2px);
+        }
+        100% {
+          transform: translate(0, 0);
+        }
+      }
+
+      @keyframes logo-c-mid {
+        0%,
+        12% {
+          transform: translate(0, 0);
+        }
+        18% {
+          transform: translate(-0.5px, 0);
+        }
+        24% {
+          transform: translate(1px, 0);
+        }
+        32%,
+        64% {
+          transform: translate(0, 0);
+        }
+        72% {
+          transform: translate(-1px, 0);
+        }
+        80% {
+          transform: translate(0.5px, 0);
+        }
+        100% {
+          transform: translate(0, 0);
+        }
+      }
+
+      @keyframes logo-f-top {
+        0%,
+        50%,
+        100% {
+          transform: translate(0, 0);
+        }
+        20% {
+          transform: translate(8px, -2px);
+        }
+        40% {
+          transform: translate(-8px, 2px);
+        }
+        70% {
+          transform: translate(7px, -1px);
+        }
+        90% {
+          transform: translate(-7px, 1px);
+        }
+      }
+
+      @keyframes logo-f-bottom {
+        0%,
+        50%,
+        100% {
+          transform: translate(0, 0);
+        }
+        20% {
+          transform: translate(-8px, 2px);
+        }
+        40% {
+          transform: translate(8px, -2px);
+        }
+        70% {
+          transform: translate(-7px, 1px);
+        }
+        90% {
+          transform: translate(7px, -1px);
+        }
+      }
+
+      @keyframes logo-d-shift-left {
+        0%,
+        100% {
+          transform: translateX(0);
+        }
+        50% {
+          transform: translateX(-8px);
+        }
+      }
+
+      @keyframes logo-d-shift-right {
+        0%,
+        100% {
+          transform: translateX(0);
+        }
+        50% {
+          transform: translateX(8px);
+        }
+      }
+
+      @keyframes logo-e-shift-left {
+        0%,
+        100% {
+          transform: translateX(0);
+        }
+        50% {
+          transform: translateX(-4px);
+        }
+      }
+
+      @keyframes logo-e-shift-right {
+        0%,
+        100% {
+          transform: translateX(0);
+        }
+        50% {
+          transform: translateX(4px);
+        }
+      }
+
+      @keyframes logo-e-top {
+        0%,
+        15% {
+          transform: translate(0, 0);
+        }
+        17% {
+          transform: translate(calc(var(--e-range) * 1px), calc(var(--e-range) * -0.4px));
+        }
+        19% {
+          transform: translate(calc(var(--e-range) * -0.8px), calc(var(--e-range) * 0.35px));
+        }
+        21% {
+          transform: translate(calc(var(--e-range) * 1.1px), calc(var(--e-range) * -0.6px));
+        }
+        23%,
+        80% {
+          transform: translate(0, 0);
+        }
+        82% {
+          transform: translate(calc(var(--e-range) * -1px), calc(var(--e-range) * 0.5px));
+        }
+        84% {
+          transform: translate(calc(var(--e-range) * 0.8px), calc(var(--e-range) * -0.4px));
+        }
+        86% {
+          transform: translate(calc(var(--e-range) * -1.2px), calc(var(--e-range) * 0.6px));
+        }
+        88%,
+        100% {
+          transform: translate(0, 0);
+        }
+      }
+
+      @keyframes logo-e-bottom {
+        0%,
+        15% {
+          transform: translate(0, 0);
+        }
+        17% {
+          transform: translate(calc(var(--e-range) * -1px), calc(var(--e-range) * 0.4px));
+        }
+        19% {
+          transform: translate(calc(var(--e-range) * 0.8px), calc(var(--e-range) * -0.35px));
+        }
+        21% {
+          transform: translate(calc(var(--e-range) * -1.1px), calc(var(--e-range) * 0.6px));
+        }
+        23%,
+        80% {
+          transform: translate(0, 0);
+        }
+        82% {
+          transform: translate(calc(var(--e-range) * 1px), calc(var(--e-range) * -0.5px));
+        }
+        84% {
+          transform: translate(calc(var(--e-range) * -0.8px), calc(var(--e-range) * 0.4px));
+        }
+        86% {
+          transform: translate(calc(var(--e-range) * 1.2px), calc(var(--e-range) * -0.6px));
+        }
+        88%,
+        100% {
+          transform: translate(0, 0);
+        }
+      }
+
+      @keyframes logo-e-mid {
+        0%,
+        15%,
+        80%,
+        100% {
+          transform: translate(0, 0);
+        }
+        17% {
+          transform: translate(calc(var(--e-range) * 0.2px), 0);
+        }
+        19% {
+          transform: translate(calc(var(--e-range) * -0.2px), 0);
+        }
+        21% {
+          transform: translate(calc(var(--e-range) * 0.15px), 0);
+        }
+        82% {
+          transform: translate(calc(var(--e-range) * -0.15px), 0);
+        }
+        84% {
+          transform: translate(calc(var(--e-range) * 0.25px), 0);
+        }
+        86% {
+          transform: translate(calc(var(--e-range) * -0.25px), 0);
+        }
+      }
+
+      @keyframes logo-e-phase {
+        0%,
+        20% {
+          transform: translate(0, 0);
+        }
+        24% {
+          transform: translate(6px, -2px);
+        }
+        28% {
+          transform: translate(-6px, 3px);
+        }
+        32% {
+          transform: translate(7px, -3px);
+        }
+        36% {
+          transform: translate(-8px, 4px);
+        }
+        40%,
+        50% {
+          transform: translate(0, 0);
+        }
+        54% {
+          transform: translate(-8px, 4px);
+        }
+        58% {
+          transform: translate(8px, -3px);
+        }
+        62% {
+          transform: translate(-7px, 2px);
+        }
+        66% {
+          transform: translate(6px, -2px);
+        }
+        70% {
+          transform: translate(-5px, 1px);
+        }
+        74% {
+          transform: translate(4px, -1px);
+        }
+        78%,
+        100% {
+          transform: translate(0, 0);
+        }
+      }
+
+      .loader-logo:nth-child(1) {
+        --loader-color: var(--loader-color-one);
+      }
+
+      .loader-logo:nth-child(2) {
+        --loader-color: var(--loader-color-two);
+      }
+
+      .loader-logo:nth-child(3) {
+        --loader-color: var(--loader-color-three);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="loader-grid" id="loader-grid"></div>
+    <script>
+      const grid = document.getElementById("loader-grid");
+      const logoPathD =
+        "M52.5,7.5h-7.5V0h7.5v7.5h7.5v30h-7.5v7.5H0v-7.5h45v-7.5h7.5v-7.5h-7.5v-7.5h7.5v-7.5ZM22.5,15v-7.5h7.5v7.5h-7.5ZM22.5,30v-7.5h7.5v7.5h-7.5Z";
+
+      const svgMarkup = `
+        <svg viewBox="0 0 60 45" aria-hidden="true">
+          <path d="${logoPathD}" />
+        </svg>
+      `;
+
+      const paletteLibrary = [
+        "#ff3cac",
+        "#ffd447",
+        "#2ec4b6",
+        "#ff0054",
+        "#4cc9f0",
+        "#00f5d4",
+        "#784ba0",
+        "#ff7b00",
+        "#9ef6ff",
+        "#011627",
+        "#00c6ff",
+        "#f441a5",
+        "#fcee0c",
+        "#4361ee",
+        "#ff4ecd",
+      ];
+
+      const totalCells = 25;
+      const wrapperRefs = new Array(totalCells);
+
+      const combinations = Array.from({ length: totalCells }, (_, index) => {
+        const start = (index * 2) % paletteLibrary.length;
+        return [
+          paletteLibrary[start],
+          paletteLibrary[(start + 4) % paletteLibrary.length],
+          paletteLibrary[(start + 8) % paletteLibrary.length],
+        ];
+      });
+
+      const descriptionMeta = {
+        0: { anim: "electric jitter", colours: "neon pink (#ff3cac), cyan (#4cc9f0), teal (#9ef6ff)", range: "±8px" },
+        1: { anim: "electric jitter", colours: "neon pink (#ff3cac), cyan (#4cc9f0), teal (#9ef6ff)", range: "±6px" },
+        2: { anim: "electric jitter", colours: "neon pink (#ff3cac), cyan (#4cc9f0), teal (#9ef6ff)", range: "±4px" },
+        3: { anim: "electric jitter (parallax)", colours: "neon pink (#ff3cac), cyan (#4cc9f0), teal (#9ef6ff)", range: "±8px" },
+        4: { anim: "electric jitter (surge)", colours: "neon pink (#ff3cac), cyan (#4cc9f0), teal (#9ef6ff)", range: "±2-6px" },
+        5: { anim: "electric jitter", colours: "petrol blue (#1f2f53), mint (#00ff4d), violet (#5a4dff)", range: "±8px" },
+        6: { anim: "electric jitter", colours: "petrol blue (#1f2f53), mint (#00ff4d), violet (#5a4dff)", range: "±6px" },
+        7: { anim: "electric jitter", colours: "petrol blue (#1f2f53), mint (#00ff4d), violet (#5a4dff)", range: "±6px" },
+        8: { anim: "electric jitter", colours: "petrol blue (#1f2f53), mint (#00ff4d), violet (#5a4dff)", range: "±6px" },
+        9: { anim: "electric jitter", colours: "petrol blue (#1f2f53), mint (#00ff4d), violet (#5a4dff)", range: "±6px" },
+        10: { anim: "electric jitter", colours: "neon pink (#ff3cac), cyan (#4cc9f0), teal (#9ef6ff)", range: "±6px" },
+        11: { anim: "electric jitter", colours: "neon pink (#ff3cac), cyan (#4cc9f0), teal (#9ef6ff)", range: "±6px" },
+        12: { anim: "electric jitter", colours: "neon pink (#ff3cac), cyan (#4cc9f0), teal (#9ef6ff)", range: "±6px" },
+        13: { anim: "electric jitter", colours: "neon pink (#ff3cac), cyan (#4cc9f0), teal (#9ef6ff)", range: "±6px" },
+        14: { anim: "electric jitter", colours: "neon pink (#ff3cac), cyan (#4cc9f0), teal (#9ef6ff)", range: "±6px" },
+        15: { anim: "electric jitter", colours: "neon pink (#ff3cac), cyan (#4cc9f0), teal (#9ef6ff)", range: "±6px" },
+        16: { anim: "electric jitter", colours: "neon pink (#ff3cac), cyan (#4cc9f0), teal (#9ef6ff)", range: "±6px" },
+        17: { anim: "electric jitter", colours: "neon pink (#ff3cac), cyan (#4cc9f0), teal (#9ef6ff)", range: "±6px" },
+        18: { anim: "electric jitter", colours: "neon pink (#ff3cac), cyan (#4cc9f0), teal (#9ef6ff)", range: "±6px" },
+        19: { anim: "electric jitter", colours: "neon pink (#ff3cac), cyan (#4cc9f0), teal (#9ef6ff)", range: "±6px" },
+        20: { anim: "electric jitter", colours: "neon pink (#ff3cac), cyan (#4cc9f0), teal (#9ef6ff)", range: "±6px" },
+        21: { anim: "electric jitter", colours: "neon pink (#ff3cac), cyan (#4cc9f0), teal (#9ef6ff)", range: "±6px" },
+        22: { anim: "electric jitter", colours: "neon pink (#ff3cac), cyan (#4cc9f0), teal (#9ef6ff)", range: "±6px" },
+        23: { anim: "electric jitter", colours: "neon pink (#ff3cac), cyan (#4cc9f0), teal (#9ef6ff)", range: "±6px" },
+        24: { anim: "electric jitter", colours: "neon pink (#ff3cac), cyan (#4cc9f0), teal (#9ef6ff)", range: "±6px" },
+      };
+
+      const defaultOffsets = {
+        x: [-16, 0, 16],
+        y: [-4, 0, 4],
+      };
+
+      const customOffsets = {
+        0: {
+          x: [0, 0, 0],
+          y: [0, 0, 0],
+          static: true,
+          animation: "logo-a",
+          palette: ["#ff3cac", "#4cc9f0", "#9ef6ff"],
+        },
+        1: {
+          x: [0, 0, 0],
+          y: [0, 0, 0],
+          static: true,
+          animation: "logo-b",
+          palette: ["#ff3cac", "#4cc9f0", "#9ef6ff"],
+        },
+        2: {
+          x: [0, 0, 0],
+          y: [0, 0, 0],
+          static: true,
+          animation: "logo-c",
+          palette: ["#ff3cac", "#4cc9f0", "#9ef6ff"],
+        },
+        3: {
+          x: [0, 0, 0],
+          y: [0, 0, 0],
+          static: true,
+          animation: "logo-f",
+          palette: ["#ff3cac", "#4cc9f0", "#9ef6ff"],
+        },
+        4: {
+          x: [0, 0, 0],
+          y: [0, 0, 0],
+          static: true,
+          animation: "logo-e",
+          palette: ["#ff3cac", "#4cc9f0", "#9ef6ff"],
+        },
+        5: {
+          x: [0, 0, 0],
+          y: [0, 0, 0],
+          static: true,
+          animation: "logo-a",
+          palette: ["#1f2f53", "#00ff4d", "#5a4dff"],
+        },
+        6: {
+          x: [0, 0, 0],
+          y: [0, 0, 0],
+          static: true,
+          animation: "logo-b",
+          palette: ["#1f2f53", "#00ff4d", "#5a4dff"],
+        },
+        7: {
+          x: [0, 0, 0],
+          y: [0, 0, 0],
+          static: true,
+          animation: "logo-b",
+          palette: ["#1f2f53", "#00ff4d", "#5a4dff"],
+        },
+        8: {
+          x: [0, 0, 0],
+          y: [0, 0, 0],
+          static: true,
+          animation: "logo-b",
+          palette: ["#1f2f53", "#00ff4d", "#5a4dff"],
+        },
+        9: {
+          x: [0, 0, 0],
+          y: [0, 0, 0],
+          static: true,
+          animation: "logo-b",
+          palette: ["#1f2f53", "#00ff4d", "#5a4dff"],
+        },
+        10: {
+          x: [0, 0, 0],
+          y: [0, 0, 0],
+          static: true,
+          animation: "logo-b",
+          palette: ["#ff3cac", "#4cc9f0", "#9ef6ff"],
+          blendModes: ["screen", "multiply", "color-dodge"],
+        },
+        11: {
+          x: [0, 0, 0],
+          y: [0, 0, 0],
+          static: true,
+          animation: "logo-b",
+          palette: ["#ff3cac", "#4cc9f0", "#9ef6ff"],
+          blendModes: ["screen", "multiply", "color-dodge"],
+        },
+        12: {
+          x: [0, 0, 0],
+          y: [0, 0, 0],
+          static: true,
+          animation: "logo-b",
+          palette: ["#ff3cac", "#4cc9f0", "#9ef6ff"],
+          blendModes: ["screen", "multiply", "color-dodge"],
+        },
+        13: {
+          x: [0, 0, 0],
+          y: [0, 0, 0],
+          static: true,
+          animation: "logo-b",
+          palette: ["#ff3cac", "#4cc9f0", "#9ef6ff"],
+          blendModes: ["screen", "multiply", "color-dodge"],
+        },
+        14: {
+          x: [0, 0, 0],
+          y: [0, 0, 0],
+          static: true,
+          animation: "logo-b",
+          palette: ["#ff3cac", "#4cc9f0", "#9ef6ff"],
+          blendModes: ["screen", "multiply", "color-dodge"],
+        },
+        15: {
+          x: [0, 0, 0],
+          y: [0, 0, 0],
+          static: true,
+          animation: "logo-b",
+          palette: ["#ff3cac", "#4cc9f0", "#9ef6ff"],
+          blendModes: ["difference", "screen", "lighten"],
+        },
+        16: {
+          x: [0, 0, 0],
+          y: [0, 0, 0],
+          static: true,
+          animation: "logo-b",
+          palette: ["#ff3cac", "#4cc9f0", "#9ef6ff"],
+          blendModes: ["overlay", "difference", "screen"],
+        },
+        17: {
+          x: [0, 0, 0],
+          y: [0, 0, 0],
+          static: true,
+          animation: "logo-b",
+          palette: ["#ff3cac", "#4cc9f0", "#9ef6ff"],
+          blendModes: ["screen", "hard-light", "color-dodge"],
+        },
+        18: {
+          x: [0, 0, 0],
+          y: [0, 0, 0],
+          static: true,
+          animation: "logo-b",
+          palette: ["#ff3cac", "#4cc9f0", "#9ef6ff"],
+          blendModes: ["difference", "screen", "overlay"],
+        },
+        19: {
+          x: [0, 0, 0],
+          y: [0, 0, 0],
+          static: true,
+          animation: "logo-b",
+          palette: ["#ff3cac", "#4cc9f0", "#9ef6ff"],
+          blendModes: ["screen", "multiply", "hard-light"],
+        },
+        20: {
+          x: [0, 0, 0],
+          y: [0, 0, 0],
+          static: true,
+          animation: "logo-b",
+          palette: ["#ff3cac", "#4cc9f0", "#9ef6ff"],
+          blendModes: ["color-dodge", "screen", "soft-light"],
+        },
+        21: {
+          x: [0, 0, 0],
+          y: [0, 0, 0],
+          static: true,
+          animation: "logo-b",
+          palette: ["#ff3cac", "#4cc9f0", "#9ef6ff"],
+          blendModes: ["overlay", "hard-light", "screen"],
+        },
+        22: {
+          x: [0, 0, 0],
+          y: [0, 0, 0],
+          static: true,
+          animation: "logo-b",
+          palette: ["#ff3cac", "#4cc9f0", "#9ef6ff"],
+          blendModes: ["screen", "difference", "multiply"],
+        },
+        23: {
+          x: [0, 0, 0],
+          y: [0, 0, 0],
+          static: true,
+          animation: "logo-b",
+          palette: ["#ff3cac", "#4cc9f0", "#9ef6ff"],
+          blendModes: ["soft-light", "screen", "overlay"],
+        },
+        24: {
+          x: [0, 0, 0],
+          y: [0, 0, 0],
+          static: true,
+          animation: "logo-b",
+          palette: ["#ff3cac", "#4cc9f0", "#9ef6ff"],
+          blendModes: ["screen", "multiply", "color-dodge"],
+        },
+      };
+      let comboIndex = 0;
+
+      for (let index = 0; index < totalCells; index++) {
+        const wrapper = document.createElement("div");
+        wrapper.className = "loader-wrapper";
+
+        const label = document.createElement("span");
+        label.className = "loader-label";
+        label.textContent = String.fromCharCode(65 + index);
+        wrapper.appendChild(label);
+
+        const customConfig = customOffsets[index];
+
+        if (customConfig?.wrapperClass) {
+          wrapper.classList.add(customConfig.wrapperClass);
+        }
+
+        const stack = document.createElement("div");
+        stack.className = "loader-stack";
+        stack.setAttribute("aria-hidden", "true");
+
+        let colors;
+        if (customConfig && customConfig.palette) {
+          colors = customConfig.palette;
+        } else {
+          colors = combinations[comboIndex % combinations.length];
+          comboIndex++;
+        }
+        let offsets = customConfig ?? defaultOffsets;
+        let isStatic = Boolean(customConfig?.static);
+        const customAnimation = customConfig?.animation;
+
+        if (!customConfig && index >= 5) {
+          offsets = {
+            x: [0, 0, 0],
+            y: [0, 0, 0],
+          };
+          isStatic = true;
+        }
+
+        const usedBlendModes = [];
+
+        colors.forEach((color, layerIndex) => {
+          if (customAnimation === "logo-b" && layerIndex === 1) {
+            return;
+          }
+          const logo = document.createElement("span");
+          logo.className = "loader-logo";
+          logo.style.setProperty("--loader-color", color);
+          logo.dataset.baseX = (offsets.x[layerIndex] ?? 0).toString();
+          logo.dataset.baseY = (offsets.y[layerIndex] ?? 0).toString();
+          if (isStatic) {
+            logo.dataset.static = "true";
+          }
+          const blendModesArray = customConfig?.blendModes ?? ["hard-light", "hard-light", "hard-light"];
+          const blendMode = blendModesArray[layerIndex] ?? "hard-light";
+          logo.style.mixBlendMode = blendMode;
+          usedBlendModes.push(blendMode);
+          if (customAnimation) {
+            logo.dataset.customAnimation = customAnimation;
+            if (layerIndex === 0) {
+              logo.classList.add("loader-logo--top");
+            } else if (layerIndex === 1) {
+              logo.classList.add("loader-logo--middle");
+            } else if (layerIndex === 2) {
+              logo.classList.add("loader-logo--bottom");
+            }
+          }
+          logo.innerHTML = svgMarkup;
+          stack.appendChild(logo);
+        });
+
+        wrapper.appendChild(stack);
+        const description = document.createElement("div");
+        description.className = "loader-description";
+        const meta =
+          descriptionMeta[index] ?? {
+            anim: "electric jitter",
+            colours: "neon pink, cyan, teal",
+            range: "±6px",
+          };
+        const blend =
+          (usedBlendModes.length ? usedBlendModes : customConfig?.blendModes ?? ["hard-light", "hard-light", "hard-light"]).filter(Boolean).join(" / ");
+        const lines = [
+          `anim: ${meta.anim}`,
+          `colours: ${meta.colours}`,
+          `range: ${meta.range}`,
+          `blend: ${blend}`,
+        ];
+        lines.forEach((line) => {
+          const div = document.createElement("div");
+          const [label, value] = line.split(":").map((segment) => segment.trim());
+          const labelSpan = document.createElement("span");
+          labelSpan.style.color = "inherit";
+          labelSpan.textContent = `${label}: `;
+          const valueSpan = document.createElement("span");
+          valueSpan.style.color = "rgba(255, 255, 255, 0.68)";
+          valueSpan.textContent = value;
+          div.appendChild(labelSpan);
+          div.appendChild(valueSpan);
+          description.appendChild(div);
+        });
+        wrapper.appendChild(description);
+        grid.appendChild(wrapper);
+        wrapperRefs[index] = wrapper;
+      }
+
+      const logos = Array.from(document.querySelectorAll(".loader-logo")).map(
+        (el) => {
+          const baseX = Number(el.dataset.baseX) || 0;
+          const baseY = Number(el.dataset.baseY) || 0;
+          const isStatic = el.dataset.static === "true";
+          const customAnimation = el.dataset.customAnimation ?? "";
+          return {
+            el,
+            baseX,
+            baseY,
+            static: isStatic,
+            customAnimation,
+            position: { x: baseX, y: baseY },
+            velocity: { x: 0, y: 0 },
+            target: { x: baseX, y: baseY },
+            timer: 0,
+          };
+        },
+      );
+
+      const radius = 12;
+      const stiffness = 0.04;
+      const damping = 0.82;
+
+      function setNewTarget(item) {
+        if (item.static) {
+          item.target.x = item.baseX;
+          item.target.y = item.baseY;
+          item.timer = Infinity;
+          if (item.customAnimation === "logo-a") {
+            if (item.el.classList.contains("loader-logo--top")) {
+              item.el.style.animation = `logo-a-top 2.6s steps(60, end) infinite`;
+            } else if (item.el.classList.contains("loader-logo--bottom")) {
+              item.el.style.animation = `logo-a-bottom 2.6s steps(60, end) infinite`;
+            } else {
+              item.el.style.animation = `logo-a-mid 2.6s linear infinite`;
+            }
+          } else if (item.customAnimation === "logo-b") {
+            if (item.el.classList.contains("loader-logo--top")) {
+              item.el.style.animation = `logo-b-top 2.4s steps(32, end) infinite`;
+            } else if (item.el.classList.contains("loader-logo--bottom")) {
+              item.el.style.animation = `logo-b-bottom 2.4s steps(32, end) infinite`;
+            } else {
+              item.el.style.animation = `logo-b-mid 2.4s steps(20, end) infinite`;
+            }
+          } else if (item.customAnimation === "logo-c") {
+            if (item.el.classList.contains("loader-logo--top")) {
+              item.el.style.animation = `logo-c-top 2.4s steps(36, end) infinite`;
+            } else if (item.el.classList.contains("loader-logo--bottom")) {
+              item.el.style.animation = `logo-c-bottom 2.4s steps(36, end) infinite`;
+            } else {
+              item.el.style.animation = `logo-c-mid 2.4s steps(24, end) infinite`;
+            }
+          } else if (item.customAnimation === "logo-f") {
+            if (item.el.classList.contains("loader-logo--top")) {
+              item.el.style.animation = `logo-f-top 2.8s steps(28, end) infinite`;
+            } else if (item.el.classList.contains("loader-logo--bottom")) {
+              item.el.style.animation = `logo-f-bottom 2.8s steps(28, end) infinite`;
+            } else {
+              item.el.style.animation = `logo-a-mid 2.8s linear infinite`;
+            }
+          } else if (item.customAnimation === "logo-d") {
+            if (item.el.classList.contains("loader-logo--top")) {
+              item.el.style.animation = `logo-d-shift-right 2.8s ease-in-out infinite alternate`;
+            } else if (item.el.classList.contains("loader-logo--bottom")) {
+              item.el.style.animation = `logo-d-shift-left 2.8s ease-in-out infinite alternate`;
+            } else {
+              item.el.style.animation = "none";
+            }
+          } else if (item.customAnimation === "logo-e") {
+            item.el.style.animation = "none";
+          } else {
+            item.el.style.animation = "none";
+          }
+          item.el.style.transform = `translate(${item.baseX}px, ${item.baseY}px)`;
+          return;
+        }
+
+        const angle = Math.random() * Math.PI * 2;
+        const magnitude = radius * (0.6 + Math.random() * 0.5);
+        item.target.x = item.baseX + Math.cos(angle) * magnitude;
+        item.target.y = item.baseY + Math.sin(angle) * magnitude * 0.5;
+        item.timer = 1800 + Math.random() * 2200;
+      }
+
+      logos.forEach((item) => {
+        setNewTarget(item);
+      });
+
+      let lastTime = performance.now();
+      if (wrapperRefs[4]) {
+        setupLogoEScheduler(wrapperRefs[4]);
+      }
+
+      function tick(now) {
+        const delta = Math.min(now - lastTime, 50);
+        lastTime = now;
+
+        logos.forEach((item) => {
+          if (item.static) {
+            item.el.style.transform = `translate(${item.baseX}px, ${item.baseY}px)`;
+            return;
+          }
+
+          item.timer -= delta;
+          if (item.timer <= 0) {
+            setNewTarget(item);
+          }
+
+          const ax = (item.target.x - item.position.x) * stiffness;
+          const ay = (item.target.y - item.position.y) * stiffness;
+
+          item.velocity.x = (item.velocity.x + ax) * damping;
+          item.velocity.y = (item.velocity.y + ay) * damping;
+
+          item.position.x += item.velocity.x;
+          item.position.y += item.velocity.y;
+
+          item.el.style.transform = `translate(${item.position.x.toFixed(
+            2,
+          )}px, ${item.position.y.toFixed(2)}px)`;
+        });
+
+        requestAnimationFrame(tick);
+      }
+
+      requestAnimationFrame(tick);
+
+      function delay(ms) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+      }
+
+      function setupLogoEScheduler(wrapper) {
+        const layers = wrapper.querySelectorAll(".loader-logo");
+        if (layers.length < 3) {
+          return;
+        }
+        const [top, mid, bottom] = layers;
+
+        const clearAnimations = () => {
+          [top, mid, bottom].forEach((layer) => {
+            layer.style.animation = "none";
+            layer.style.transform = "";
+          });
+        };
+
+        const runBurst = async (durationMs) => {
+          const range = 2 + Math.random() * 4;
+          [top, mid, bottom].forEach((layer) => {
+            layer.style.setProperty("--e-range", range.toFixed(2));
+            layer.style.animation = "none";
+            // Force reflow so animation can restart
+            void layer.offsetWidth;
+          });
+          top.style.animation = `logo-e-top ${durationMs}ms steps(30, end) forwards`;
+          mid.style.animation = `logo-e-mid ${durationMs}ms steps(24, end) forwards`;
+          bottom.style.animation = `logo-e-bottom ${durationMs}ms steps(30, end) forwards`;
+          await delay(durationMs);
+          clearAnimations();
+        };
+
+        const cycle = async () => {
+          await delay(3000);
+          await runBurst(1100);
+          await delay(11000);
+          await runBurst(1400);
+          await delay(3000);
+          cycle();
+        };
+
+        clearAnimations();
+        cycle();
+      }
+    </script>
+  </body>
+</html>
+
+
