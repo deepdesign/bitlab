@@ -805,9 +805,12 @@ export const createSpriteController = (
       // Canvas should match the card's intended size, accounting for padding and border
       const cardPadding = 40; // 20px each side = 40px total (spacing.5)
       const cardBorder = 4; // 2px each side = 4px total
-      const containerWidth = container.clientWidth || 720;
-      // Calculate canvas size: container width + padding + border, clamped between min (720px) and max (960px)
-      const size = Math.min(960, Math.max(720, containerWidth + cardPadding + cardBorder));
+      const containerWidth = container.clientWidth || 0;
+      // Minimum card width is 320px, so minimum canvas size accounting for padding/border
+      const minCardWidth = 320;
+      const minCanvasSize = Math.max(0, minCardWidth - cardPadding - cardBorder); // 276px minimum canvas
+      // Calculate canvas size: container width, clamped between min (276px) and max (960px)
+      const size = Math.min(960, Math.max(minCanvasSize, containerWidth));
       canvas = p.createCanvas(size, size);
       canvas.parent(container);
       p.pixelDensity(1);
@@ -841,12 +844,14 @@ export const createSpriteController = (
         //   clientWidth = cardWidth - border - padding = 960 - 4 - 40 = 916px
         // To get the intended canvas size (960px), we add padding back: 916 + 40 = 956px
         // But we want 960px, so we need to add border too: 916 + 40 + 4 = 960px
-        // Status bar needs ~720px minimum to fit all elements (5 badges + 3 buttons) on one row
+        // Minimum card width is 360px, so minimum canvas size accounting for padding/border
         const cardPadding = 40; // 20px each side = 40px total (spacing.5)
         const cardBorder = 4; // 2px each side = 4px total
-        const containerWidth = container.clientWidth || 720;
-        // Calculate canvas size: container width + padding + border, clamped between min (720px) and max (960px)
-        size = Math.min(960, Math.max(720, containerWidth + cardPadding + cardBorder));
+        const containerWidth = container.clientWidth || 0;
+        const minCardWidth = 320;
+        const minCanvasSize = Math.max(0, minCardWidth - cardPadding - cardBorder); // 276px minimum canvas
+        // Calculate canvas size: container width, clamped between min (276px) and max (960px)
+        size = Math.min(960, Math.max(minCanvasSize, containerWidth));
       }
       
       p.resizeCanvas(size, size);

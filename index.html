@@ -47,10 +47,26 @@
         pointer-events: none;
       }
 
+      .initial-loader-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 40px;
+      }
+
       .initial-loader-stack {
         position: relative;
         width: 96px;
         aspect-ratio: 60 / 45;
+      }
+
+      .initial-loader-text {
+        font-family: "Press Start 2P", monospace;
+        font-size: 0.58rem;
+        color: rgba(255, 255, 255, 0.7);
+        text-transform: uppercase;
+        letter-spacing: 0.24em;
+        text-align: center;
       }
 
       .initial-loader-logo {
@@ -198,10 +214,13 @@
   </head>
   <body>
     <div id="initial-loader" role="status">
-      <div class="initial-loader-stack" aria-hidden="true">
-        <span class="initial-loader-logo initial-loader-logo--one"></span>
-        <span class="initial-loader-logo initial-loader-logo--two"></span>
-        <span class="initial-loader-logo initial-loader-logo--three"></span>
+      <div class="initial-loader-content">
+        <div class="initial-loader-stack" aria-hidden="true">
+          <span class="initial-loader-logo initial-loader-logo--one"></span>
+          <span class="initial-loader-logo initial-loader-logo--two"></span>
+          <span class="initial-loader-logo initial-loader-logo--three"></span>
+        </div>
+        <div class="initial-loader-text" id="initial-loader-text">loading 0%</div>
       </div>
       <span class="initial-loader-sr">Loading BitLab</span>
     </div>

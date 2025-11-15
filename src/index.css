@@ -137,7 +137,8 @@
   --control-column-width-narrow: 280px;
   --layout-max-width-split: calc(var(--control-column-width-narrow) + 24px + 960px + 24px + var(--control-column-width-narrow));
   --layout-max-width-split-with-padding: calc(var(--layout-max-width-split) + 48px);
-  --layout-min-width-compact: calc(var(--control-column-width) + 24px + 720px + 48px);
+  --layout-min-width-compact: calc(var(--control-column-width) + 20px + 480px + 48px);
+  --layout-min-width-stacked: 320px; /* Allow cards to scale down to 320px when stacked */
 
   --btn-primary-bg: var(--accent-primary);
   --btn-primary-text: var(--accent-primary-contrast);
@@ -870,6 +871,14 @@ html[data-theme="dark"][data-theme-color="rose"] body {
   );
 }
 
+.app-frame--stacked {
+  width: clamp(
+    var(--layout-min-width-stacked),
+    100%,
+    calc(960px + var(--control-column-width) + theme("spacing.6") * 2)
+  );
+}
+
 .app-frame--main {
   flex: 1 1 auto;
   display: flex;
@@ -879,7 +888,7 @@ html[data-theme="dark"][data-theme-color="rose"] body {
 
 .app-frame--footer {
   flex-shrink: 0;
-  margin-top: auto;
+  margin-top: 64px; /* 64px space between footer and content */
 }
 
 /* Debug outlines for header and card containers */
@@ -993,12 +1002,22 @@ body:has(.app-layout--wide) .app-header {
   }
 
   .header-actions {
-    @apply w-full justify-between;
+    @apply w-full justify-end;
     gap: theme("spacing.2");
+  }
+
+  .header-actions > * {
+    flex: 0 0 auto; /* Prevent items from expanding */
   }
 
   .header-actions .control-dropdown-trigger {
     flex: 1 1 160px;
+  }
+
+  .header-theme-trigger {
+    flex: 0 0 auto !important; /* Prevent theme selector from expanding */
+    max-width: fit-content !important; /* Keep it at its natural width */
+    width: auto !important; /* Prevent width from being set to 100% */
   }
 
   .header-icon-button {
@@ -1115,12 +1134,76 @@ body:has(.app-layout--wide) .app-header {
   padding-block: theme("spacing.3");
 }
 
+/* Reorder columns when canvas is small - canvas above controls */
+.app-layout--small-canvas {
+  flex-direction: column !important;
+  gap: theme("spacing.5") !important; /* Always use spacing.5, locked at all viewport sizes */
+  /* DEBUG: Visual outline to see actual gap */
+  /* background: rgba(255, 0, 0, 0.1); */
+}
+
+/* CRITICAL: Override studio gap when small-canvas is active */
+/* Studio layout uses spacing.6, but small-canvas must always use spacing.5 */
+.app-layout--studio.app-layout--small-canvas,
+.app-layout--small-canvas.app-layout--studio,
+.app-layout.app-layout--studio.app-layout--small-canvas,
+.app-layout.app-layout--small-canvas.app-layout--studio {
+  gap: theme("spacing.5") !important;
+}
+
+.app-layout--small-canvas .display-column {
+  order: -1 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  flex: 0 1 auto !important; /* Prevent growing - only shrink if needed */
+  margin: 0 !important;
+  padding: 0 !important;
+  gap: theme("spacing.6") !important; /* Keep internal gap for canvas/status bar spacing */
+}
+
+.app-layout--small-canvas .control-column {
+  order: 1 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 320px !important; /* Allow scaling down to 320px, but not below */
+  min-height: 0 !important;
+  flex: 0 1 auto !important; /* Prevent growing - only shrink if needed */
+  margin: 0 !important;
+  padding: 0 !important;
+  gap: theme("spacing.6") !important; /* Keep internal gap for panel spacing */
+}
+
+/* Ensure cards don't add extra margins when stacked */
+/* Note: Cards keep their padding - only margins are removed */
+/* Cards can scale down to 320px but not below */
+.app-layout--small-canvas .control-card,
+.app-layout--small-canvas .canvas-card-shell,
+.app-layout--small-canvas .canvas-card {
+  margin: 0 !important;
+  width: 100%;
+  min-width: 320px; /* Cards can scale down to 320px but not below */
+}
+
 /* Mobile Layout */
 @media (max-width: 768px) {
   /* Stack layout vertically on mobile */
-  .app-layout--mobile {
+  /* BUT: Don't set gap if small-canvas is also present - let small-canvas rule handle it */
+  .app-layout--mobile:not(.app-layout--small-canvas) {
     @apply flex-col;
     gap: theme("spacing.4");
+  }
+
+  /* Ensure small-canvas always uses spacing.5, even on mobile */
+  .app-layout--small-canvas,
+  .app-layout--mobile.app-layout--small-canvas {
+    gap: theme("spacing.5") !important;
+  }
+  
+  /* Ensure flex-col is still applied even when small-canvas is present */
+  .app-layout--mobile.app-layout--small-canvas {
+    @apply flex-col;
   }
 
   /* Full width columns on mobile */
@@ -1272,24 +1355,60 @@ body:has(.app-layout--wide) .app-header {
   }
 }
 
+@media (max-width: 800px) {
+  /* Further reduce header and footer padding as viewport shrinks */
+  .app-header {
+    padding-inline: theme("spacing.2");
+  }
+
+  .app-footer {
+    padding-inline: theme("spacing.2");
+  }
+}
+
+@media (max-width: 760px) {
+  /* Ensure small-canvas gap is locked at spacing.5 */
+  .app-layout--small-canvas {
+    gap: theme("spacing.5") !important;
+  }
+
+  /* Continue reducing padding */
+  .app-header {
+    padding-inline: theme("spacing.2");
+  }
+
+  .app-footer {
+    padding-inline: theme("spacing.2");
+  }
+}
+
 @media (max-width: 640px) {
   .header-toolbar {
     gap: theme("spacing.3");
   }
 
+  /* Never stack header actions - overflow menu always handles this */
+  /* The overflow menu should be shown before this breakpoint is reached */
+  /* This prevents the brief stacking flash when viewport shrinks */
   .header-actions {
-    @apply flex-col items-stretch;
+    /* Keep horizontal layout - overflow menu handles space constraints */
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-end !important; /* Keep actions aligned to the right */
+  }
+  
+  /* Ensure overflow button stays right-aligned even when viewport shrinks */
+  .header-actions--overflow {
+    margin-left: auto !important; /* Push overflow button to the right edge */
+    justify-content: flex-end !important; /* Right-align overflow button */
   }
 
-  .header-actions .control-dropdown-trigger {
-    @apply w-full;
-    flex: 1 1 100%;
-  }
-
-  .header-icon-button {
-    @apply w-full justify-center;
+  /* Ensure small-canvas gap is locked at spacing.5 */
+  .app-layout--small-canvas {
+    gap: theme("spacing.5") !important;
   }
 }
+
 
 @keyframes logoGradientShift {
   0% {
@@ -1321,7 +1440,7 @@ body:has(.app-layout--wide) .app-header {
 /* Layout Container
  * 
  * Flexbox container that holds control-column, display-column, and motion-column
- * Uses gap: 24px (spacing.6) between columns
+ * Uses gap: 20px (spacing.5) between columns to mirror card padding
  */
 .app-layout {
   @apply w-full flex items-start justify-start;
@@ -1334,7 +1453,12 @@ body:has(.app-layout--wide) .app-header {
   flex: 1 1 auto;
 }
 
-.app-layout--studio {
+/* Ensure small-canvas gap always wins - place after base app-layout rule */
+.app-layout--small-canvas {
+  gap: theme("spacing.5") !important;
+}
+
+.app-layout--studio:not(.app-layout--small-canvas) {
   @apply justify-start;
   gap: theme("spacing.6");
 }
@@ -1347,12 +1471,12 @@ body:has(.app-layout--wide) .app-header {
  * Fixed width prevents column from growing/shrinking, maintaining consistent layout
  */
 .control-column {
-  flex: 0 0 var(--control-column-width) !important;
-  width: var(--control-column-width) !important;
-  max-width: var(--control-column-width) !important;
-  min-width: var(--control-column-width) !important;
+  flex: 0 1 auto !important; /* Allow shrinking */
+  width: var(--control-column-width);
+  max-width: var(--control-column-width);
+  min-width: 320px !important; /* Allow scaling down to 320px */
   flex-grow: 0 !important;
-  flex-shrink: 0 !important;
+  flex-shrink: 1 !important; /* Allow shrinking */
   @apply flex flex-col;
   gap: theme("spacing.6");
   box-sizing: border-box;
@@ -1400,17 +1524,17 @@ body:has(.app-layout--wide) .app-header {
  * Flex properties:
  *   flex: 1 - Grows to fill available space, but constrained by max-width
  *   flex-basis: 0 - Starts from zero, allowing smooth growth
- *   min-width: 720px - Ensures status bar fits on one row
+ *   min-width: 0 - Allows column to shrink freely, canvas card has its own min-width
  *   max-width: 960px - Prevents column from growing beyond canvas max size
  *                      This keeps the motion column close to the canvas
  * 
- * The canvas-card inside uses clamp(720px, 70vw, 960px) for smooth scaling
- * between minimum (720px) and maximum (960px) sizes
+ * The canvas-card inside scales with container width, clamped between
+ * minimum (480px) and maximum (960px) sizes
  */
 .display-column {
   @apply flex flex-1 flex-col items-start;
   gap: theme("spacing.6");
-  min-width: 720px; /* Minimum width ensures status bar fits on one row */
+  min-width: 0; /* Allow column to shrink freely, canvas card has its own min-width (320px) */
   max-width: 960px; /* Maximum width prevents column from growing beyond canvas max */
   flex-basis: 0; /* Start from zero for smooth flex growth */
   overflow: visible;
@@ -1434,6 +1558,7 @@ body:has(.app-layout--wide) .app-header {
   background: var(--panel-bg);
   width: 100%;
   max-width: 100%;
+  min-width: 0; /* Allow cards to shrink - containers enforce min-width */
   box-sizing: border-box;
   overflow: visible;
 }
@@ -2003,6 +2128,11 @@ body:has(.app-layout--wide) .app-header {
   z-index: 70;
 }
 
+/* When inside overflow menu, ensure dropdown appears above */
+.header-overflow-popover .header-theme-menu {
+  z-index: 2001 !important; /* Above overflow popover (2000) */
+}
+
 .preset-select-dropdown {
   z-index: 1001 !important;
 }
@@ -2197,22 +2327,22 @@ body:has(.app-layout--wide) .app-header {
 
 /* Canvas Card
  * 
- * Smooth scaling between minimum (720px) and maximum (960px) sizes
+ * Smooth scaling between minimum (400px) and maximum (960px) sizes
  * 
- * Sizing formula: min(100%, clamp(720px, 70vw, 960px))
+ * Uses 100% of container width to scale with available space, clamped between min and max
  * 
- * - min(100%, ...) ensures card never exceeds its container (display-column)
- * - clamp(720px, 70vw, 960px) provides smooth scaling:
- *   * Minimum: 720px (ensures status bar fits on one row)
- *   * Scales proportionally: 70% of viewport width
- *   * Maximum: 960px (optimal canvas size)
+ * - width: 100% allows card to fill its container (display-column)
+ * - min-width: 400px ensures card doesn't get too small
+ * - max-width: 960px prevents card from exceeding optimal size
  * 
- * The 70vw allows the canvas to scale smoothly as the viewport changes,
- * while the min/max constraints ensure it never gets too small or too large.
+ * The container (display-column) handles the flex shrinking, allowing the card
+ * to scale smoothly as the viewport changes.
  */
 .canvas-card-shell {
-  width: min(100%, clamp(720px, 70vw, 960px));
-  max-width: 100%;
+  width: 100%;
+  min-width: 320px; /* Allow scaling down to 320px */
+  max-width: min(100%, 960px); /* Ensure it never exceeds container or 960px */
+  box-sizing: border-box;
   position: relative;
   overflow: visible;
 }
@@ -2322,7 +2452,7 @@ body:has(.app-layout--wide) .app-header {
 
 .status-bar-left {
   @apply flex items-start;
-  gap: theme("spacing.3");
+  gap: theme("spacing.2"); /* Match icon button gap */
   flex: 1;
   flex-wrap: nowrap;
   white-space: nowrap;
@@ -2335,7 +2465,7 @@ body:has(.app-layout--wide) .app-header {
   pointer-events: none;
   opacity: 0;
   display: inline-flex;
-  gap: theme("spacing.3");
+  gap: theme("spacing.2"); /* Match icon button gap */
   white-space: nowrap;
 }
 
@@ -2360,6 +2490,70 @@ body:has(.app-layout--wide) .app-header {
   z-index: 2000;
   min-width: 180px;
   transform: none;
+}
+
+/* Header overflow menu */
+.header-actions--overflow {
+  position: relative;
+  flex-direction: row !important; /* Always horizontal */
+  align-items: center !important; /* Center align */
+  justify-content: flex-end !important; /* Keep overflow button aligned to the right */
+  flex: 0 0 auto !important; /* Don't grow or shrink - maintain size */
+  margin-left: auto !important; /* Push to the right edge */
+}
+
+.header-overflow-trigger {
+  position: relative;
+  flex: 0 0 auto !important; /* Don't grow or shrink - maintain icon button size */
+  /* Don't override width - let Button component handle sizing (w-9 from size="icon") */
+  /* Keep aligned to the right - no margin-left to push it away */
+}
+
+.header-overflow-popover {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  display: inline-flex;
+  flex-direction: column;
+  gap: theme("spacing.2");
+  padding: theme("spacing.3");
+  background: rgba(15, 16, 32, 0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 12px 32px rgba(10, 12, 28, 0.4);
+  z-index: 2000;
+  min-width: 200px;
+  transform: none;
+}
+
+.header-overflow-content {
+  display: flex;
+  flex-direction: row; /* Align tools in a row */
+  align-items: center; /* Vertically center items */
+  gap: theme("spacing.2");
+  position: relative; /* Ensure dropdowns position relative to this */
+}
+
+.header-overflow-content .header-theme-trigger {
+  width: auto; /* Allow natural width, don't force full width */
+  min-width: 140px; /* Ensure proper styling in overflow menu */
+  flex: 0 0 auto; /* Don't grow or shrink */
+}
+
+/* Ensure Select dropdown appears above overflow popover */
+.header-overflow-popover [data-radix-popper-content-wrapper],
+.header-overflow-popover [data-radix-select-content] {
+  z-index: 2001 !important; /* Above overflow popover (2000) */
+}
+
+.header-overflow-content .header-icon-button {
+  /* Maintain icon button size - don't force full width */
+  width: auto;
+  min-width: 36px; /* h-9 = 36px */
+  height: 36px; /* h-9 = 36px */
+  justify-content: center; /* Center icon in button */
+  flex: 0 0 auto; /* Don't grow or shrink */
 }
 
 .status-bar-right {
@@ -3222,18 +3416,48 @@ body:has(.app-layout--wide) .app-footer {
 }
 
 @media (max-width: 900px) {
+  /* Allow header and footer frames to scale with main content frame */
+  /* They should use the same width calculation as .app-frame--compact for alignment */
+  .app-frame--header,
+  .app-frame--footer {
+    min-width: 0 !important; /* Remove any implicit min-width constraints */
+    /* Don't override width - let them use the same width as .app-frame--compact */
+    max-width: 100% !important; /* Ensure they don't exceed viewport */
+  }
+
+  /* Header styling - align with main content */
   .app-header {
-    @apply flex flex-col items-start;
-    gap: theme("spacing.4");
+    /* Keep grid layout but allow it to shrink */
+    grid-template-columns: minmax(0, auto) minmax(0, 1fr); /* Logo takes natural width, toolbar takes remaining space */
+    gap: theme("spacing.3"); /* Reduce gap slightly */
+    padding-inline: theme("spacing.6"); /* Match main content padding for alignment */
+    min-width: 0; /* Allow header to shrink below content size */
+    overflow: visible; /* Prevent content from being cut off */
+  }
+
+  .app-logo-button {
+    width: auto; /* Allow logo to size naturally */
+    max-width: var(--control-column-width); /* But don't exceed control column width */
+    min-width: 0; /* Allow it to shrink if needed */
   }
 
   .header-toolbar {
-    @apply flex-col items-start;
-    gap: theme("spacing.3");
+    /* Keep toolbar horizontal, don't stack */
+    min-width: 0; /* Allow toolbar to shrink */
+    overflow: visible; /* Prevent content cutoff */
   }
 
   .header-actions {
-    margin-left: 0;
+    /* Keep actions together, allow them to shrink */
+    flex-wrap: wrap; /* Allow wrapping if absolutely necessary */
+    min-width: 0;
+  }
+
+  /* Footer styling - align with main content */
+  .app-footer {
+    padding-inline: theme("spacing.6"); /* Match main content padding for alignment */
+    min-width: 0; /* Allow footer to shrink below content size */
+    flex-wrap: wrap; /* Allow footer content to wrap and shrink */
   }
 }
 
@@ -3470,6 +3694,21 @@ body:has(.app-layout--wide) .app-footer {
 
 :fullscreen .display-column {
   overflow: visible !important;
+}
+
+/* ABSOLUTE FINAL OVERRIDE: Lock gap at spacing.5 for small-canvas at ALL viewport sizes */
+/* This must be the last rule to ensure maximum cascade priority */
+@media (max-width: 99999px) {
+  .app-layout--small-canvas,
+  .app-layout.app-layout--small-canvas,
+  .app-layout--mobile.app-layout--small-canvas,
+  .app-layout.app-layout--mobile.app-layout--small-canvas,
+  .app-layout--studio.app-layout--small-canvas,
+  .app-layout.app-layout--studio.app-layout--small-canvas,
+  .app-layout--wide.app-layout--small-canvas,
+  .app-layout.app-layout--wide.app-layout--small-canvas {
+    gap: theme("spacing.5") !important;
+  }
 }
 
 @layer base {

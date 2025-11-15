@@ -41,7 +41,7 @@ import { PresetManager } from "./components/PresetManager";
 import { ExportModal } from "./components/ExportModal";
 import { MobileMenu } from "./components/MobileMenu";
 import { Badge } from "./components/retroui/Badge";
-import { Moon, Monitor, Sun, Maximize2, X, RefreshCw, Bookmark, Camera, HelpCircle, Lock, Unlock } from "lucide-react";
+import { Moon, Monitor, Sun, Maximize2, X, RefreshCw, Bookmark, Camera, HelpCircle, Info, Lock, Unlock } from "lucide-react";
 import { palettes } from "./data/palettes";
 // import { shouldSplitColumns, getAppMainPadding } from "./lib/responsiveLayout";
 import { useIsMobile } from "./hooks/useIsMobile";
@@ -678,34 +678,321 @@ const App = () => {
   // state and effects can be restored from version control.
   const isWideLayout = false;
   const canvasWrapperRef = useRef<HTMLDivElement | null>(null);
+  const canvasCardShellRef = useRef<HTMLDivElement | null>(null);
   const layoutRef = useRef<HTMLDivElement | null>(null);
+  const [isSmallCanvas, setIsSmallCanvas] = useState(false);
   const statusBarRef = useRef<HTMLDivElement | null>(null);
   const statusBarLeftRef = useRef<HTMLDivElement | null>(null);
   const statusBarRightRef = useRef<HTMLDivElement | null>(null);
   const badgeMeasureRef = useRef<HTMLDivElement | null>(null);
   const badgeTriggerRef = useRef<HTMLButtonElement | null>(null);
   const badgePopoverRef = useRef<HTMLDivElement | null>(null);
+  const headerActionsRef = useRef<HTMLDivElement | null>(null);
+  const headerToolbarRef = useRef<HTMLDivElement | null>(null);
+  const headerOverflowTriggerRef = useRef<HTMLButtonElement | null>(null);
+  // Initialize overflow state based on viewport width immediately (synchronously)
+  // This prevents the brief stacking flash before the overflow menu appears
+  const [showHeaderOverflow, setShowHeaderOverflow] = useState(() => {
+    if (typeof window === "undefined") return false;
+    // Check if viewport is below threshold where overflow would be needed
+    // This is a conservative estimate - the actual check will refine it
+    return window.innerWidth < 640;
+  });
+  const [isHeaderOverflowOpen, setIsHeaderOverflowOpen] = useState(false);
   
   // Mobile device detection
   const isMobile = useIsMobile();
 
+  // Check viewport width to determine when to stack canvas above controls
+  // Stack when viewport is too narrow to fit control column (344px) + gap (20px) + canvas (480px) + padding (48px) = 892px
   useEffect(() => {
-    const initialLoader = document.getElementById("initial-loader");
-    if (!initialLoader) {
-      return;
-    }
-    initialLoader.classList.add("initial-loader--hidden");
-    const removeLoader = () => {
-      initialLoader.removeEventListener("transitionend", removeLoader);
-      if (initialLoader.parentNode) {
-        initialLoader.parentNode.removeChild(initialLoader);
+    const checkViewportSize = () => {
+      if (typeof window === "undefined") {
+        return;
+      }
+      // Calculate minimum width needed for side-by-side layout
+      // Control column (344px) + gap (20px) + canvas min (480px) + padding (48px) = 892px
+      const minWidthForSideBySide = 892;
+      const viewportWidth = window.innerWidth;
+      // Stack when viewport is smaller than needed for side-by-side layout
+      setIsSmallCanvas(viewportWidth < minWidthForSideBySide);
+    };
+
+    // Check initial size
+    checkViewportSize();
+
+    // Listen to window resize
+    window.addEventListener("resize", checkViewportSize);
+
+    return () => {
+      window.removeEventListener("resize", checkViewportSize);
+    };
+  }, []);
+
+  // Check if header actions fit and show overflow menu if they don't
+  // Use refs to track state to prevent effect re-runs from causing loops
+  const showHeaderOverflowRef = useRef(showHeaderOverflow);
+  useEffect(() => {
+    showHeaderOverflowRef.current = showHeaderOverflow;
+  }, [showHeaderOverflow]);
+
+  useEffect(() => {
+    let debounceTimer: NodeJS.Timeout | null = null;
+    let lastCheckTime = 0;
+    let pendingStateUpdate: boolean | null = null;
+    const DEBOUNCE_DELAY = 250; // Increased delay to prevent rapid toggling
+    const MIN_TIME_BETWEEN_CHECKS = 150; // Increased minimum time between checks
+
+    const checkHeaderFit = () => {
+      // Throttle checks to prevent too many rapid updates
+      const now = Date.now();
+      if (now - lastCheckTime < MIN_TIME_BETWEEN_CHECKS) {
+        debounceTimer = setTimeout(checkHeaderFit, MIN_TIME_BETWEEN_CHECKS - (now - lastCheckTime));
+        return;
+      }
+      lastCheckTime = now;
+
+      const headerToolbar = headerToolbarRef.current;
+      const headerActions = headerActionsRef.current;
+      if (!headerToolbar) {
+        return;
+      }
+
+      // Get the header container to check available space
+      const header = headerToolbar.closest(".app-header");
+      if (!header) {
+        return;
+      }
+
+      const headerRect = header.getBoundingClientRect();
+      const logoButton = header.querySelector(".app-logo-button");
+      const logoRect = logoButton?.getBoundingClientRect();
+      
+      // Get computed styles to check actual padding
+      const headerStyles = window.getComputedStyle(header);
+      const paddingLeft = parseFloat(headerStyles.paddingLeft) || 0;
+      const paddingRight = parseFloat(headerStyles.paddingRight) || 0;
+      const headerPadding = paddingLeft + paddingRight;
+      
+      // Get gap from toolbar
+      const toolbarStyles = window.getComputedStyle(headerToolbar);
+      const gap = parseFloat(toolbarStyles.gap) || 12;
+      
+      // Calculate available space: header width minus logo width minus gaps
+      const logoWidth = logoRect?.width ?? 0;
+      const minGapForActions = 20; // Minimum space needed for actions
+      
+      // Available width for actions (or hamburger button)
+      const availableWidth = headerRect.width - logoWidth - headerPadding - gap - minGapForActions;
+      
+      // Try to measure actual actions width if they're rendered
+      let actionsWidth = 0;
+      if (headerActions) {
+        const actionsRect = headerActions.getBoundingClientRect();
+        actionsWidth = actionsRect.width;
+      }
+      
+      // If we couldn't measure (actions not rendered because overflow is shown),
+      // use estimated width: Theme selector (~120px) + Shape button (44px) + Mode button (44px) + gaps (~12px) = ~220px
+      const estimatedActionsWidth = 220;
+      const actionsWidthToUse = actionsWidth > 0 ? actionsWidth : estimatedActionsWidth;
+      
+      // Increased hysteresis buffer to prevent flickering at threshold
+      // When showing overflow: need at least 40px extra space before switching back
+      // When hiding overflow: need at least 40px less space before switching back
+      const HYSTERESIS_BUFFER = 40;
+      const viewportWidth = window.innerWidth;
+      
+      // Use ref to get current state to avoid dependency issues
+      const currentNeedsOverflow = showHeaderOverflowRef.current;
+      
+      let needsOverflow: boolean;
+      if (currentNeedsOverflow) {
+        // Currently showing overflow - need significantly more space to hide it (with buffer)
+        needsOverflow = viewportWidth < 640 || actionsWidthToUse > (availableWidth - HYSTERESIS_BUFFER);
+      } else {
+        // Currently showing actions - need significantly less space to show overflow (with buffer)
+        needsOverflow = viewportWidth < 640 || actionsWidthToUse > (availableWidth + HYSTERESIS_BUFFER);
+      }
+      
+      // Only update state if it actually changed and we don't have a pending update
+      if (needsOverflow !== currentNeedsOverflow && pendingStateUpdate !== needsOverflow) {
+        // Clear any existing debounce timer
+        if (debounceTimer) {
+          clearTimeout(debounceTimer);
+        }
+        
+        // Store pending state
+        pendingStateUpdate = needsOverflow;
+        
+        // Debounce the state update to prevent rapid toggling
+        debounceTimer = setTimeout(() => {
+          // Double-check that state hasn't changed since we queued this update
+          if (showHeaderOverflowRef.current === currentNeedsOverflow) {
+            setShowHeaderOverflow(needsOverflow);
+          }
+          pendingStateUpdate = null;
+          debounceTimer = null;
+        }, DEBOUNCE_DELAY);
       }
     };
-    initialLoader.addEventListener("transitionend", removeLoader);
-    const fallbackTimeout = window.setTimeout(removeLoader, 500);
+
+    // Check immediately and also after a short delay to ensure DOM is ready
+    // Immediate check prevents stacking flash on initial render
+    checkHeaderFit();
+    const timeoutId = setTimeout(checkHeaderFit, 100);
+
+    // Set up ResizeObserver to watch for size changes
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(() => {
+        // Use requestAnimationFrame to batch updates and ensure DOM has updated
+        requestAnimationFrame(() => {
+          checkHeaderFit();
+        });
+      });
+      
+      const headerToolbar = headerToolbarRef.current;
+      const header = headerToolbar?.closest(".app-header");
+      const logoButton = header?.querySelector(".app-logo-button");
+      
+      // Observe header and toolbar - these will change when viewport resizes
+      if (headerToolbar) {
+        resizeObserver.observe(headerToolbar);
+      }
+      if (header) {
+        resizeObserver.observe(header);
+      }
+      if (logoButton) {
+        resizeObserver.observe(logoButton);
+      }
+      
+      // Also observe headerActions if it exists (when overflow is not shown)
+      // This helps catch size changes when actions are visible
+      const headerActions = headerActionsRef.current;
+      if (headerActions) {
+        resizeObserver.observe(headerActions);
+      }
+    }
+
+    // Also listen to window resize - this ensures we catch viewport changes
+    // even if observed elements don't change size (e.g., when header width stays same but viewport expands)
+    const handleWindowResize = () => {
+      // Throttle to avoid too many checks
+      requestAnimationFrame(checkHeaderFit);
+    };
+    window.addEventListener("resize", handleWindowResize);
+
     return () => {
-      initialLoader.removeEventListener("transitionend", removeLoader);
-      window.clearTimeout(fallbackTimeout);
+      clearTimeout(timeoutId);
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
+      window.removeEventListener("resize", handleWindowResize);
+    };
+  }, []); // Empty deps - use ref to track state to prevent re-run loops
+
+  // Handle click-away for header overflow menu
+  useEffect(() => {
+    if (!isHeaderOverflowOpen) {
+      return;
+    }
+    const handleClickAway = (event: MouseEvent) => {
+      const trigger = headerOverflowTriggerRef.current;
+      const popover = document.querySelector(".header-overflow-popover");
+      if (!trigger || !popover) {
+        return;
+      }
+      const target = event.target as Node;
+      if (
+        trigger.contains(target) ||
+        popover.contains(target)
+      ) {
+        return;
+      }
+      setIsHeaderOverflowOpen(false);
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsHeaderOverflowOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickAway);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickAway);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isHeaderOverflowOpen]);
+
+  useEffect(() => {
+    let fallbackTimeout: ReturnType<typeof setTimeout> | null = null;
+    let initialLoader: HTMLElement | null = null;
+    let handleTransitionEnd: ((event: TransitionEvent) => void) | null = null;
+    
+    // Hide loader immediately when component mounts
+    const hideLoader = () => {
+      initialLoader = document.getElementById("initial-loader");
+      if (!initialLoader) {
+        return;
+      }
+      
+      // Update percentage to 100% before hiding
+      const loaderText = document.getElementById("initial-loader-text");
+      if (loaderText) {
+        loaderText.textContent = "loading 100%";
+      }
+      
+      // Add hidden class to trigger fade-out
+      initialLoader.classList.add("initial-loader--hidden");
+      
+      // Remove after transition completes or fallback timeout
+      const removeLoader = () => {
+        if (initialLoader && initialLoader.parentNode) {
+          initialLoader.parentNode.removeChild(initialLoader);
+        }
+      };
+      
+      handleTransitionEnd = (event: TransitionEvent) => {
+        if (event.propertyName === "opacity" && event.target === initialLoader) {
+          if (initialLoader && handleTransitionEnd) {
+            initialLoader.removeEventListener("transitionend", handleTransitionEnd);
+          }
+          removeLoader();
+        }
+      };
+      
+      if (initialLoader && handleTransitionEnd) {
+        initialLoader.addEventListener("transitionend", handleTransitionEnd);
+      }
+      
+      // Fallback: remove after 400ms if transition doesn't fire
+      fallbackTimeout = window.setTimeout(() => {
+        if (initialLoader && handleTransitionEnd) {
+          initialLoader.removeEventListener("transitionend", handleTransitionEnd);
+        }
+        removeLoader();
+      }, 400);
+    };
+    
+    // Use requestAnimationFrame to ensure DOM is ready, but don't add extra delay
+    const frameId = requestAnimationFrame(hideLoader);
+    
+    // Cleanup
+    return () => {
+      cancelAnimationFrame(frameId);
+      if (fallbackTimeout) {
+        window.clearTimeout(fallbackTimeout);
+      }
+      if (initialLoader && handleTransitionEnd) {
+        initialLoader.removeEventListener("transitionend", handleTransitionEnd);
+      }
     };
   }, []);
 
@@ -1868,10 +2155,10 @@ const App = () => {
           className="status-bar-badges-measure"
         >
           <Badge variant="surface" size="sm">
-            Palette · {statusPalette}
+            Sprite · {statusMode}
           </Badge>
           <Badge variant="surface" size="sm">
-            Sprite · {statusMode}
+            Palette · {statusPalette}
           </Badge>
           <Badge variant="surface" size="sm">
             Blend · {statusBlend}
@@ -1899,10 +2186,10 @@ const App = () => {
             {showStatusInfo && (
               <div className="status-bar-info-mobile">
                 <Badge variant="surface" size="sm">
-                  Palette · {statusPalette}
+                  Sprite · {statusMode}
                 </Badge>
                 <Badge variant="surface" size="sm">
-                  Sprite · {statusMode}
+                  Palette · {statusPalette}
                 </Badge>
                 <Badge variant="surface" size="sm">
                   Blend · {statusBlend}
@@ -1931,7 +2218,7 @@ const App = () => {
                   }
                   ref={badgeTriggerRef}
                 >
-                  <HelpCircle className="status-bar-icon" />
+                  <Info className="status-bar-icon" />
                 </Button>
                 {isBadgePopoverOpen && (
                   <div
@@ -1940,10 +2227,10 @@ const App = () => {
                     ref={badgePopoverRef}
                   >
                     <Badge variant="surface" size="sm">
-                      Palette · {statusPalette}
+                      Sprite · {statusMode}
                     </Badge>
                     <Badge variant="surface" size="sm">
-                      Sprite · {statusMode}
+                      Palette · {statusPalette}
                     </Badge>
                     <Badge variant="surface" size="sm">
                       Blend · {statusBlend}
@@ -1960,10 +2247,10 @@ const App = () => {
             ) : (
               <>
                 <Badge variant="surface" size="sm">
-                  Palette · {statusPalette}
+                  Sprite · {statusMode}
                 </Badge>
                 <Badge variant="surface" size="sm">
-                  Sprite · {statusMode}
+                  Palette · {statusPalette}
                 </Badge>
                 <Badge variant="surface" size="sm">
                   Blend · {statusBlend}
@@ -2038,7 +2325,7 @@ const App = () => {
   };
 
   const renderDisplayContent = () => (
-    <div className="canvas-card-shell">
+    <div className="canvas-card-shell" ref={canvasCardShellRef}>
       <Card
         className={`canvas-card ${isFullscreen ? "canvas-card--fullscreen" : ""}`}
       >
@@ -2122,149 +2409,218 @@ const App = () => {
             <button type="button" className="app-logo-button" aria-label="BitLab">
               <BitlabLogo className="app-logo-svg" />
             </button>
-            <div className="header-toolbar">
-              <div className="header-spacer" />
-              <div className="header-actions">
-              <Select value={themeColor} onValueChange={handleThemeSelect}>
-                <SelectTrigger
-                  className="header-theme-trigger"
-                  aria-label="Theme colour"
-                >
-                  <SelectValue placeholder="Theme">
-                    {THEME_COLOR_OPTIONS.find(
-                      (option) => option.value === themeColor,
-                    )?.label ?? "Theme"}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent className="header-theme-menu">
-                  <SelectGroup>
-                    {THEME_COLOR_OPTIONS.map((option) => (
-                      <SelectItem
-                        key={option.value}
-                        value={option.value}
-                        className="header-theme-item"
-                        style={
-                          {
-                            "--theme-preview": THEME_COLOR_PREVIEW[option.value],
-                          } as CSSProperties
-                        }
-                      >
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-              <Button
-                type="button"
-                size="icon"
-                variant="outline"
-                className="header-icon-button"
-                onClick={cycleThemeShape}
-                aria-label={`Switch theme shape (current ${themeShape === "rounded" ? "rounded" : "box"})`}
-                title={`Shape: ${themeShape === "rounded" ? "Rounded" : "Box"}`}
-              >
-                {themeShape === "rounded" ? (
-                  <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ display: "block" }} aria-hidden="true">
-                    <rect x={4} y={4} width={16} height={16} rx={3} ry={3} />
-                  </svg>
-                ) : (
-                  <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ display: "block" }} aria-hidden="true">
-                    <rect x={4} y={4} width={16} height={16} />
-                  </svg>
-                )}
-              </Button>
-              <Button
-                type="button"
-                size="icon"
-                variant="outline"
-                className="header-icon-button"
-                onClick={cycleThemeMode}
-                aria-label={`Switch theme mode (current ${themeModeText})`}
-                title={`Theme: ${themeModeText}`}
-              >
-                <ThemeModeIconComponent className="h-4 w-4" aria-hidden="true" />
-              </Button>
-              </div>
+            <div className="header-toolbar" ref={headerToolbarRef}>
+              <div className="header-spacer"></div>
+              {showHeaderOverflow ? (
+                <div className="header-actions header-actions--overflow">
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="outline"
+                    className="header-icon-button header-overflow-trigger"
+                    onClick={() => setIsHeaderOverflowOpen((prev) => !prev)}
+                    aria-label="Theme options"
+                    aria-expanded={isHeaderOverflowOpen}
+                    ref={headerOverflowTriggerRef}
+                  >
+                    <svg
+                      width={16}
+                      height={16}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      style={{ display: "block" }}
+                      aria-hidden="true"
+                    >
+                      <line x1={3} y1={6} x2={21} y2={6} />
+                      <line x1={3} y1={12} x2={21} y2={12} />
+                      <line x1={3} y1={18} x2={21} y2={18} />
+                    </svg>
+                  </Button>
+                  {isHeaderOverflowOpen && (
+                    <div
+                      className="header-overflow-popover"
+                      role="dialog"
+                      aria-label="Theme options"
+                    >
+                      <div className="header-overflow-content">
+                        <Select value={themeColor} onValueChange={handleThemeSelect}>
+                          <SelectTrigger
+                            className="header-theme-trigger"
+                            aria-label="Theme colour"
+                          >
+                            <SelectValue placeholder="Theme">
+                              {THEME_COLOR_OPTIONS.find(
+                                (option) => option.value === themeColor,
+                              )?.label ?? "Theme"}
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent className="header-theme-menu">
+                            <SelectGroup>
+                              {THEME_COLOR_OPTIONS.map((option) => (
+                                <SelectItem
+                                  key={option.value}
+                                  value={option.value}
+                                  className="header-theme-item"
+                                  style={
+                                    {
+                                      "--theme-preview": THEME_COLOR_PREVIEW[option.value],
+                                    } as CSSProperties
+                                  }
+                                >
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="outline"
+                          className="header-icon-button"
+                          onClick={cycleThemeShape}
+                          aria-label={`Switch theme shape (current ${themeShape === "rounded" ? "rounded" : "box"})`}
+                          title={`Shape: ${themeShape === "rounded" ? "Rounded" : "Box"}`}
+                        >
+                          {themeShape === "rounded" ? (
+                            <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ display: "block" }} aria-hidden="true">
+                              <rect x={4} y={4} width={16} height={16} rx={3} ry={3} />
+                            </svg>
+                          ) : (
+                            <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ display: "block" }} aria-hidden="true">
+                              <rect x={4} y={4} width={16} height={16} />
+                            </svg>
+                          )}
+                        </Button>
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="outline"
+                          className="header-icon-button"
+                          onClick={cycleThemeMode}
+                          aria-label={`Switch theme mode (current ${themeModeText})`}
+                          title={`Theme: ${themeModeText}`}
+                        >
+                          <ThemeModeIconComponent className="h-4 w-4" aria-hidden="true" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="header-actions" ref={headerActionsRef}>
+                  <Select value={themeColor} onValueChange={handleThemeSelect}>
+                    <SelectTrigger
+                      className="header-theme-trigger"
+                      aria-label="Theme colour"
+                    >
+                      <SelectValue placeholder="Theme">
+                        {THEME_COLOR_OPTIONS.find(
+                          (option) => option.value === themeColor,
+                        )?.label ?? "Theme"}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent className="header-theme-menu">
+                      <SelectGroup>
+                        {THEME_COLOR_OPTIONS.map((option) => (
+                          <SelectItem
+                            key={option.value}
+                            value={option.value}
+                            className="header-theme-item"
+                            style={
+                              {
+                                "--theme-preview": THEME_COLOR_PREVIEW[option.value],
+                              } as CSSProperties
+                            }
+                          >
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="outline"
+                    className="header-icon-button"
+                    onClick={cycleThemeShape}
+                    aria-label={`Switch theme shape (current ${themeShape === "rounded" ? "rounded" : "box"})`}
+                    title={`Shape: ${themeShape === "rounded" ? "Rounded" : "Box"}`}
+                  >
+                    {themeShape === "rounded" ? (
+                      <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ display: "block" }} aria-hidden="true">
+                        <rect x={4} y={4} width={16} height={16} rx={3} ry={3} />
+                      </svg>
+                    ) : (
+                      <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ display: "block" }} aria-hidden="true">
+                        <rect x={4} y={4} width={16} height={16} />
+                      </svg>
+                    )}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="outline"
+                    className="header-icon-button"
+                    onClick={cycleThemeMode}
+                    aria-label={`Switch theme mode (current ${themeModeText})`}
+                    title={`Theme: ${themeModeText}`}
+                  >
+                    <ThemeModeIconComponent className="h-4 w-4" aria-hidden="true" />
+                  </Button>
+                </div>
+              )}
             </div>
           </>
           )}
         </header>
       </div>
 
-      <div className="app-frame app-frame--compact app-frame--main">
+      <div className={`app-frame app-frame--compact app-frame--main${isSmallCanvas ? " app-frame--stacked" : ""}`}>
         <main className="app-main">
           <div
             ref={layoutRef}
-            className={`app-layout${isStudioLayout ? " app-layout--studio" : ""}${isWideLayout ? " app-layout--wide" : ""}${isMobile ? " app-layout--mobile" : ""}`}
+            className={`app-layout${isStudioLayout ? " app-layout--studio" : ""}${isWideLayout ? " app-layout--wide" : ""}${isMobile ? " app-layout--mobile" : ""}${isSmallCanvas ? " app-layout--small-canvas" : ""}`}
           >
-          {isMobile ? (
-            // Mobile layout: Canvas first, then controls
-            <>
-              <div className="display-column">
-                {renderDisplayContent()}
-              </div>
-              <aside className="control-column">
-                <Card className="panel">
-                  <Tabs
-                    selectedIndex={controlTabIndex}
-                    onChange={setControlTabIndex}
-                  >
-                    <TabsTriggerList className="retro-tabs">
-                      <TabsTrigger>Sprites</TabsTrigger>
-                      <TabsTrigger>Colours</TabsTrigger>
+          <aside className="control-column">
+            <Card className="panel">
+              <Tabs
+                selectedIndex={controlTabIndex}
+                onChange={setControlTabIndex}
+              >
+                <TabsTriggerList className="retro-tabs">
+                  <TabsTrigger>Sprites</TabsTrigger>
+                  <TabsTrigger>Colours</TabsTrigger>
+                  {!isWideLayout && (
+                    <>
                       <TabsTrigger>Motion</TabsTrigger>
-                    </TabsTriggerList>
-                    <TabsPanels>
-                      <TabsContent>{renderSpriteControls()}</TabsContent>
-                      <TabsContent>{renderFxControls()}</TabsContent>
+                    </>
+                  )}
+                </TabsTriggerList>
+                <TabsPanels>
+                  <TabsContent>{renderSpriteControls()}</TabsContent>
+                  <TabsContent>{renderFxControls()}</TabsContent>
+                  {!isWideLayout && (
+                    <>
                       <TabsContent>{renderMotionControls(true)}</TabsContent>
-                    </TabsPanels>
-                  </Tabs>
-                </Card>
-              </aside>
-            </>
-          ) : (
-            // Desktop layout: Controls first, then canvas
-            <>
-              <aside className="control-column">
-                <Card className="panel">
-                  <Tabs
-                    selectedIndex={controlTabIndex}
-                    onChange={setControlTabIndex}
-                  >
-                    <TabsTriggerList className="retro-tabs">
-                      <TabsTrigger>Sprites</TabsTrigger>
-                      <TabsTrigger>Colours</TabsTrigger>
-                      {!isWideLayout && (
-                        <>
-                          <TabsTrigger>Motion</TabsTrigger>
-                        </>
-                      )}
-                    </TabsTriggerList>
-                    <TabsPanels>
-                      <TabsContent>{renderSpriteControls()}</TabsContent>
-                      <TabsContent>{renderFxControls()}</TabsContent>
-                      {!isWideLayout && (
-                        <>
-                          <TabsContent>{renderMotionControls(true)}</TabsContent>
-                        </>
-                      )}
-                    </TabsPanels>
-                  </Tabs>
-                </Card>
-              </aside>
+                    </>
+                  )}
+                </TabsPanels>
+              </Tabs>
+            </Card>
+          </aside>
 
-              <div className="display-column">
-                {renderDisplayContent()}
-              </div>
+          <div className="display-column">
+            {renderDisplayContent()}
+          </div>
 
-              {isWideLayout && (
-                <aside className="motion-column">
-                  <Card className="panel">{renderMotionControls(true)}</Card>
-                </aside>
-              )}
-            </>
+          {isWideLayout && (
+            <aside className="motion-column">
+              <Card className="panel">{renderMotionControls(true)}</Card>
+            </aside>
           )}
           </div>
         </main>

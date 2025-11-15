@@ -83,6 +83,8 @@ export const MOTION_COLUMN_WIDTH = 280;
 export const CANVAS_CONFIG = {
   /** Minimum canvas width - ensures status bar fits on one row */
   MIN_WIDTH: 720,
+  /** Minimum canvas width for small viewports */
+  MIN_WIDTH_SMALL: 480,
   /** Maximum canvas width - optimal size for display */
   MAX_WIDTH: 960,
   /** Viewport width percentage for smooth scaling between min/max */
