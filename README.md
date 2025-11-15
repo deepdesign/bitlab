@@ -73,12 +73,13 @@ BitLab is a vibrant generative art workbench built with React, p5.js, Tailwind, 
 - **Blend Architectures** – Layer-specific blend modes (multiply, screen, hard light, overlay) with optional per-sprite randomisation.
 - **Custom Palette Management** – Create custom color palettes from images (upload or URL), extract dominant colors using k-means clustering, and manage up to 10 custom palettes. Custom palettes automatically generate gradients and work with canvas backgrounds (solid and gradient modes), just like built-in palettes. Export/import palettes as JSON for easy sharing.
 - **Organized Color Palettes** – 20+ built-in palettes organized by category (Neon/Cyber, Warm/Fire, Cool/Ocean, Nature, Soft/Pastel, Dark/Mysterious) with color preview squares in dropdowns.
-- **Theme Designer** – System/light/dark cycling, 12 colourway accents (Sunburst, Neon Grid, Nebula, Ember Glow, Lagoon Tide, Rose Quartz, Battleship, Electric Cyan, Lime Zest, Coral Reef, Deep Indigo, Metallic Gold), and RetroUI Box/Rounded chassis toggle applied across the entire shell. Each theme includes custom backgrounds, shadows, and UI styling for both light and dark modes.
+- **Theme Designer** – System/light/dark cycling, 11 colourway accents (Sunburst, Neon Grid, Nebula, Ember Glow, Lagoon Tide, Rose Quartz, Battleship, Electric Cyan, Midnight, Deep Indigo, Metallic Gold), and RetroUI Box/Rounded chassis toggle applied across the entire shell. Each theme includes custom backgrounds, shadows, and UI styling for both light and dark modes.
 - **Status HUD** – Live palette, sprite mode, blend, motion, density, and FPS read-outs follow you into fullscreen.
 - **Instant Loader** – Lightweight inline bootstrapper renders the BitLab spinner before the bundle downloads, then hands off seamlessly to React once the generator is ready.
 - **High-Resolution Export** – Export your canvas at any resolution with presets for social media, wallpapers, and print. Aspect ratio locking, custom dimensions, and high-quality PNG output with smooth scaling.
 - **Tailwind Retro Components** – Buttons, Selects, Switches, Tabs, Cards, Input, Label, and Accordion rebuilt on the Tailwind spacing scale while honouring RetroUI tokens.
 - **Modular Architecture** – Clean codebase structure with extracted hooks (`useTheme`, `useFullscreen`, `useSpriteController`), reusable components (`StatusBar`, `Header`, `ControlPanel`), and organized utilities. App.tsx reduced from ~2,800 lines to ~770 lines (72% reduction).
+- **Code Quality** – Type-safe codebase with proper error handling, memory management, and cleanup. Debug code gated behind development mode. Comprehensive documentation for all features.
 - **Versioning** – Automatic version injection from package.json displayed in the footer.
 - **Footer Resources** – Slim footer featuring the BitLab logotype, version number, quick access to RetroUI docs, p5.js, and `jamescutts.me`.
 
