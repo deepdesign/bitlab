@@ -150,6 +150,7 @@ export interface GeneratorState {
   canvasFillMode: "solid" | "gradient";
   canvasGradientMode: BackgroundMode; // Same options as backgroundMode
   canvasGradientDirection: number; // 0-360 degrees
+  randomSprites: boolean; // When true, each sprite uses a random shape from the selection
 }
 
 export interface SpriteControllerOptions {
@@ -207,6 +208,7 @@ export const DEFAULT_STATE: GeneratorState = {
   canvasFillMode: "solid",
   canvasGradientMode: "auto",
   canvasGradientDirection: 0,
+  randomSprites: false,
 };
 
 const SEED_ALPHABET = "0123456789ABCDEF";
@@ -671,9 +673,15 @@ const computeSprite = (state: GeneratorState): PreparedSprite => {
       // Gradient assignment is now done during rendering, not during computation
       // This allows toggling gradients without regenerating sprite positions/scales
       
+      // If randomSprites is enabled, assign a random shape to each tile
+      // Otherwise, use the activeShape from spriteMode
+      const tileShape = state.randomSprites
+        ? (shapeModes[Math.floor(rng() * shapeModes.length)] as ShapeMode)
+        : activeShape;
+      
       tiles.push({
         kind: "shape",
-        shape: activeShape,
+        shape: tileShape,
         tint,
         paletteColorIndex,
         u,
@@ -710,6 +718,7 @@ export interface SpriteController {
   randomizeScaleRange: () => void;
   randomizeMotion: () => void;
   randomizeBlendMode: () => void;
+  randomizeSpriteShapes: () => void;
   setScalePercent: (value: number) => void;
   setScaleBase: (value: number) => void;
   setScaleSpread: (value: number) => void;
@@ -787,6 +796,31 @@ export const createSpriteController = (
         tile.blendMode = randomBlendMode();
       });
     });
+  };
+
+  const reassignRandomShapes = () => {
+    if (!prepared || !stateRef.current.randomSprites) {
+      return;
+    }
+
+    // Modify shapes directly in the prepared object
+    // The draw loop reads from prepared, so changes will be visible on next frame
+    prepared.layers.forEach((layer) => {
+      if (layer.mode !== "shape") {
+        return;
+      }
+      layer.tiles.forEach((tile) => {
+        if (tile.kind === "shape") {
+          // Assign a random shape from available shape modes
+          tile.shape = shapeModes[Math.floor(Math.random() * shapeModes.length)] as ShapeMode;
+        }
+      });
+    });
+    
+    // Force a redraw by updating the p5 instance if available
+    if (p5Instance && typeof (p5Instance as any).redraw === 'function') {
+      (p5Instance as any).redraw();
+    }
   };
 
   const notifyState = () => {
@@ -891,7 +925,7 @@ export const createSpriteController = (
     // However, p5.js may call it without an event in some cases (e.g., from resizeCanvas)
     // When p5.js calls resizeCanvas, it internally calls windowResized without an event,
     // causing Zod validation errors. We can't prevent this, but we can prevent recursive calls.
-    function windowResizedHandler(event: UIEvent) {
+    function windowResizedHandler(_event: UIEvent) {
       // If we're already resizing (from performResize), don't call performResize again
       // This prevents infinite loops when p5.js calls windowResized from resizeCanvas
       if (!isResizing) {
@@ -1554,6 +1588,17 @@ export const createSpriteController = (
       state = stateRef.current; // Keep local variable in sync
       updateSprite();
     },
+    randomizeSpriteShapes: () => {
+      if (!stateRef.current.randomSprites) {
+        // If randomSprites is disabled, enable it and regenerate
+        applyState({ randomSprites: true });
+        return;
+      }
+      // Reassign random shapes to existing tiles
+      reassignRandomShapes();
+      // Force state notification to ensure UI updates
+      notifyState();
+    },
     setScalePercent: (value: number) => {
       applyState({ scalePercent: clamp(value, 0, MAX_DENSITY_PERCENT_UI) });
     },
@@ -1704,6 +1749,10 @@ export const createSpriteController = (
     setCanvasGradientDirection: (degrees: number) => {
       // Canvas gradient direction is applied in render, no regeneration needed
       applyState({ canvasGradientDirection: clamp(degrees, 0, 360) }, { recompute: false });
+    },
+    setRandomSprites: (enabled: boolean) => {
+      // Random sprites requires regeneration to assign random shapes to each tile
+      applyState({ randomSprites: enabled });
     },
     applySingleTilePreset: () => {
       updateSeed();

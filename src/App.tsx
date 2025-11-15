@@ -737,7 +737,7 @@ const App = () => {
   }, [showHeaderOverflow]);
 
   useEffect(() => {
-    let debounceTimer: NodeJS.Timeout | null = null;
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
     let lastCheckTime = 0;
     let pendingStateUpdate: boolean | null = null;
     const DEBOUNCE_DELAY = 250; // Increased delay to prevent rapid toggling
@@ -1346,6 +1346,10 @@ const App = () => {
     controllerRef.current?.setRotationEnabled(checked);
   }, []);
 
+  const handleRandomSpritesToggle = useCallback((checked: boolean) => {
+    controllerRef.current?.setRandomSprites(checked);
+  }, []);
+
   const handleRotationAmountChange = useCallback((value: number) => {
     controllerRef.current?.setRotationAmount(value);
   }, []);
@@ -1687,6 +1691,38 @@ const App = () => {
                   <Unlock className="h-4 w-4" />
                 )}
               </Button>
+            </div>
+          </div>
+
+          {/* Random sprites switch */}
+          <div className="control-field" style={{ marginTop: '1rem' }}>
+            <div className="switch-row" style={{ gap: "0.75rem" }}>
+              <Switch
+                id="random-sprites"
+                checked={spriteState.randomSprites ?? false}
+                onCheckedChange={handleRandomSpritesToggle}
+                disabled={!ready || lockedSpriteMode}
+                aria-labelledby="random-sprites-label"
+              />
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                onClick={() => controllerRef.current?.randomizeSpriteShapes()}
+                disabled={!ready || !spriteState.randomSprites}
+                aria-label="Randomise sprite shapes"
+                title="Randomise sprite shapes"
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+              <div className="field-heading-left">
+                <span className="field-label" id="random-sprites-label">Random sprites</span>
+                <TooltipIcon 
+                  id="random-sprites-tip" 
+                  text="When enabled, each sprite on the canvas uses a random shape from the selection." 
+                  label="Random sprites" 
+                />
+              </div>
             </div>
           </div>
         </div>
