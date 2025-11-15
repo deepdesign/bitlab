@@ -40,10 +40,11 @@ import {
 } from "./generator";
 import { PresetManager } from "./components/PresetManager";
 import { ExportModal } from "./components/ExportModal";
+import { CustomPaletteManager } from "./components/CustomPaletteManager";
 import { MobileMenu } from "./components/MobileMenu";
 import { Badge } from "./components/retroui/Badge";
-import { Moon, Monitor, Sun, Maximize2, X, RefreshCw, Bookmark, Camera, HelpCircle, Info, Lock, Unlock } from "lucide-react";
-import { palettes } from "./data/palettes";
+import { Moon, Monitor, Sun, Maximize2, X, RefreshCw, Bookmark, Camera, HelpCircle, Info, Lock, Unlock, ImagePlus } from "lucide-react";
+import { palettes, getAllPalettes, getPalette } from "./data/palettes";
 // import { shouldSplitColumns, getAppMainPadding } from "./lib/responsiveLayout";
 import { useIsMobile } from "./hooks/useIsMobile";
 const BLEND_MODES: BlendModeOption[] = [
@@ -203,9 +204,8 @@ const uiToSpeed = (value: number) => {
   return Math.round((bounded / 100) * MOTION_SPEED_MAX);
 };
 
-// Organize palettes by category, then alphabetically within each category
-// Returns grouped options with category labels and color previews
-const PALETTE_OPTIONS = (() => {
+// Helper function to generate palette options (will be used in useMemo)
+const generatePaletteOptions = () => {
   const categoryOrder = [
     "Neon/Cyber",
     "Warm/Fire",
@@ -213,11 +213,15 @@ const PALETTE_OPTIONS = (() => {
     "Nature",
     "Soft/Pastel",
     "Dark/Mysterious",
+    "Custom",
   ];
   
+  // Get all palettes (built-in + custom)
+  const allPalettes = getAllPalettes();
+  
   // Group palettes by category
-  const byCategory = new Map<string, typeof palettes>();
-  for (const palette of palettes) {
+  const byCategory = new Map<string, typeof allPalettes>();
+  for (const palette of allPalettes) {
     const category = palette.category || "Other";
     if (!byCategory.has(category)) {
       byCategory.set(category, []);
@@ -267,12 +271,9 @@ const PALETTE_OPTIONS = (() => {
   }
   
   return result;
-})();
+};
 
-const CANVAS_PALETTE_OPTIONS = [
-  { value: "auto", label: "Palette (auto)" },
-  ...PALETTE_OPTIONS,
-];
+// CANVAS_PALETTE_OPTIONS will be generated inside App component using useMemo
 
 const MOVEMENT_MODES: Array<{ value: MovementMode; label: string }> = [
   { value: "pulse", label: "Pulse" },
@@ -428,6 +429,7 @@ const ControlSelect = ({
   onItemPointerDown,
   locked,
   onLockToggle,
+  prefixButton,
 }: {
   id: string;
   label: string;
@@ -442,6 +444,7 @@ const ControlSelect = ({
   onItemPointerDown?: (value: string) => void;
   locked?: boolean;
   onLockToggle?: () => void;
+  prefixButton?: React.ReactNode;
 }) => {
   const tooltipId = tooltip ? `${id}-tip` : undefined;
   const resolvedLabel =
@@ -611,6 +614,7 @@ const ControlSelect = ({
             )}
           </SelectContent>
         </Select>
+        {prefixButton}
         {onLockToggle && (
           <Button
             type="button"
@@ -854,6 +858,8 @@ const App = () => {
   const [controlTabIndex, setControlTabIndex] = useState(0);
   const [showPresetManager, setShowPresetManager] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [showCustomPaletteManager, setShowCustomPaletteManager] = useState(false);
+  const [customPalettesRefresh, setCustomPalettesRefresh] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [hudVisible, setHudVisible] = useState(true);
   const [isBadgeCompact, setIsBadgeCompact] = useState(false);
@@ -1270,6 +1276,23 @@ const App = () => {
 
   const ready = spriteState !== null && controllerRef.current !== null;
 
+  // Generate palette options reactively (includes custom palettes)
+  const PALETTE_OPTIONS = useMemo(() => {
+    return generatePaletteOptions();
+  }, [customPalettesRefresh]);
+
+  // Generate canvas palette options from palette options
+  const CANVAS_PALETTE_OPTIONS = useMemo(() => {
+    return [
+      { value: "auto", label: "Palette (auto)" },
+      ...PALETTE_OPTIONS,
+    ];
+  }, [PALETTE_OPTIONS]);
+
+  const handleCustomPaletteCreated = useCallback(() => {
+    setCustomPalettesRefresh((prev) => prev + 1);
+  }, []);
+
   useLayoutEffect(() => {
     if (!statusBarRef.current) {
       return;
@@ -1460,9 +1483,10 @@ const App = () => {
   // }, [isWideLayout, updateCanvasSize]);
 
   const currentPalette = useMemo(() => {
-    return (
-      palettes.find((item) => item.id === spriteState?.paletteId) ?? palettes[0]
-    );
+    if (!spriteState?.paletteId) {
+      return palettes[0];
+    }
+    return getPalette(spriteState.paletteId);
   }, [spriteState?.paletteId]);
 
   const currentModeLabel = useMemo(() => {
@@ -2144,6 +2168,20 @@ const App = () => {
             currentLabel={currentPalette.name}
             locked={lockedSpritePalette}
             onLockToggle={() => setLockedSpritePalette(!lockedSpritePalette)}
+            prefixButton={
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                onClick={() => setShowCustomPaletteManager(true)}
+                disabled={!ready}
+                aria-label="Manage custom palettes"
+                title="Manage custom palettes"
+                style={{ flexShrink: 0 }}
+              >
+                <ImagePlus className="h-4 w-4" />
+              </Button>
+            }
           />
           <div className="control-field">
             <div className="switch-row" style={{ gap: "0.75rem" }}>
@@ -2865,6 +2903,12 @@ const App = () => {
           p5Instance={controllerRef.current?.getP5Instance() || null}
           currentCanvasSize={currentCanvasSize}
           controller={controllerRef.current}
+        />
+      )}
+      {showCustomPaletteManager && (
+        <CustomPaletteManager
+          onClose={() => setShowCustomPaletteManager(false)}
+          onPaletteCreated={handleCustomPaletteCreated}
         />
       )}
 

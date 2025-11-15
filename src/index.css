@@ -3101,6 +3101,63 @@ body:has(.app-layout--wide) .app-footer {
   padding: theme("spacing.4");
 }
 
+/* Custom Palette Manager - matches preset manager styles */
+.custom-palette-manager-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+.custom-palette-manager-modal {
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  overflow-x: visible;
+  padding: theme("spacing.6");
+  position: relative;
+}
+
+.custom-palette-manager-header {
+  @apply flex items-center justify-between;
+  margin-bottom: theme("spacing.5");
+}
+
+.custom-palette-manager-title {
+  font-size: 1rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--heading-color);
+  margin: 0;
+}
+
+.custom-palette-manager-close {
+  @apply flex items-center justify-center;
+  width: 32px;
+  height: 32px;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.custom-palette-manager-close:hover {
+  color: var(--accent-primary);
+}
+
+.custom-palette-manager-content {
+  @apply flex flex-col;
+  gap: theme("spacing.5");
+}
+
 .preset-actions {
   @apply flex gap-2;
   margin-top: theme("spacing.3");

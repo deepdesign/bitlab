@@ -1,3 +1,5 @@
+import { getAllCustomPalettes } from "@/lib/customPaletteStorage";
+
 export interface Palette {
   id: string;
   name: string;
@@ -106,8 +108,46 @@ export const palettes: Palette[] = [
 
 export const defaultPaletteId = "neon";
 
-export const getPalette = (id: string) =>
-  palettes.find((palette) => palette.id === id) ?? palettes[0];
+const getCustomPalettes = (): Palette[] => {
+  if (typeof window === "undefined") {
+    return [];
+  }
+  
+  try {
+    return getAllCustomPalettes();
+  } catch {
+    return [];
+  }
+};
 
-export const getRandomPalette = () =>
-  palettes[Math.floor(Math.random() * palettes.length)];
+export const getPalette = (id: string) => {
+  // Check built-in palettes first
+  const builtIn = palettes.find((palette) => palette.id === id);
+  if (builtIn) {
+    return builtIn;
+  }
+  
+  // Check custom palettes if not found in built-in
+  const customPalettes = getCustomPalettes();
+  const custom = customPalettes.find((p) => p.id === id);
+  if (custom) {
+    return custom;
+  }
+  
+  return palettes[0];
+};
+
+export const getAllPalettes = (): Palette[] => {
+  const allPalettes = [...palettes];
+  
+  // Add custom palettes
+  const customPalettes = getCustomPalettes();
+  allPalettes.push(...customPalettes);
+  
+  return allPalettes;
+};
+
+export const getRandomPalette = () => {
+  const allPalettes = getAllPalettes();
+  return allPalettes[Math.floor(Math.random() * allPalettes.length)];
+};
