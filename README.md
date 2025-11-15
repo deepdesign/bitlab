@@ -71,7 +71,7 @@ BitLab is a vibrant generative art workbench built with React, p5.js, Tailwind, 
 - **Motion Lab** – Density-driven layering paired with ten motion envelopes (sway → wavefront) and a master speed dial, now normalised so every mode feels punchy at the same slider value.
 - **Rotation System** – Independent rotation offsets (Sprites tab) and spin animation (Motion tab) with per-sprite direction, speed and angle variance.
 - **Blend Architectures** – Layer-specific blend modes (multiply, screen, hard light, overlay) with optional per-sprite randomisation.
-- **Custom Palette Management** – Create custom color palettes from images (upload or URL), extract dominant colors using k-means clustering, and manage up to 10 custom palettes. Export/import palettes as JSON for easy sharing.
+- **Custom Palette Management** – Create custom color palettes from images (upload or URL), extract dominant colors using k-means clustering, and manage up to 10 custom palettes. Custom palettes automatically generate gradients and work with canvas backgrounds (solid and gradient modes), just like built-in palettes. Export/import palettes as JSON for easy sharing.
 - **Organized Color Palettes** – 20+ built-in palettes organized by category (Neon/Cyber, Warm/Fire, Cool/Ocean, Nature, Soft/Pastel, Dark/Mysterious) with color preview squares in dropdowns.
 - **Theme Designer** – System/light/dark cycling, six colourway accents, and RetroUI Box/Rounded chassis toggle applied across the entire shell.
 - **Status HUD** – Live palette, sprite mode, blend, motion, density, and FPS read-outs follow you into fullscreen.
@@ -112,7 +112,10 @@ BitLab includes a powerful custom palette management system that lets you create
 
 - **Smart Color Extraction** – Uses k-means clustering to extract 5 dominant colors from images
 - **Up to 10 Custom Palettes** – Store and manage multiple custom palettes
+- **Automatic Gradient Generation** – Custom palettes automatically generate gradients for sprite fills, just like built-in palettes
+- **Canvas Background Support** – Use custom palettes for canvas backgrounds in both solid and gradient modes
 - **Export & Share** – Export any palette as JSON to share with others
+- **Import Palettes** – Import shared palette JSON files to use others' color schemes
 - **Edit & Delete** – Rename or remove custom palettes as needed
 - **Category Organization** – Custom palettes appear in a "Custom" category in the palette dropdown
 - **Color Previews** – See color swatches in both the manager and dropdown selectors

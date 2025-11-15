@@ -1739,12 +1739,16 @@ export const createSpriteController = (
       }
     },
     setBackgroundMode: (mode: BackgroundMode) => {
-      const isValid =
-        mode === "auto" || palettes.some((palette) => palette.id === mode);
-      if (!isValid) {
+      // Check if mode is valid (auto or a valid palette ID from all palettes including custom)
+      if (mode === "auto") {
+        applyState({ backgroundMode: mode });
         return;
       }
-      applyState({ backgroundMode: mode });
+      // Use getPalette to check if palette exists (includes custom palettes)
+      const palette = getPalette(mode);
+      if (palette && palette.id === mode) {
+        applyState({ backgroundMode: mode });
+      }
     },
     setBackgroundHueShift: (value: number) => {
       // Background hue shift affects background color, so regeneration is needed
@@ -1783,13 +1787,17 @@ export const createSpriteController = (
       applyState(updates, { recompute: false });
     },
     setCanvasGradientMode: (mode: BackgroundMode) => {
-      const isValid =
-        mode === "auto" || palettes.some((palette) => palette.id === mode);
-      if (!isValid) {
+      // Check if mode is valid (auto or a valid palette ID from all palettes including custom)
+      if (mode === "auto") {
+        applyState({ canvasGradientMode: mode }, { recompute: false });
         return;
       }
-      // Canvas gradient mode is applied in render, no regeneration needed
-      applyState({ canvasGradientMode: mode }, { recompute: false });
+      // Use getPalette to check if palette exists (includes custom palettes)
+      const palette = getPalette(mode);
+      if (palette && palette.id === mode) {
+        // Canvas gradient mode is applied in render, no regeneration needed
+        applyState({ canvasGradientMode: mode }, { recompute: false });
+      }
     },
     setCanvasGradientDirection: (degrees: number) => {
       // Canvas gradient direction is applied in render, no regeneration needed

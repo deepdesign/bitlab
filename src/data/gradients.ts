@@ -1,4 +1,4 @@
-import { palettes, type Palette } from "./palettes";
+import { getAllPalettes, type Palette } from "./palettes";
 
 export interface GradientPreset {
   id: string;
@@ -128,12 +128,15 @@ function generatePaletteGradients(palette: Palette): GradientPreset[] {
 }
 
 /**
- * Generate all gradients from palettes
+ * Generate all gradients from palettes (including custom palettes)
  */
 function generateAllGradients(): GradientPreset[] {
   const allGradients: GradientPreset[] = [];
   
-  for (const palette of palettes) {
+  // Use getAllPalettes() to include both built-in and custom palettes
+  const allPalettes = getAllPalettes();
+  
+  for (const palette of allPalettes) {
     const paletteGradients = generatePaletteGradients(palette);
     allGradients.push(...paletteGradients);
   }
@@ -141,6 +144,9 @@ function generateAllGradients(): GradientPreset[] {
   return allGradients;
 }
 
+// Generate gradients at module load time
+// Note: Custom palettes added after page load won't have gradients until page refresh
+// This is acceptable since gradients are generated from localStorage on page load
 export const gradientPresets: GradientPreset[] = generateAllGradients();
 
 /**
@@ -159,7 +165,24 @@ export function getRandomGradient(): GradientPreset {
 
 /**
  * Get gradients for a specific palette
+ * Generates gradients on-the-fly for custom palettes if not already in the preset list
  */
 export function getGradientsForPalette(paletteId: string): GradientPreset[] {
-  return gradientPresets.filter((g) => g.id.startsWith(`${paletteId}_`));
+  // First, check if gradients already exist in presets
+  const existingGradients = gradientPresets.filter((g) => g.id.startsWith(`${paletteId}_`));
+  
+  if (existingGradients.length > 0) {
+    return existingGradients;
+  }
+  
+  // If no gradients found, it might be a custom palette added at runtime
+  // Generate gradients on-the-fly for this palette
+  const allPalettes = getAllPalettes();
+  const palette = allPalettes.find((p) => p.id === paletteId);
+  
+  if (palette) {
+    return generatePaletteGradients(palette);
+  }
+  
+  return [];
 }
