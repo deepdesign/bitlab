@@ -15,6 +15,12 @@ const MOTION_SPEED_MAX = 12.5;
 const clampValue = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
 
+/**
+ * Converts internal density value (50-1000) to UI slider value (0-100)
+ * 
+ * @param value - Internal density value (50-1000)
+ * @returns UI slider value (0-100)
+ */
 export const densityToUi = (value: number) => {
   const bounded = clampValue(value, TILE_DENSITY_MIN, TILE_DENSITY_MAX);
   return Math.round(
@@ -23,6 +29,12 @@ export const densityToUi = (value: number) => {
   );
 };
 
+/**
+ * Converts UI slider value (0-100) to internal density value (50-1000)
+ * 
+ * @param value - UI slider value (0-100)
+ * @returns Internal density value (50-1000)
+ */
 export const uiToDensity = (value: number) => {
   const bounded = clampValue(value, 0, 100);
   return Math.round(
@@ -30,6 +42,12 @@ export const uiToDensity = (value: number) => {
   );
 };
 
+/**
+ * Converts internal palette variance value (0-150) to UI slider value (0-100)
+ * 
+ * @param value - Internal variance value (0-150)
+ * @returns UI slider value (0-100)
+ */
 export const varianceToUi = (value: number) => {
   const bounded = clampValue(value, PALETTE_VARIANCE_MIN, PALETTE_VARIANCE_MAX);
   return Math.round(
@@ -38,6 +56,12 @@ export const varianceToUi = (value: number) => {
   );
 };
 
+/**
+ * Converts UI slider value (0-100) to internal palette variance value (0-150)
+ * 
+ * @param value - UI slider value (0-100)
+ * @returns Internal variance value (0-150)
+ */
 export const uiToVariance = (value: number) => {
   const bounded = clampValue(value, 0, 100);
   return Math.round(
@@ -45,11 +69,23 @@ export const uiToVariance = (value: number) => {
   );
 };
 
+/**
+ * Converts internal motion speed value (0-12.5) to UI slider value (0-100)
+ * 
+ * @param value - Internal speed value (0-12.5)
+ * @returns UI slider value (0-100)
+ */
 export const speedToUi = (value: number) => {
   const bounded = clampValue(value, 0, MOTION_SPEED_MAX);
   return Math.round((bounded / MOTION_SPEED_MAX) * 100);
 };
 
+/**
+ * Converts UI slider value (0-100) to internal motion speed value (0-12.5)
+ * 
+ * @param value - UI slider value (0-100)
+ * @returns Internal speed value (0-12.5)
+ */
 export const uiToSpeed = (value: number) => {
   const bounded = clampValue(value, 0, 100);
   return Math.round((bounded / 100) * MOTION_SPEED_MAX);

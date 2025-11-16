@@ -1,9 +1,11 @@
+import { useRef } from "react";
 import { Button } from "@/components/Button";
 import { Switch } from "@/components/retroui/Switch";
 import { Lock, Unlock, RefreshCw } from "lucide-react";
 import { SPRITE_MODES } from "@/constants/sprites";
 import { ControlSlider, ShapeIcon, TooltipIcon } from "./shared";
 import { densityToUi, uiToDensity } from "@/lib/utils";
+import { animatePulse } from "@/lib/utils/animations";
 import type { GeneratorState, SpriteController, SpriteMode } from "@/types/generator";
 
 interface SpriteControlsProps {
@@ -37,6 +39,7 @@ export function SpriteControls({
   onRotationToggle,
   onRotationAmountChange,
 }: SpriteControlsProps) {
+  const randomizeButtonRef = useRef<HTMLButtonElement>(null);
   const densityValueUi = densityToUi(spriteState.scalePercent);
 
   return (
@@ -60,21 +63,9 @@ export function SpriteControls({
               <span className="field-value">{currentModeLabel}</span>
             )}
           </div>
-        </div>
-
-        {/* Icon button row for sprite selection */}
-        <div
-          className="sprite-icon-buttons"
-          style={{ marginTop: "0.25rem", marginBottom: "0" }}
-        >
-          <div
-            style={{
-              display: "flex",
-              gap: "0.5rem",
-              flexWrap: "wrap",
-              alignItems: "center",
-            }}
-          >
+          {/* Icon button row for sprite selection */}
+          <div className="sprite-icon-buttons">
+          <div className="flex flex-wrap items-center">
             {SPRITE_MODES.map((mode) => {
               const isSelected = spriteState.spriteMode === mode.value;
               return (
@@ -98,6 +89,8 @@ export function SpriteControls({
               variant="outline"
               onClick={() => onLockSpriteMode(!lockedSpriteMode)}
               disabled={!ready}
+              aria-label={lockedSpriteMode ? "Unlock sprite mode" : "Lock sprite mode"}
+              title={lockedSpriteMode ? "Unlock sprite mode" : "Lock sprite mode"}
               className={
                 lockedSpriteMode
                   ? "control-lock-button control-lock-button-locked"
@@ -115,11 +108,12 @@ export function SpriteControls({
               )}
             </Button>
           </div>
+          </div>
         </div>
 
         {/* Random sprites switch */}
-        <div className="control-field" style={{ marginTop: "1rem" }}>
-          <div className="switch-row" style={{ gap: "0.75rem" }}>
+        <div className="control-field control-field--spaced-top">
+          <div className="switch-row">
             <Switch
               id="random-sprites"
               checked={spriteState.randomSprites ?? false}
@@ -128,10 +122,16 @@ export function SpriteControls({
               aria-labelledby="random-sprites-label"
             />
             <Button
+              ref={randomizeButtonRef}
               type="button"
               size="icon"
               variant="outline"
-              onClick={() => controller?.randomizeSpriteShapes()}
+              onClick={() => {
+                if (randomizeButtonRef.current) {
+                  animatePulse(randomizeButtonRef.current);
+                }
+                controller?.randomizeSpriteShapes();
+              }}
               disabled={!ready || !spriteState.randomSprites}
               aria-label="Randomise sprite shapes"
               title="Randomise sprite shapes"
@@ -152,7 +152,7 @@ export function SpriteControls({
         </div>
       </div>
 
-      <div className="section" style={{ marginTop: "2rem" }}>
+      <div className="section section--spaced">
         <hr className="section-divider" />
         <h3 className="section-title">Density &amp; Scale</h3>
         <ControlSlider
@@ -190,11 +190,11 @@ export function SpriteControls({
         />
       </div>
 
-      <div className="section" style={{ marginTop: "2rem" }}>
+      <div className="section section--spaced">
         <hr className="section-divider" />
         <h3 className="section-title">Rotation</h3>
         <div className="control-field control-field--rotation">
-          <div className="switch-row" style={{ gap: "0.75rem" }}>
+          <div className="switch-row">
             <Switch
               id="rotation-toggle"
               checked={spriteState.rotationEnabled}
@@ -215,10 +215,7 @@ export function SpriteControls({
           </div>
         </div>
         {spriteState.rotationEnabled && (
-          <div
-            className="rotation-slider-wrapper"
-            style={{ marginBottom: "1.5rem" }}
-          >
+          <div className="rotation-slider-wrapper">
             <ControlSlider
               id="rotation-amount"
               label="Rotation Amount"

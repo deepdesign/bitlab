@@ -20,4 +20,5 @@ export * from "./responsiveLayout";
 export * from "./conversions";
 export { formatBlendMode } from "./formatting";
 export { generatePaletteOptions } from "./paletteOptions";
+export * from "./animations";
 

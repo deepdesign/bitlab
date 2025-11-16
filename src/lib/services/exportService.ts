@@ -1,4 +1,6 @@
 import p5 from "p5";
+import type { P5WithCanvas } from "@/types/p5-extensions";
+import { hasCanvas } from "@/types/p5-extensions";
 
 /**
  * Export configuration options
@@ -47,18 +49,39 @@ export async function exportCanvas(
 ): Promise<string> {
   const { width, height, format, quality = 0.92, scale = 1 } = config;
   
+  // Validate input parameters
+  if (!isFinite(width) || !isFinite(height) || width <= 0 || height <= 0) {
+    throw new Error(`Invalid export dimensions: ${width}x${height}`);
+  }
+  if (!isFinite(scale) || scale <= 0 || scale > 10) {
+    throw new Error(`Invalid scale factor: ${scale} (must be between 0 and 10)`);
+  }
+  if (quality < 0.1 || quality > 1.0) {
+    throw new Error(`Invalid quality: ${quality} (must be between 0.1 and 1.0)`);
+  }
+  
   // Get the current canvas (p5.js stores it as a property, but TypeScript types don't include it)
-  const currentCanvas = (p5Instance as any).canvas as HTMLCanvasElement | null;
+  const currentCanvas = hasCanvas(p5Instance) ? p5Instance.canvas : null;
   if (!currentCanvas) {
-    throw new Error("Canvas not found");
+    throw new Error("Canvas not found. Make sure the canvas is initialized.");
   }
 
   const currentWidth = currentCanvas.width;
   const currentHeight = currentCanvas.height;
   
+  // Validate source canvas dimensions
+  if (!currentWidth || !currentHeight || currentWidth <= 0 || currentHeight <= 0) {
+    throw new Error(`Invalid source canvas dimensions: ${currentWidth}x${currentHeight}`);
+  }
+  
   // Calculate target dimensions with scale factor
-  const targetWidth = width * scale;
-  const targetHeight = height * scale;
+  const targetWidth = Math.floor(width * scale);
+  const targetHeight = Math.floor(height * scale);
+  
+  // Validate target dimensions
+  if (targetWidth <= 0 || targetHeight <= 0 || !isFinite(targetWidth) || !isFinite(targetHeight)) {
+    throw new Error(`Invalid target dimensions: ${targetWidth}x${targetHeight}`);
+  }
   
   // Create a temporary offscreen canvas for high-res rendering
   const offscreenCanvas = document.createElement("canvas");
@@ -71,7 +94,7 @@ export async function exportCanvas(
   });
   
   if (!offscreenCtx) {
-    throw new Error("Could not create offscreen canvas context");
+    throw new Error("Could not create offscreen canvas context. Your browser may not support canvas operations.");
   }
 
   // Enable high-quality rendering
@@ -176,6 +199,6 @@ export function createThumbnail(
  * @returns The HTML canvas element, or null if not found
  */
 export function getCanvasFromP5(p5Instance: p5): HTMLCanvasElement | null {
-  return ((p5Instance as any).canvas as HTMLCanvasElement) || null;
+  return hasCanvas(p5Instance) ? p5Instance.canvas : null;
 }
 

@@ -1,4 +1,4 @@
-# Complete Guide: Theme Mode (Dark/Light) in BitLab
+# Complete Guide: Theme Mode (Dark/Light) in Pixli
 
 ## Table of Contents
 1. [Project Overview](#project-overview)
@@ -12,7 +12,7 @@
 
 ## Project Overview
 
-**BitLab** supports light, dark, and system (auto) theme modes for the UI.
+**Pixli** supports light, dark, and system (auto) theme modes for the UI.
 
 ### What Is Theme Mode?
 

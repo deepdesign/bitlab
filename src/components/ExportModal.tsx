@@ -5,6 +5,7 @@ import { Accordion } from "@/components/retroui/Accordion";
 import { X, Settings2 } from "lucide-react";
 import p5 from "p5";
 import { exportCanvas, downloadImage, createThumbnail, getCanvasFromP5 } from "@/lib/services";
+import { animateSuccess } from "@/lib/utils/animations";
 import type { SpriteController } from "../generator";
 
 interface ExportModalProps {
@@ -58,6 +59,7 @@ export const ExportModal = ({
   const [lockAspectRatio, setLockAspectRatio] = useState(true);
   const [aspectRatio, setAspectRatio] = useState(1); // Store the aspect ratio when locked
   const [selectedPreset, setSelectedPreset] = useState<string | null>("Quick-Current"); // Track selected preset
+  const exportButtonRef = useRef<HTMLButtonElement>(null);
 
   // Update dimensions when canvas size changes
   useEffect(() => {
@@ -160,10 +162,30 @@ export const ExportModal = ({
     const exportWidth = width;
     const exportHeight = height;
 
-    // Validate dimensions
-    if (exportWidth < 100 || exportWidth > 16384 || exportHeight < 100 || exportHeight > 16384) {
-      setError("Dimensions must be between 100px and 16384px");
+    // Validate dimensions with more detailed error messages
+    if (!isFinite(exportWidth) || !isFinite(exportHeight)) {
+      setError("Dimensions must be valid numbers");
       return;
+    }
+    if (exportWidth < 100 || exportWidth > 16384) {
+      setError(`Width must be between 100px and 16384px (got ${exportWidth}px)`);
+      return;
+    }
+    if (exportHeight < 100 || exportHeight > 16384) {
+      setError(`Height must be between 100px and 16384px (got ${exportHeight}px)`);
+      return;
+    }
+    // Check for reasonable aspect ratio to prevent memory issues
+    const aspectRatio = exportWidth / exportHeight;
+    if (aspectRatio > 10 || aspectRatio < 0.1) {
+      setError("Aspect ratio is too extreme. Please use dimensions between 1:10 and 10:1");
+      return;
+    }
+    // Warn about very large exports (but allow them)
+    const pixelCount = exportWidth * exportHeight;
+    if (pixelCount > 268435456) { // 16384 * 16384
+      const sizeMB = (pixelCount * 4 / 1024 / 1024).toFixed(1);
+      console.warn(`Large export detected: ${sizeMB}MB. This may take a while.`);
     }
 
     setIsExporting(true);
@@ -208,7 +230,7 @@ export const ExportModal = ({
 
       // Generate filename
       const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, -5);
-      const filename = `bitlab-export-${exportWidth}x${exportHeight}-${timestamp}.png`;
+      const filename = `pixli-export-${exportWidth}x${exportHeight}-${timestamp}.png`;
 
       setExportProgress(90);
       downloadImage(dataUrl, filename);
@@ -216,12 +238,19 @@ export const ExportModal = ({
       setExportProgress(100);
       await new Promise(resolve => setTimeout(resolve, 200));
       
+      // Animate success on export button
+      if (exportButtonRef.current) {
+        animateSuccess(exportButtonRef.current);
+      }
+      
       // Resume animation before closing modal
       if (controller && wasAnimatingRef.current) {
         controller.resumeAnimation();
         wasAnimatingRef.current = false;
       }
       
+      // Delay close slightly to show success animation
+      await new Promise(resolve => setTimeout(resolve, 300));
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Export failed");
@@ -277,7 +306,7 @@ export const ExportModal = ({
             size="icon"
             onClick={handleClose}
             disabled={isExporting}
-            aria-label="Close"
+            aria-label="Close export modal"
             className="export-modal-close"
           >
             <X />
@@ -383,6 +412,8 @@ export const ExportModal = ({
                               disabled={isExporting}
                               title={preset.label}
                               className="export-preset-button-compact"
+                              aria-label={`Select ${preset.label} preset (${preset.width}x${preset.height}px)`}
+                              aria-pressed={isSelected}
                             >
                               {preset.label}
                             </Button>
@@ -405,12 +436,14 @@ export const ExportModal = ({
 
           {/* Export Button */}
           <Button
+            ref={exportButtonRef}
             type="button"
             variant="default"
             size="md"
             onClick={handleExport}
             disabled={isExporting || !p5Instance}
             className="export-button-full-width"
+            aria-label={isExporting ? "Exporting canvas" : "Export canvas"}
           >
             {isExporting ? "Exporting..." : "Export"}
           </Button>

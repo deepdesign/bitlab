@@ -13,7 +13,7 @@ export interface Preset {
   updatedAt: number;
 }
 
-const STORAGE_KEY = "bitlab-presets";
+const STORAGE_KEY = "pixli-presets";
 const MAX_PRESETS = 50;
 
 export const getAllPresets = (): Preset[] => {

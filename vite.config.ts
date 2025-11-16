@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs'
 
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
+import { visualizer } from 'rollup-plugin-visualizer'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -11,11 +12,18 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const packageJson = JSON.parse(readFileSync(path.resolve(__dirname, 'package.json'), 'utf-8'))
 const version = packageJson.version
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     // Removed force-full-reload plugin - stateRef pattern handles HMR properly
-  ],
+    // Bundle analyzer (only in analyze mode)
+    mode === 'analyze' && visualizer({
+      open: true,
+      filename: 'dist/stats.html',
+      gzipSize: true,
+      brotliSize: true,
+    }),
+  ].filter(Boolean),
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
@@ -27,5 +35,23 @@ export default defineConfig({
   server: {
     // Reverted HMR and server config to defaults - the connection loss might have been caused by our changes
   },
-})
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Split vendor libraries into separate chunks
+          'react-vendor': ['react', 'react-dom'],
+          'radix-vendor': [
+            '@radix-ui/react-select',
+            '@radix-ui/react-slider',
+            '@radix-ui/react-switch',
+            '@radix-ui/react-accordion',
+          ],
+          'p5-vendor': ['p5'],
+          'icons-vendor': ['lucide-react'],
+        },
+      },
+    },
+  },
+}))
 

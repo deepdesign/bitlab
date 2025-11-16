@@ -1,4 +1,4 @@
-# Complete Guide: Managing Color Palettes in BitLab
+# Complete Guide: Managing Color Palettes in Pixli
 
 ## Table of Contents
 1. [Project Overview](#project-overview)
@@ -16,7 +16,7 @@
 
 ## Project Overview
 
-**BitLab** is a React + TypeScript web application for creating generative art with animated sprites. It uses:
+**Pixli** is a React + TypeScript web application for creating generative art with animated sprites. It uses:
 - **React 19** for UI components
 - **TypeScript** for type safety
 - **p5.js** for canvas rendering and animation
@@ -37,7 +37,7 @@ Color palettes are collections of 4-5 colors that define the visual theme of the
 
 ### Directory Tree
 ```
-bitlab/
+pixli/
 ├── src/
 │   ├── data/                    # Data definitions
 │   │   ├── palettes.ts         # ⭐ MAIN FILE - Palette definitions
@@ -1045,4 +1045,4 @@ npm run preview
 ---
 
 **Last Updated:** 2025-01-18  
-**Maintained By:** BitLab Development Team
+**Maintained By:** Pixli Development Team

@@ -3,6 +3,7 @@ import { Button } from "@/components/Button";
 import { Badge } from "@/components/retroui/Badge";
 import { Maximize2, X, RefreshCw, Bookmark, Camera, HelpCircle, Info } from "lucide-react";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { animatePulse } from "@/lib/utils/animations";
 import type { GeneratorState, MovementMode } from "@/types/generator";
 import type { BlendModeOption } from "@/types/generator";
 
@@ -46,6 +47,7 @@ export function StatusBar({
   statusBarRef,
 }: StatusBarProps) {
   const isMobile = useIsMobile();
+  const randomiseButtonRef = useRef<HTMLButtonElement>(null);
   const [showStatusInfo, setShowStatusInfo] = useState(false);
   const [isBadgeCompact, setIsBadgeCompact] = useState(false);
   const [isBadgePopoverOpen, setIsBadgePopoverOpen] = useState(false);
@@ -287,14 +289,20 @@ export function StatusBar({
       </div>
       <div className="status-bar-right" ref={statusBarRightRef}>
         <Button
+          ref={randomiseButtonRef}
           type="button"
           size="icon"
           variant="outline"
-          onClick={onRandomiseAll}
+          onClick={() => {
+            if (randomiseButtonRef.current) {
+              animatePulse(randomiseButtonRef.current);
+            }
+            onRandomiseAll();
+          }}
           disabled={!ready}
           className="status-bar-randomise-button"
-          aria-label="Randomise all"
-          title="Randomise all"
+          aria-label="Randomise all sprites"
+          title="Randomise all sprites"
         >
           <RefreshCw className="status-bar-icon" />
         </Button>
@@ -305,8 +313,8 @@ export function StatusBar({
           onClick={onShowPresets}
           disabled={!ready}
           className="status-bar-presets-button"
-          aria-label="Presets"
-          title="Presets"
+          aria-label="Manage presets"
+          title="Manage presets"
         >
           <Bookmark className="status-bar-icon" />
         </Button>

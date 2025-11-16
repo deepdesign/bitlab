@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_DIR="/var/www/bitlab.jamescutts.me"
+REPO_DIR="/var/www/pixli.jamescutts.me"
 PUBLISH_DIR="$REPO_DIR/html"
 
-printf "\n==> Deploying BitLab to %s\n" "$PUBLISH_DIR"
+printf "\n==> Deploying Pixli to %s\n" "$PUBLISH_DIR"
 
 cd "$REPO_DIR"
 

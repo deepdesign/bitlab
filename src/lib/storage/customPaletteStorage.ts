@@ -6,7 +6,7 @@ export interface CustomPalette extends Palette {
   updatedAt: number;
 }
 
-const STORAGE_KEY = "bitlab-custom-palettes";
+const STORAGE_KEY = "pixli-custom-palettes";
 const MAX_CUSTOM_PALETTES = 10;
 
 export const getAllCustomPalettes = (): CustomPalette[] => {

@@ -1,4 +1,4 @@
-# Complete Guide: Density & Scale in BitLab
+# Complete Guide: Density & Scale in Pixli
 
 ## Table of Contents
 1. [Project Overview](#project-overview)
@@ -16,7 +16,7 @@
 
 ## Project Overview
 
-**BitLab** is a React + TypeScript web application for creating generative art with animated sprites. It uses:
+**Pixli** is a React + TypeScript web application for creating generative art with animated sprites. It uses:
 - **React 19** for UI components
 - **TypeScript** for type safety
 - **p5.js** for canvas rendering and animation
@@ -40,7 +40,7 @@ Together, these controls determine the visual density and size distribution of s
 
 ### Directory Tree
 ```
-bitlab/
+pixli/
 ├── src/
 │   ├── lib/
 │   │   └── utils/
@@ -601,7 +601,7 @@ After modifying density or scale behavior:
 
 ## Summary
 
-The density and scale system in BitLab provides:
+The density and scale system in Pixli provides:
 - **Flexible Control**: Adjust sprite count and size independently
 - **Layer System**: Progressive layer appearance based on density
 - **Size Variation**: Random scale distribution for visual interest

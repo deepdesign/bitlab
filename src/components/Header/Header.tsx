@@ -1,4 +1,4 @@
-import { useRef, useMemo, useCallback } from "react";
+import { useRef, useMemo, useCallback, useState } from "react";
 import { Button } from "@/components/Button";
 import {
   Select,
@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from "@/components/retroui/Select";
 import { MobileMenu } from "@/components/MobileMenu";
-import { BitlabLogo } from "./BitlabLogo";
+import { PixliLogo } from "./PixliLogo";
 import { useHeaderOverflow } from "@/hooks/useHeaderOverflow";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import {
@@ -17,8 +17,9 @@ import {
   THEME_COLOR_PREVIEW,
   type ThemeColor,
 } from "@/constants/theme";
-import { Moon, Monitor, Sun } from "lucide-react";
+import { Moon, Monitor, Sun, HelpCircle, Settings } from "lucide-react";
 import type { CSSProperties } from "react";
+import { HelpMenu } from "../Onboarding/HelpMenu";
 
 interface HeaderProps {
   themeMode: "system" | "light" | "dark";
@@ -27,6 +28,8 @@ interface HeaderProps {
   onThemeModeChange: (mode: "system" | "light" | "dark") => void;
   onThemeColorChange: (color: ThemeColor) => void;
   onThemeShapeChange: (shape: "box" | "rounded") => void;
+  onStartTour?: () => void;
+  onOpenSettings?: () => void;
 }
 
 export function Header({
@@ -36,7 +39,10 @@ export function Header({
   onThemeModeChange,
   onThemeColorChange,
   onThemeShapeChange,
+  onStartTour,
+  onOpenSettings,
 }: HeaderProps) {
+  const [showHelpMenu, setShowHelpMenu] = useState(false);
   const isMobile = useIsMobile();
   const headerToolbarRef = useRef<HTMLDivElement | null>(null);
   const headerActionsRef = useRef<HTMLDivElement | null>(null);
@@ -118,9 +124,9 @@ export function Header({
           <button
             type="button"
             className="app-logo-button app-logo-button--mobile"
-            aria-label="BitLab"
+            aria-label="Pixli"
           >
-            <BitlabLogo className="app-logo-svg" />
+            <PixliLogo className="app-logo-svg" />
           </button>
           <MobileMenu
             themeColor={themeColor}
@@ -136,8 +142,8 @@ export function Header({
         </div>
       ) : (
         <>
-          <button type="button" className="app-logo-button" aria-label="BitLab">
-            <BitlabLogo className="app-logo-svg" />
+          <button type="button" className="app-logo-button" aria-label="Pixli">
+            <PixliLogo className="app-logo-svg" />
           </button>
           <div className="header-toolbar" ref={headerToolbarRef}>
             <div className="header-spacer"></div>
@@ -175,7 +181,35 @@ export function Header({
                     aria-label="Theme options"
                   >
                     <div className="header-overflow-content">
-                      <Select value={themeColor} onValueChange={handleThemeSelect}>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setIsHeaderOverflowOpen(false);
+                          onOpenSettings?.();
+                        }}
+                        className="w-full justify-start gap-2"
+                      >
+                        <Settings className="h-4 w-4" />
+                        Settings
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setIsHeaderOverflowOpen(false);
+                          setShowHelpMenu(true);
+                        }}
+                        className="w-full justify-start gap-2"
+                      >
+                        <HelpCircle className="h-4 w-4" />
+                        Help
+                      </Button>
+                      <div className="header-overflow-divider"></div>
+                      <div className="header-overflow-theme-section">
+                        <Select value={themeColor} onValueChange={handleThemeSelect}>
                         <SelectTrigger
                           className="header-theme-trigger"
                           aria-label="Theme colour"
@@ -253,12 +287,35 @@ export function Header({
                       >
                         <ThemeModeIconComponent className="h-4 w-4" aria-hidden="true" />
                       </Button>
+                      </div>
                     </div>
                   </div>
                 )}
               </div>
             ) : (
               <div className="header-actions" ref={headerActionsRef}>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="outline"
+                  className="header-icon-button"
+                  onClick={() => onOpenSettings?.()}
+                  aria-label="Settings"
+                  title="Settings"
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="outline"
+                  className="header-icon-button"
+                  onClick={() => setShowHelpMenu(true)}
+                  aria-label="Help"
+                  title="Help"
+                >
+                  <HelpCircle className="h-4 w-4" />
+                </Button>
                 <Select value={themeColor} onValueChange={handleThemeSelect}>
                   <SelectTrigger
                     className="header-theme-trigger"
@@ -342,6 +399,20 @@ export function Header({
           </div>
         </>
       )}
+
+      {/* Help Menu */}
+      <HelpMenu
+        isOpen={showHelpMenu}
+        onClose={() => setShowHelpMenu(false)}
+        onStartTour={() => {
+          setShowHelpMenu(false);
+          onStartTour?.();
+        }}
+        onOpenSettings={() => {
+          setShowHelpMenu(false);
+          onOpenSettings?.();
+        }}
+      />
     </header>
   );
 }

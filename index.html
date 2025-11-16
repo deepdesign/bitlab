@@ -2,25 +2,32 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon/svg/bitlab-b-logo-black.svg" />
+    <!-- SVG Favicon (modern browsers) -->
+    <link rel="icon" type="image/svg+xml" href="/logo/SVG/pixli-logo-p-white.svg" />
     <link
       rel="icon"
       type="image/svg+xml"
-      href="/favicon/svg/bitlab-b-logo-black.svg"
+      href="/logo/SVG/pixli-logo-p-black.svg"
       media="(prefers-color-scheme: light)"
     />
     <link
       rel="icon"
       type="image/svg+xml"
-      href="/favicon/svg/bitlab-b-logo-white.svg"
+      href="/logo/SVG/pixli-logo-p-white.svg"
       media="(prefers-color-scheme: dark)"
     />
+    <!-- PNG Favicons (fallback for older browsers) -->
+    <link rel="icon" type="image/png" sizes="16x16" href="/logo/16w/pixli-logo-p-white.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/logo/32w/pixli-logo-p-white.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/logo/48w/pixli-logo-p-white.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/logo/192w/pixli-logo-p-white.png" />
+    <link rel="apple-touch-icon" sizes="128x128" href="/logo/128w/pixli-logo-p-white.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
     />
-    <title>BitLab</title>
+    <title>Pixli</title>
     <style>
       :root {
         color-scheme: dark;
@@ -79,8 +86,8 @@
         height: 100%;
         background: var(--loader-color);
         mix-blend-mode: hard-light;
-        mask: url("/bitlab-b-logo-white.svg") center / contain no-repeat;
-        -webkit-mask: url("/bitlab-b-logo-white.svg") center / contain no-repeat;
+        mask: url("/logo/SVG/pixli-logo-p-white.svg") center / contain no-repeat;
+        -webkit-mask: url("/logo/SVG/pixli-logo-p-white.svg") center / contain no-repeat;
         transform-origin: center;
         animation: none;
       }
@@ -224,7 +231,7 @@
         </div>
         <div class="initial-loader-text" id="initial-loader-text">loading 0%</div>
       </div>
-      <span class="initial-loader-sr">Loading BitLab</span>
+      <span class="initial-loader-sr">Loading Pixli</span>
     </div>
     <div id="app"></div>
     <script type="module" src="/src/bootstrap.ts"></script>

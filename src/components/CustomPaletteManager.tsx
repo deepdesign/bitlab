@@ -207,7 +207,7 @@ export const CustomPaletteManager = ({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `bitlab-palette-${palette.name.replace(/[^a-z0-9]/gi, "-").toLowerCase()}.json`;
+    a.download = `pixli-palette-${palette.name.replace(/[^a-z0-9]/gi, "-").toLowerCase()}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

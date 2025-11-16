@@ -1,4 +1,4 @@
-# Complete Guide: Presets in BitLab
+# Complete Guide: Presets in Pixli
 
 ## Table of Contents
 1. [Project Overview](#project-overview)
@@ -12,7 +12,7 @@
 
 ## Project Overview
 
-**BitLab** allows saving and loading complete generator state configurations as presets.
+**Pixli** allows saving and loading complete generator state configurations as presets.
 
 ### What Are Presets?
 
@@ -41,7 +41,7 @@ interface Preset {
 ### Storage
 
 - **Location**: Browser localStorage
-- **Key**: `"bitlab-presets"`
+- **Key**: `"pixli-presets"`
 - **Limit**: 50 presets maximum
 - **Format**: JSON array
 
@@ -109,7 +109,7 @@ const MAX_PRESETS = 50;  // Change this value
 1. Open `src/lib/storage/presetStorage.ts`
 2. Find `STORAGE_KEY` (around line 16):
 ```typescript
-const STORAGE_KEY = "bitlab-presets";  // Change this value
+const STORAGE_KEY = "pixli-presets";  // Change this value
 ```
 
 **Note:** Changing this will make existing presets inaccessible.

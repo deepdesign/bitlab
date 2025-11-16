@@ -1,4 +1,4 @@
-# Complete Guide: Sprite Shapes in BitLab
+# Complete Guide: Sprite Shapes in Pixli
 
 ## Table of Contents
 1. [Project Overview](#project-overview)
@@ -16,7 +16,7 @@
 
 ## Project Overview
 
-**BitLab** is a React + TypeScript web application for creating generative art with animated sprites. It uses:
+**Pixli** is a React + TypeScript web application for creating generative art with animated sprites. It uses:
 - **React 19** for UI components
 - **TypeScript** for type safety
 - **p5.js** for canvas rendering and animation
@@ -39,7 +39,7 @@ Sprite shapes are the geometric primitives that make up the visual elements on t
 
 ### Directory Tree
 ```
-bitlab/
+pixli/
 ├── src/
 │   ├── constants/                  # Constants and definitions
 │   │   └── sprites.ts              # ⭐ MAIN FILE - Sprite mode definitions
@@ -101,7 +101,7 @@ Every sprite shape is defined in the `SPRITE_MODES` array with this structure:
 
 ### Available Shapes
 
-BitLab currently supports **13 sprite shapes**:
+Pixli currently supports **13 sprite shapes**:
 
 1. **Rounded** - Soft-edged tiles with rounded corners
 2. **Circle** - Perfect circular orbs
@@ -702,7 +702,7 @@ Potential improvements for the shape system:
 
 ## Summary
 
-The sprite shape system in BitLab is designed to be:
+The sprite shape system in Pixli is designed to be:
 - **Extensible**: Easy to add new shapes
 - **Type-Safe**: TypeScript ensures consistency
 - **Performant**: Efficient rendering for many sprites

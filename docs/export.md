@@ -1,4 +1,4 @@
-# Complete Guide: Export in BitLab
+# Complete Guide: Export in Pixli
 
 ## Table of Contents
 1. [Project Overview](#project-overview)
@@ -12,7 +12,7 @@
 
 ## Project Overview
 
-**BitLab** allows exporting canvas compositions as high-resolution images in various formats and dimensions.
+**Pixli** allows exporting canvas compositions as high-resolution images in various formats and dimensions.
 
 ### What Is Export?
 

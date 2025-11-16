@@ -2,13 +2,13 @@
 
 **Last Updated:** November 2025  
 **Status:** Planning Phase  
-**Goal:** Package BitLab as native tablet apps for Google Play Store and Apple App Store using a single codebase with adaptive tablet layout.
+**Goal:** Package Pixli as native tablet apps for Google Play Store and Apple App Store using a single codebase with adaptive tablet layout.
 
 ---
 
 ## Executive Summary
 
-This plan outlines the strategy for packaging BitLab as native tablet applications while maintaining a single codebase. The approach uses Capacitor to wrap the existing React/Vite web application, with adaptive tablet-specific layouts and optimizations.
+This plan outlines the strategy for packaging Pixli as native tablet applications while maintaining a single codebase. The approach uses Capacitor to wrap the existing React/Vite web application, with adaptive tablet-specific layouts and optimizations.
 
 **Key Principles:**
 - Single codebase for web and native apps
@@ -68,7 +68,7 @@ This plan outlines the strategy for packaging BitLab as native tablet applicatio
 ### Single Codebase Structure
 
 ```
-bitlab/
+pixli/
 ├── src/                    # Shared web code (existing)
 │   ├── App.tsx
 │   ├── components/
@@ -115,8 +115,8 @@ npm install @capacitor/splash-screen @capacitor/status-bar
 
 ```bash
 npx cap init
-# App name: BitLab
-# App ID: me.jamescutts.bitlab
+# App name: Pixli
+# App ID: me.jamescutts.pixli
 # Web dir: dist
 ```
 
@@ -235,14 +235,14 @@ Create `src/lib/appLifecycle.ts`:
 Generate app icons for all required sizes:
 - **iOS**: 1024×1024 (App Store), plus all required sizes for devices
 - **Android**: 512×512 (Play Store), plus adaptive icons
-- Use BitLab logo with appropriate backgrounds
+- Use Pixli logo with appropriate backgrounds
 
 #### 4.2 Splash Screens
 
 Create splash screens:
 - **iOS**: Storyboard or static images for all device sizes
 - **Android**: Drawable resources for different densities
-- Match BitLab branding and theme colors
+- Match Pixli branding and theme colors
 
 #### 4.3 Status Bar Styling
 
@@ -474,8 +474,8 @@ capacitor.config.ts (new)
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'me.jamescutts.bitlab',
-  appName: 'BitLab',
+  appId: 'me.jamescutts.pixli',
+  appName: 'Pixli',
   webDir: 'dist',
   server: {
     androidScheme: 'https'
@@ -678,7 +678,7 @@ export async function showThemeSelector() {
 
 ### App Store Metadata
 
-**App Name:** BitLab  
+**App Name:** Pixli  
 **Subtitle:** Generative Pixel Playground  
 **Description:** Create vibrant generative art with pixel sprites, palettes, and motion. Export high-resolution images and share your creations.
 

@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
+import { animateSuccess, animateShake } from "@/lib/utils/animations";
 import {
   Select,
   SelectTrigger,
@@ -39,6 +40,8 @@ export const PresetManager = ({
   const [importError, setImportError] = useState<string | null>(null);
   const [importSuccess, setImportSuccess] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const saveButtonRef = useRef<HTMLButtonElement>(null);
+  const deleteButtonRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
 
   const refreshPresets = useCallback(() => {
     setPresets(getAllPresets());
@@ -53,8 +56,16 @@ export const PresetManager = ({
       savePreset(saveName, currentState);
       setSaveName("");
       refreshPresets();
+      // Animate success on save button
+      if (saveButtonRef.current) {
+        animateSuccess(saveButtonRef.current);
+      }
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : "Failed to save preset");
+      // Animate shake on error
+      if (saveButtonRef.current) {
+        animateShake(saveButtonRef.current);
+      }
     }
   }, [currentState, saveName, refreshPresets]);
 
@@ -76,10 +87,23 @@ export const PresetManager = ({
   const handleDelete = useCallback(
     (id: string) => {
       if (confirm("Delete this preset?")) {
-        deletePreset(id);
-        refreshPresets();
-        if (selectedPresetId === id) {
-          setSelectedPresetId(null);
+        try {
+          deletePreset(id);
+          refreshPresets();
+          if (selectedPresetId === id) {
+            setSelectedPresetId(null);
+          }
+          // Animate success on delete button
+          const deleteButton = deleteButtonRefs.current.get(id);
+          if (deleteButton) {
+            animateSuccess(deleteButton);
+          }
+        } catch (error) {
+          // Animate shake on error
+          const deleteButton = deleteButtonRefs.current.get(id);
+          if (deleteButton) {
+            animateShake(deleteButton);
+          }
         }
       }
     },
@@ -92,7 +116,7 @@ export const PresetManager = ({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `bitlab-presets-${new Date().toISOString().split("T")[0]}.json`;
+    a.download = `pixli-presets-${new Date().toISOString().split("T")[0]}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -112,7 +136,7 @@ export const PresetManager = ({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `bitlab-preset-${preset.name.replace(/[^a-z0-9]/gi, "-").toLowerCase()}.json`;
+    a.download = `pixli-preset-${preset.name.replace(/[^a-z0-9]/gi, "-").toLowerCase()}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -214,6 +238,7 @@ export const PresetManager = ({
                 disabled={!currentState}
               />
               <Button
+                ref={saveButtonRef}
                 type="button"
                 size="md"
                 onClick={handleSave}
@@ -264,6 +289,13 @@ export const PresetManager = ({
                   </Button>
                   {selectedPresetId && (
                     <Button
+                      ref={(el) => {
+                        if (el && selectedPresetId) {
+                          deleteButtonRefs.current.set(selectedPresetId, el);
+                        } else if (selectedPresetId) {
+                          deleteButtonRefs.current.delete(selectedPresetId);
+                        }
+                      }}
                       type="button"
                       size="md"
                       variant="secondary"

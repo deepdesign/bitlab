@@ -1,4 +1,4 @@
-# Complete Guide: Theme Shape (Box/Rounded) in BitLab
+# Complete Guide: Theme Shape (Box/Rounded) in Pixli
 
 ## Table of Contents
 1. [Project Overview](#project-overview)
@@ -12,7 +12,7 @@
 
 ## Project Overview
 
-**BitLab** allows toggling between "box" (sharp corners) and "rounded" (rounded corners) UI styling.
+**Pixli** allows toggling between "box" (sharp corners) and "rounded" (rounded corners) UI styling.
 
 ### What Is Theme Shape?
 

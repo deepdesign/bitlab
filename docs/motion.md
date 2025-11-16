@@ -1,4 +1,4 @@
-# Complete Guide: Motion in BitLab
+# Complete Guide: Motion in Pixli
 
 ## Table of Contents
 1. [Project Overview](#project-overview)
@@ -13,7 +13,7 @@
 
 ## Project Overview
 
-**BitLab** uses motion modes to animate sprites across the canvas, creating dynamic, living compositions.
+**Pixli** uses motion modes to animate sprites across the canvas, creating dynamic, living compositions.
 
 ### What Is Motion?
 

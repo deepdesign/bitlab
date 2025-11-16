@@ -5,31 +5,68 @@
 export async function extractColorsFromImage(
   image: File | string,
 ): Promise<string[]> {
-  // Load image into HTMLImageElement
-  const img = await loadImage(image);
+  try {
+    // Validate input
+    if (typeof image === "string" && !image.trim()) {
+      throw new Error("Image URL cannot be empty");
+    }
+    if (image instanceof File && image.size === 0) {
+      throw new Error("Image file is empty");
+    }
+    if (image instanceof File && image.size > 10 * 1024 * 1024) {
+      throw new Error("Image file is too large (max 10MB)");
+    }
 
-  // Create canvas and draw image (resize for performance)
-  const canvas = document.createElement("canvas");
-  const maxSize = 200; // Resize to max 200px for performance
-  const scale = Math.min(maxSize / img.width, maxSize / img.height, 1);
-  canvas.width = img.width * scale;
-  canvas.height = img.height * scale;
+    // Load image into HTMLImageElement
+    const img = await loadImage(image);
 
-  const ctx = canvas.getContext("2d");
-  if (!ctx) {
-    throw new Error("Could not get canvas context");
+    // Validate image dimensions
+    if (img.width === 0 || img.height === 0) {
+      throw new Error("Invalid image dimensions");
+    }
+    if (img.width > 10000 || img.height > 10000) {
+      throw new Error("Image dimensions are too large (max 10000x10000)");
+    }
+
+    // Create canvas and draw image (resize for performance)
+    const canvas = document.createElement("canvas");
+    const maxSize = 200; // Resize to max 200px for performance
+    const scale = Math.min(maxSize / img.width, maxSize / img.height, 1);
+    canvas.width = Math.max(1, Math.floor(img.width * scale));
+    canvas.height = Math.max(1, Math.floor(img.height * scale));
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      throw new Error("Could not get canvas context");
+    }
+
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    // Get pixel data
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const pixels = imageData.data;
+
+    // Validate pixel data
+    if (!pixels || pixels.length === 0) {
+      throw new Error("Could not extract pixel data from image");
+    }
+
+    // Extract colors using k-means clustering
+    const colors = extractKMeansColors(pixels, 5);
+
+    // Validate extracted colors
+    if (!colors || colors.length === 0) {
+      throw new Error("Could not extract colors from image");
+    }
+
+    return colors;
+  } catch (error) {
+    // Re-throw with more context if it's not already an Error
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error(`Failed to extract colors: ${String(error)}`);
   }
-
-  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-  // Get pixel data
-  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  const pixels = imageData.data;
-
-  // Extract colors using k-means clustering
-  const colors = extractKMeansColors(pixels, 5);
-
-  return colors;
 }
 
 /**
@@ -70,7 +107,18 @@ function loadImage(image: File | string): Promise<HTMLImageElement> {
 
 /**
  * Extract colors using simplified k-means clustering
- * Returns array of 5 hex color strings
+ * 
+ * Implements a simplified k-means algorithm to find k dominant colors in an image.
+ * The algorithm:
+ * 1. Samples pixels (every 4th pixel for performance)
+ * 2. Initializes k centroids with random samples
+ * 3. Iterates 10 times, assigning samples to nearest centroids and updating centroids
+ * 4. Converts centroids to hex colors
+ * 5. Ensures minimum distance between colors for distinctness
+ * 
+ * @param pixels - Image pixel data as RGBA array (Uint8ClampedArray)
+ * @param k - Number of colors to extract (typically 5)
+ * @returns Array of k hex color strings (e.g., ["#ff0000", "#00ff00", ...])
  */
 function extractKMeansColors(pixels: Uint8ClampedArray, k: number): string[] {
   // Sample pixels (every 4th pixel for performance)

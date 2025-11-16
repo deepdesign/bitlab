@@ -76,11 +76,11 @@ export function MotionControls({
         />
       </div>
 
-      <div className="section" style={{ marginTop: "2rem" }}>
+      <div className="section section--spaced">
         <hr className="section-divider" />
         <h3 className="section-title">Rotation</h3>
         <div className="control-field control-field--rotation">
-          <div className="switch-row" style={{ gap: "0.75rem" }}>
+          <div className="switch-row">
             <Switch
               id="rotation-animate"
               checked={spriteState.rotationAnimated}

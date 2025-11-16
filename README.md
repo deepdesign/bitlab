@@ -1,14 +1,14 @@
-# <picture><source media="(prefers-color-scheme: dark)" srcset="public/bitlab-logo-white.svg"><source media="(prefers-color-scheme: light)" srcset="public/bitlab-logo-black.svg"><img alt="BitLab" src="public/bitlab-logo-black.svg"></picture>
+# <picture><source media="(prefers-color-scheme: dark)" srcset="public/logo/SVG/pixli-logo-white.svg"><source media="(prefers-color-scheme: light)" srcset="public/logo/SVG/pixli-logo-black.svg"><img alt="Pixli" src="public/logo/SVG/pixli-logo-black.svg"></picture>
 
 <br />
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="public/favicon/svg/bitlab-b-logo-white.svg" />
-    <source media="(prefers-color-scheme: light)" srcset="public/favicon/svg/bitlab-b-logo-black.svg" />
+    <source media="(prefers-color-scheme: dark)" srcset="public/logo/SVG/pixli-logo-p-white.svg" />
+    <source media="(prefers-color-scheme: light)" srcset="public/logo/SVG/pixli-logo-p-black.svg" />
     <img
-      src="public/favicon/svg/bitlab-b-logo-black.svg"
-      alt="BitLab modular logomark"
+      src="public/logo/SVG/pixli-logo-p-black.svg"
+      alt="Pixli modular logomark"
       width="120"
     />
   </picture>
@@ -16,7 +16,7 @@
 
 ## 🎨 Generative Pixel Playground
 
-BitLab is a vibrant generative art workbench built with React, p5.js, Tailwind, and RetroUI. Mix pixel iconography, palette theory, and motion envelopes to compose shimmering sprite tapestries in real time.
+Pixli is a vibrant generative art workbench built with React, p5.js, Tailwind, and RetroUI. Mix pixel iconography, palette theory, and motion envelopes to compose shimmering sprite tapestries in real time.
 
 <p align="center">
   <img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=20232A" alt="React" />
@@ -28,8 +28,8 @@ BitLab is a vibrant generative art workbench built with React, p5.js, Tailwind, 
 </p>
 
 <p align="center">
-  <img src="public/screengrabs/Screenshot%202025-11-10%20105941.png" width="48%" alt="BitLab Canvas view" />
-  <img src="public/screengrabs/Screenshot%202025-11-10%20105947.png" width="48%" alt="BitLab Control panels" />
+  <img src="public/screengrabs/Screenshot%202025-11-10%20105941.png" width="48%" alt="Pixli Canvas view" />
+  <img src="public/screengrabs/Screenshot%202025-11-10%20105947.png" width="48%" alt="Pixli Control panels" />
 </p>
 
 <p align="center">
@@ -53,9 +53,9 @@ BitLab is a vibrant generative art workbench built with React, p5.js, Tailwind, 
 ---
 
 <p align="center">
-  <a href="https://bitlab.jamescutts.me/">
+  <a href="https://pixli.jamescutts.me/">
     <img
-      src="https://img.shields.io/badge/Live%20Demo-bitlab.jamescutts.me-ff4f8b?style=for-the-badge&logo=debian&logoColor=white"
+      src="https://img.shields.io/badge/Live%20Demo-pixli.jamescutts.me-ff4f8b?style=for-the-badge&logo=debian&logoColor=white"
       alt="Live Demo"
     />
   </a>
@@ -75,13 +75,13 @@ BitLab is a vibrant generative art workbench built with React, p5.js, Tailwind, 
 - **Organized Color Palettes** – 20+ built-in palettes organized by category (Neon/Cyber, Warm/Fire, Cool/Ocean, Nature, Soft/Pastel, Dark/Mysterious) with color preview squares in dropdowns.
 - **Theme Designer** – System/light/dark cycling, 11 colourway accents (Sunburst, Neon Grid, Nebula, Ember Glow, Lagoon Tide, Rose Quartz, Battleship, Electric Cyan, Midnight, Deep Indigo, Metallic Gold), and RetroUI Box/Rounded chassis toggle applied across the entire shell. Each theme includes custom backgrounds, shadows, and UI styling for both light and dark modes.
 - **Status HUD** – Live palette, sprite mode, blend, motion, density, and FPS read-outs follow you into fullscreen.
-- **Instant Loader** – Lightweight inline bootstrapper renders the BitLab spinner before the bundle downloads, then hands off seamlessly to React once the generator is ready.
+- **Instant Loader** – Lightweight inline bootstrapper renders the Pixli spinner before the bundle downloads, then hands off seamlessly to React once the generator is ready.
 - **High-Resolution Export** – Export your canvas at any resolution with presets for social media, wallpapers, and print. Aspect ratio locking, custom dimensions, and high-quality PNG output with smooth scaling.
 - **Tailwind Retro Components** – Buttons, Selects, Switches, Tabs, Cards, Input, Label, and Accordion rebuilt on the Tailwind spacing scale while honouring RetroUI tokens.
 - **Modular Architecture** – Clean codebase structure with extracted hooks (`useTheme`, `useFullscreen`, `useSpriteController`), reusable components (`StatusBar`, `Header`, `ControlPanel`), and organized utilities. App.tsx reduced from ~2,800 lines to ~770 lines (72% reduction).
 - **Code Quality** – Type-safe codebase with proper error handling, memory management, and cleanup. Debug code gated behind development mode. Comprehensive documentation for all features.
 - **Versioning** – Automatic version injection from package.json displayed in the footer.
-- **Footer Resources** – Slim footer featuring the BitLab logotype, version number, quick access to RetroUI docs, p5.js, and `jamescutts.me`.
+- **Footer Resources** – Slim footer featuring the Pixli logotype, version number, quick access to RetroUI docs, p5.js, and `jamescutts.me`.
 
 ---
 
@@ -95,19 +95,19 @@ BitLab is a vibrant generative art workbench built with React, p5.js, Tailwind, 
 | **Status Bar / HUD** | Palette, sprite mode, blend, motion, density, and FPS badges anchor to the canvas edge alongside Randomise, Presets, Export, and Fullscreen buttons. In fullscreen they float as an auto-hiding HUD. |
 | **Export Modal** | High-resolution export with dimension presets (Social, Wallpapers, Print), custom dimensions, aspect ratio locking, and PNG output. Animation pauses during export for crisp captures. |
 | **Custom Palette Manager** | Tabbed interface (Upload/URL/Import) for creating palettes from images. Extract colors, name your palette, export as JSON, and import shared palettes. Manage up to 10 custom palettes with edit, delete, and export options. |
-| **Canvas**       | BitLab renders layered motion paths with depth-aware scaling, leaving the status HUD and fullscreen controls within reach. |
-| **Footer**       | BitLab wordmark, version number, plus links to p5.js, RetroUI docs, and `jamescutts.me`. |
+| **Canvas**       | Pixli renders layered motion paths with depth-aware scaling, leaving the status HUD and fullscreen controls within reach. |
+| **Footer**       | Pixli wordmark, version number, plus links to p5.js, RetroUI docs, and `jamescutts.me`. |
 
 ---
 
 ## 🎨 Custom Palettes
 
-BitLab includes a powerful custom palette management system that lets you create color palettes from your own images.
+Pixli includes a powerful custom palette management system that lets you create color palettes from your own images.
 
 ### Creating Custom Palettes
 
 1. **From Image Upload** – Click the palette management button (📷 icon) next to the palette selector, then use the "Upload" tab to select an image file from your device.
-2. **From Image URL** – Use the "URL" tab to paste an image URL. BitLab will extract colors from the image.
+2. **From Image URL** – Use the "URL" tab to paste an image URL. Pixli will extract colors from the image.
 3. **From JSON Import** – Use the "Import" tab to load a previously exported palette JSON file.
 
 ### Features
@@ -144,8 +144,8 @@ BitLab includes a powerful custom palette management system that lets you create
 
 ```bash
 # clone the repository
-git clone https://github.com/deepdesign/bitlab.git
-cd bitlab
+git clone https://github.com/deepdesign/pixli.git
+cd pixli
 
 # install dependencies
 npm install
@@ -190,8 +190,8 @@ The build artifacts land in `/dist` ready for static hosting.
 
 ```
 ├── public/
-│   ├── bitlab-logo-black.svg
-│   └── bitlab-logo-white.svg
+│   ├── pixli-logo-black.svg
+│   └── pixli-logo-white.svg
 ├── src/
 │   ├── App.tsx           # Main UI & state wiring
 │   ├── generator.ts      # p5.js sprite logic & controller API
@@ -213,7 +213,7 @@ The build artifacts land in `/dist` ready for static hosting.
 2. Run `npm run dev` and ensure changes pass `npm run build` before committing.
 3. Submit a pull request describing the tweak, referencing any issues.
 
-Bug reports and enhancement ideas are always welcome via [GitHub issues](https://github.com/deepdesign/bitlab/issues).
+Bug reports and enhancement ideas are always welcome via [GitHub issues](https://github.com/deepdesign/pixli/issues).
 
 ---
 

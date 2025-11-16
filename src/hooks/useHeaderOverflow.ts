@@ -11,7 +11,7 @@ export function useHeaderOverflow(
   const [showHeaderOverflow, setShowHeaderOverflow] = useState(() => {
     if (typeof window === "undefined") return false;
     // Check if viewport is below threshold where overflow would be needed
-    return window.innerWidth < 640;
+    return window.innerWidth < 500;
   });
   const [isHeaderOverflowOpen, setIsHeaderOverflowOpen] = useState(false);
   const headerOverflowTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -84,8 +84,8 @@ export function useHeaderOverflow(
       }
 
       // If we couldn't measure (actions not rendered because overflow is shown),
-      // use estimated width: Theme selector (~120px) + Shape button (44px) + Mode button (44px) + gaps (~12px) = ~220px
-      const estimatedActionsWidth = 220;
+      // use estimated width: Settings button (44px) + Help button (44px) + Theme selector (~120px) + Shape button (44px) + Mode button (44px) + gaps (~24px) = ~300px
+      const estimatedActionsWidth = 300;
       const actionsWidthToUse =
         actionsWidth > 0 ? actionsWidth : estimatedActionsWidth;
 
@@ -100,12 +100,12 @@ export function useHeaderOverflow(
       if (currentNeedsOverflow) {
         // Currently showing overflow - need significantly more space to hide it (with buffer)
         needsOverflow =
-          viewportWidth < 640 ||
+          viewportWidth < 500 ||
           actionsWidthToUse > availableWidth - HYSTERESIS_BUFFER;
       } else {
         // Currently showing actions - need significantly less space to show overflow (with buffer)
         needsOverflow =
-          viewportWidth < 640 ||
+          viewportWidth < 500 ||
           actionsWidthToUse > availableWidth + HYSTERESIS_BUFFER;
       }
 
@@ -136,7 +136,7 @@ export function useHeaderOverflow(
 
     // Check immediately and also after a short delay to ensure DOM is ready
     checkHeaderFit();
-    const timeoutId = setTimeout(checkHeaderFit, 100);
+    const initialTimeoutId = setTimeout(checkHeaderFit, 100);
 
     // Set up ResizeObserver to watch for size changes
     let resizeObserver: ResizeObserver | null = null;
@@ -176,7 +176,7 @@ export function useHeaderOverflow(
     window.addEventListener("resize", handleWindowResize);
 
     return () => {
-      clearTimeout(timeoutId);
+      clearTimeout(initialTimeoutId);
       if (debounceTimer) {
         clearTimeout(debounceTimer);
       }

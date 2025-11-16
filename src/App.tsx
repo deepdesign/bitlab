@@ -4,6 +4,8 @@ import {
   useMemo,
   useRef,
   useState,
+  lazy,
+  Suspense,
 } from "react";
 import { Card } from "@/components/Card";
 import {
@@ -20,18 +22,24 @@ import type {
   SpriteMode,
   MovementMode,
 } from "./types/generator";
-import { PresetManager } from "./components/PresetManager";
-import { ExportModal } from "./components/ExportModal";
-import { CustomPaletteManager } from "./components/CustomPaletteManager";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import { WelcomeScreen, TabOnboarding, OnboardingTour, type TabName } from "./components/Onboarding";
+import { hasSeenWelcome } from "./lib/storage/onboardingStorage";
+
+// Lazy load modals for better initial load performance
+const PresetManager = lazy(() => import("./components/PresetManager").then(module => ({ default: module.PresetManager })));
+const ExportModal = lazy(() => import("./components/ExportModal").then(module => ({ default: module.ExportModal })));
+const CustomPaletteManager = lazy(() => import("./components/CustomPaletteManager").then(module => ({ default: module.CustomPaletteManager })));
+const SettingsModal = lazy(() => import("./components/SettingsModal").then(module => ({ default: module.SettingsModal })));
 import { Header } from "./components/Header";
 import { StatusBar } from "./components/StatusBar";
-import { BitlabLogo } from "./components/Header/BitlabLogo";
+import { PixliLogo } from "./components/Header/PixliLogo";
 import {
   SpriteControls,
   FxControls,
   MotionControls,
 } from "./components/ControlPanel";
-import { palettes, getPalette } from "./data/palettes";
+import { getPalette } from "./data/palettes";
 import { useIsMobile } from "./hooks/useIsMobile";
 import { useTheme } from "./hooks/useTheme";
 import { useFullscreen } from "./hooks/useFullscreen";
@@ -42,10 +50,12 @@ import {
   formatBlendMode,
   generatePaletteOptions,
 } from "./lib/utils";
+import { hasCanvas } from "./types/p5-extensions";
 
-
-// Constants and formatting functions are now imported from their respective modules
-
+/**
+ * Hook to track media query matches
+ * Used for responsive layout detection
+ */
 const useMediaQuery = (query: string) => {
   const [matches, setMatches] = useState(() => {
     if (typeof window === "undefined") {
@@ -79,6 +89,19 @@ const useMediaQuery = (query: string) => {
 const App = () => {
   const sketchContainerRef = useRef<HTMLDivElement | null>(null);
   const canvasWrapperRef = useRef<HTMLDivElement | null>(null);
+  
+  // Onboarding state
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabName | null>(null);
+  const [showTabOnboarding, setShowTabOnboarding] = useState(false);
+  const [showTour, setShowTour] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const tabRefs = {
+    sprites: useRef<HTMLElement | null>(null),
+    motion: useRef<HTMLElement | null>(null),
+    fx: useRef<HTMLElement | null>(null),
+    canvas: useRef<HTMLElement | null>(null),
+  };
   
   // Use extracted hooks
   const { themeMode, setThemeMode, themeColor, setThemeColor, themeShape, setThemeShape } = useTheme();
@@ -228,6 +251,43 @@ const App = () => {
     };
   }, [spriteState, controller, forceLoader]);
 
+  // Check if welcome screen should be shown
+  useEffect(() => {
+    if (!hasSeenWelcome() && ready) {
+      // Small delay to ensure app is fully loaded
+      const timer = setTimeout(() => {
+        setShowWelcome(true);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [ready]);
+
+  // Track tab changes for onboarding (only when welcome is not shown)
+  useEffect(() => {
+    if (showWelcome) {
+      // Ensure tab onboarding stays hidden while welcome screen is visible
+      setShowTabOnboarding(false);
+      return;
+    }
+    // Map tab indices to tab names
+    // Sprites = 0, Colours/FX = 1, Motion = 2 (if visible)
+    const tabMap: Record<number, TabName> = {
+      0: "sprites",
+      1: "fx", // Colours tab maps to fx
+      2: "motion",
+    };
+    
+    const tabName = tabMap[controlTabIndex];
+    if (tabName) {
+      setActiveTab(tabName);
+      // Show onboarding if needed (with small delay for tab transition)
+      const timer = setTimeout(() => {
+        setShowTabOnboarding(true);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [controlTabIndex, showWelcome]);
+
   /**
    * Check if columns should be split or merged based on viewport width
    * 
@@ -264,10 +324,10 @@ const App = () => {
     }
     // Debug loader only in development
     if (import.meta.env.DEV) {
-      const params = new URLSearchParams(window.location.search);
-      const debugLoader = params.get("debugLoader");
-      if (debugLoader === "1") {
-        setForceLoader(true);
+    const params = new URLSearchParams(window.location.search);
+    const debugLoader = params.get("debugLoader");
+    if (debugLoader === "1") {
+      setForceLoader(true);
       }
     }
   }, []);
@@ -278,25 +338,40 @@ const App = () => {
   
   // Function to update canvas size from the actual canvas element
   const updateCanvasSize = useCallback(() => {
+    try {
     if (!controllerRef.current) {
+        setCurrentCanvasSize({ width: 720, height: 720 });
       return;
     }
     
     const p5Instance = controllerRef.current.getP5Instance();
     if (!p5Instance) {
+        setCurrentCanvasSize({ width: 720, height: 720 });
       return;
     }
     
     // p5.js stores canvas as a property, but TypeScript types don't include it
-    const canvas = (p5Instance as any).canvas as HTMLCanvasElement | null;
+      const canvas = hasCanvas(p5Instance) ? p5Instance.canvas : null;
     if (!canvas) {
+        setCurrentCanvasSize({ width: 720, height: 720 });
       return;
     }
     
-    setCurrentCanvasSize({
-      width: canvas.width,
-      height: canvas.height,
-    });
+      // Validate canvas dimensions
+      const width = canvas.width || 720;
+      const height = canvas.height || 720;
+      
+      if (!isFinite(width) || !isFinite(height) || width <= 0 || height <= 0) {
+        console.warn("Invalid canvas dimensions, using defaults");
+        setCurrentCanvasSize({ width: 720, height: 720 });
+        return;
+      }
+      
+      setCurrentCanvasSize({ width, height });
+    } catch (error) {
+      console.error("Error updating canvas size:", error);
+      setCurrentCanvasSize({ width: 720, height: 720 });
+    }
   }, []);
   
   // Update canvas size when controller or spriteState changes, and watch for canvas resize
@@ -313,7 +388,7 @@ const App = () => {
     }
     
     // p5.js stores canvas as a property, but TypeScript types don't include it
-    const canvas = (p5Instance as any).canvas as HTMLCanvasElement | null;
+    const canvas = hasCanvas(p5Instance) ? p5Instance.canvas : null;
     if (!canvas) {
       setCurrentCanvasSize({ width: 720, height: 720 });
       return;
@@ -327,19 +402,33 @@ const App = () => {
     // Watch the container for size changes (triggers when layout changes)
     // This will catch both container resizes and window resizes (since container resizes with window)
     let containerResizeObserver: ResizeObserver | null = null;
+    let resizeTimeoutId: ReturnType<typeof setTimeout> | null = null;
+    
     if (container && typeof ResizeObserver !== 'undefined') {
       containerResizeObserver = new ResizeObserver(() => {
+        // Clear any pending resize timeout
+        if (resizeTimeoutId) {
+          clearTimeout(resizeTimeoutId);
+        }
         // Delay to ensure p5.js has processed the resize
-        setTimeout(() => {
+        resizeTimeoutId = setTimeout(() => {
           updateCanvasSize();
+          resizeTimeoutId = null;
         }, 50);
       });
       containerResizeObserver.observe(container);
     }
     
     return () => {
+      // Clear any pending resize timeout
+      if (resizeTimeoutId) {
+        clearTimeout(resizeTimeoutId);
+        resizeTimeoutId = null;
+      }
+      // Disconnect ResizeObserver
       if (containerResizeObserver) {
         containerResizeObserver.disconnect();
+        containerResizeObserver = null;
       }
     };
   }, [spriteState, controllerRef.current, updateCanvasSize]);
@@ -354,7 +443,7 @@ const App = () => {
 
   const currentPalette = useMemo(() => {
     if (!spriteState?.paletteId) {
-      return palettes[0];
+      return getPalette("neon"); // Fallback to default palette
     }
     return getPalette(spriteState.paletteId);
   }, [spriteState?.paletteId]);
@@ -561,6 +650,12 @@ const App = () => {
           onThemeModeChange={setThemeMode}
           onThemeColorChange={setThemeColor}
           onThemeShapeChange={setThemeShape}
+          onStartTour={() => {
+            setShowTour(true);
+          }}
+          onOpenSettings={() => {
+            setShowSettings(true);
+          }}
         />
       </div>
 
@@ -681,10 +776,10 @@ const App = () => {
       <div className="app-frame app-frame--compact app-frame--footer">
         <footer className={`app-footer${isMobile ? " app-footer--mobile" : ""}`}>
           <div className="footer-brand">
-            {!isMobile && <BitlabLogo className="footer-logo" />}
+            {!isMobile && <PixliLogo className="footer-logo" />}
           </div>
           <span className="footer-text">
-            © {new Date().getFullYear()} BitLab · Generative Playground · v{typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'dev'} ·{" "}
+            © {new Date().getFullYear()} Pixli · Generative Playground · v{typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'dev'} ·{" "}
             <a href="https://jamescutts.me/" target="_blank" rel="noreferrer">
               jamescutts.me
             </a>
@@ -693,13 +788,19 @@ const App = () => {
       </div>
 
       {showPresetManager && (
+        <ErrorBoundary>
+          <Suspense fallback={<div className="modal-loading">Loading...</div>}>
         <PresetManager
           currentState={spriteState}
           onLoadPreset={handleLoadPreset}
           onClose={() => setShowPresetManager(false)}
         />
+          </Suspense>
+        </ErrorBoundary>
       )}
       {showExportModal && (
+        <ErrorBoundary>
+          <Suspense fallback={<div className="modal-loading">Loading...</div>}>
         <ExportModal
           isOpen={showExportModal}
           onClose={() => setShowExportModal(false)}
@@ -707,14 +808,57 @@ const App = () => {
           currentCanvasSize={currentCanvasSize}
           controller={controllerRef.current}
         />
+          </Suspense>
+        </ErrorBoundary>
       )}
       {showCustomPaletteManager && (
-        <CustomPaletteManager
-          onClose={() => setShowCustomPaletteManager(false)}
-          onPaletteCreated={handleCustomPaletteCreated}
+        <ErrorBoundary>
+          <Suspense fallback={<div className="modal-loading">Loading...</div>}>
+            <CustomPaletteManager
+              onClose={() => setShowCustomPaletteManager(false)}
+              onPaletteCreated={handleCustomPaletteCreated}
+            />
+          </Suspense>
+        </ErrorBoundary>
+      )}
+
+      {/* Onboarding Components */}
+      {showWelcome && (
+        <WelcomeScreen
+          onClose={() => setShowWelcome(false)}
+          onStartTour={() => {
+            setShowWelcome(false);
+            setShowTour(true);
+          }}
         />
       )}
 
+      {showTabOnboarding && activeTab && (
+        <TabOnboarding
+          tab={activeTab}
+          isOpen={showTabOnboarding}
+          onClose={() => setShowTabOnboarding(false)}
+          targetElement={tabRefs[activeTab].current}
+        />
+      )}
+
+      {showTour && (
+        <OnboardingTour
+          isOpen={showTour}
+          onClose={() => setShowTour(false)}
+        />
+      )}
+
+      {showSettings && (
+        <ErrorBoundary>
+          <Suspense fallback={<div className="modal-loading">Loading...</div>}>
+            <SettingsModal
+              isOpen={showSettings}
+              onClose={() => setShowSettings(false)}
+            />
+          </Suspense>
+        </ErrorBoundary>
+      )}
     </div>
     </>
   );

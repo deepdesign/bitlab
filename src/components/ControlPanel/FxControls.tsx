@@ -1,9 +1,11 @@
+import { useRef } from "react";
 import { Button } from "@/components/Button";
 import { Switch } from "@/components/retroui/Switch";
 import { RefreshCw, ImagePlus } from "lucide-react";
 import { BLEND_MODES } from "@/constants/blend";
 import { ControlSlider, ControlSelect, TooltipIcon } from "./shared";
 import { varianceToUi, uiToVariance, formatBlendMode } from "@/lib/utils";
+import { animatePulse } from "@/lib/utils/animations";
 import type {
   GeneratorState,
   SpriteController,
@@ -164,7 +166,7 @@ export function FxControls({
         />
       </div>
 
-      <div className="section" style={{ marginTop: "2rem" }}>
+      <div className="section section--spaced">
         <hr className="section-divider" />
         <h3 className="section-title">CANVAS</h3>
         <ControlSelect
@@ -184,7 +186,7 @@ export function FxControls({
           onLockToggle={() => onLockCanvasPalette(!lockedCanvasPalette)}
         />
         <div className="control-field">
-          <div className="switch-row" style={{ gap: "0.75rem" }}>
+          <div className="switch-row">
             <Switch
               checked={isCanvasGradient}
               onCheckedChange={(checked) =>
@@ -226,7 +228,7 @@ export function FxControls({
         />
       </div>
 
-      <div className="section" style={{ marginTop: "2rem" }}>
+      <div className="section section--spaced">
         <hr className="section-divider" />
         <h3 className="section-title">Blend &amp; Opacity</h3>
         <ControlSlider
@@ -255,8 +257,8 @@ export function FxControls({
           locked={lockedBlendMode}
           onLockToggle={() => onLockBlendMode(!lockedBlendMode)}
         />
-        <div className="control-field control-field--spaced">
-          <div className="switch-row" style={{ gap: "0.75rem" }}>
+        <div className="control-field">
+          <div className="switch-row">
             <Switch
               id="blend-auto"
               checked={spriteState.blendModeAuto}
@@ -268,7 +270,12 @@ export function FxControls({
               type="button"
               size="icon"
               variant="outline"
-              onClick={() => controller?.randomizeBlendMode()}
+              onClick={() => {
+                if (randomizeBlendButtonRef.current) {
+                  animatePulse(randomizeBlendButtonRef.current);
+                }
+                controller?.randomizeBlendMode();
+              }}
               disabled={!ready || !spriteState.blendModeAuto}
               aria-label="Randomise sprite blend modes"
               title="Randomise sprite blend modes"

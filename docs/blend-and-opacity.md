@@ -1,4 +1,4 @@
-# Complete Guide: Blend Modes & Opacity in BitLab
+# Complete Guide: Blend Modes & Opacity in Pixli
 
 ## Table of Contents
 1. [Project Overview](#project-overview)
@@ -13,7 +13,7 @@
 
 ## Project Overview
 
-**BitLab** uses blend modes and opacity to control how sprite layers composite together, creating depth and visual interest.
+**Pixli** uses blend modes and opacity to control how sprite layers composite together, creating depth and visual interest.
 
 ### What Are Blend Modes & Opacity?
 

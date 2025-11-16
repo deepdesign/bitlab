@@ -17,23 +17,35 @@ export function useSpriteController(containerRef: React.RefObject<HTMLDivElement
       return;
     }
 
-    const controller = createSpriteController(container, {
-      onStateChange: (state) => {
-        setSpriteState(state);
-      },
-      onFrameRate: setFrameRate,
-    });
+    try {
+      const controller = createSpriteController(container, {
+        onStateChange: (state) => {
+          setSpriteState(state);
+        },
+        onFrameRate: setFrameRate,
+      });
 
-    controllerRef.current = controller;
-    controller.randomizeAll();
-    // Set state synchronously to ensure it's available immediately
-    const initialState = controller.getState();
-    setSpriteState(initialState);
+      controllerRef.current = controller;
+      controller.randomizeAll();
+      // Set state synchronously to ensure it's available immediately
+      const initialState = controller.getState();
+      setSpriteState(initialState);
+    } catch (error) {
+      console.error("Failed to create sprite controller:", error);
+      // Set a default state to prevent app from breaking
+      setSpriteState(null);
+    }
 
     return () => {
-      controller.destroy();
-      controllerRef.current = null;
-      setSpriteState(null);
+      if (controllerRef.current) {
+        try {
+          controllerRef.current.destroy();
+        } catch (error) {
+          console.error("Error destroying sprite controller:", error);
+        }
+        controllerRef.current = null;
+        setSpriteState(null);
+      }
     };
   }, [containerRef]);
 

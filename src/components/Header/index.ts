@@ -1,3 +1,3 @@
 export { Header } from "./Header";
-export { BitlabLogo } from "./BitlabLogo";
+export { PixliLogo } from "./PixliLogo";
 

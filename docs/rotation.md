@@ -1,4 +1,4 @@
-# Complete Guide: Rotation in BitLab
+# Complete Guide: Rotation in Pixli
 
 ## Table of Contents
 1. [Project Overview](#project-overview)
@@ -16,7 +16,7 @@
 
 ## Project Overview
 
-**BitLab** is a React + TypeScript web application for creating generative art with animated sprites. It uses:
+**Pixli** is a React + TypeScript web application for creating generative art with animated sprites. It uses:
 - **React 19** for UI components
 - **TypeScript** for type safety
 - **p5.js** for canvas rendering and animation
@@ -26,7 +26,7 @@
 
 ### What Is Rotation?
 
-Rotation in BitLab has two independent systems:
+Rotation in Pixli has two independent systems:
 
 1. **Rotation Offsets** (Sprites tab): Static rotation angles applied to sprites
    - Controlled by "Allow Rotation Offsets" toggle and "Rotation Amount" slider
@@ -46,7 +46,7 @@ These systems work independently and can be combined for complex rotation effect
 
 ### Directory Tree
 ```
-bitlab/
+pixli/
 ├── src/
 │   ├── components/
 │   │   └── ControlPanel/
@@ -632,7 +632,7 @@ After modifying rotation behavior:
 
 ## Summary
 
-The rotation system in BitLab provides:
+The rotation system in Pixli provides:
 - **Two Independent Systems**: Static offsets and animated rotation
 - **Flexible Control**: Adjust rotation angle and speed independently
 - **Per-Sprite Variation**: Each sprite has unique rotation properties

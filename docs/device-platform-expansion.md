@@ -89,7 +89,7 @@ _Last updated: 2025-11-10_
 
 ### 4.1 Capacitor Wrapper
 
-- **Goal:** Package BitLab for iOS/iPadOS App Store and Android Play Store distribution.
+- **Goal:** Package Pixli for iOS/iPadOS App Store and Android Play Store distribution.
 - **Technical Guidance:**
   - Initialize [Capacitor](https://capacitorjs.com/) project; serve Vite build in a WebView.
   - Add native splash screens, app icons, and status bar colour options per platform.

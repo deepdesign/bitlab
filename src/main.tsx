@@ -2,7 +2,12 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 import App from "./App";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import "./index.css";
+import { initializeSettings } from "./lib/storage/settingsStorage";
+
+// Initialize settings (e.g., reduced motion preference)
+initializeSettings();
 
 const container = document.getElementById("app");
 
@@ -12,6 +17,8 @@ if (!container) {
 
 createRoot(container).render(
   <StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </StrictMode>,
 );

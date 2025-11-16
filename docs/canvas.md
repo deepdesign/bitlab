@@ -1,4 +1,4 @@
-# Complete Guide: Canvas Background in BitLab
+# Complete Guide: Canvas Background in Pixli
 
 ## Table of Contents
 1. [Project Overview](#project-overview)
@@ -16,7 +16,7 @@
 
 ## Project Overview
 
-**BitLab** is a React + TypeScript web application for creating generative art with animated sprites. It uses:
+**Pixli** is a React + TypeScript web application for creating generative art with animated sprites. It uses:
 - **React 19** for UI components
 - **TypeScript** for type safety
 - **p5.js** for canvas rendering and animation
@@ -38,7 +38,7 @@ The canvas background is independent from sprite colors and can use a different 
 
 ### Directory Tree
 ```
-bitlab/
+pixli/
 ├── src/
 │   ├── components/
 │   │   └── ControlPanel/

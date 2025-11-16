@@ -1,7 +1,7 @@
 /**
  * Responsive Layout Configuration and Utilities
  * 
- * This module manages the responsive layout system for BitLab, including:
+ * This module manages the responsive layout system for Pixli, including:
  * - Column widths (merged vs split states)
  * - Canvas sizing constraints
  * - Viewport breakpoints

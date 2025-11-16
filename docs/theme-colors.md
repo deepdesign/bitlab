@@ -1,4 +1,4 @@
-# Complete Guide: Theme Colors in BitLab
+# Complete Guide: Theme Colors in Pixli
 
 ## Table of Contents
 1. [Project Overview](#project-overview)
@@ -16,7 +16,7 @@
 
 ## Project Overview
 
-**BitLab** is a React + TypeScript web application for creating generative art with animated sprites. It uses:
+**Pixli** is a React + TypeScript web application for creating generative art with animated sprites. It uses:
 - **React 19** for UI components
 - **TypeScript** for type safety
 - **p5.js** for canvas rendering and animation
@@ -41,7 +41,7 @@ Theme colors are accent colors applied to the **entire UI interface** (buttons, 
 
 ### Directory Tree
 ```
-bitlab/
+pixli/
 ├── src/
 │   ├── constants/                # Constants and type definitions
 │   │   └── theme.ts            # ⭐ MAIN FILE - Theme color definitions
@@ -78,7 +78,7 @@ bitlab/
 
 ### Available Theme Colors
 
-BitLab currently supports **12 theme colors**:
+Pixli currently supports **12 theme colors**:
 
 1. **Amber** (Sunburst) - `#ffdb33` - Warm golden yellow
 2. **Mint** (Neon Grid) - `#58f5c2` - Bright cyan-green

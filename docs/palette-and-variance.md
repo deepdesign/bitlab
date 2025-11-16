@@ -1,4 +1,4 @@
-# Complete Guide: Palette & Variance in BitLab
+# Complete Guide: Palette & Variance in Pixli
 
 ## Table of Contents
 1. [Project Overview](#project-overview)
@@ -16,7 +16,7 @@
 
 ## Project Overview
 
-**BitLab** is a React + TypeScript web application for creating generative art with animated sprites. It uses:
+**Pixli** is a React + TypeScript web application for creating generative art with animated sprites. It uses:
 - **React 19** for UI components
 - **TypeScript** for type safety
 - **p5.js** for canvas rendering and animation
@@ -40,7 +40,7 @@ Together, these controls allow fine-tuned color control over the entire canvas.
 
 ### Directory Tree
 ```
-bitlab/
+pixli/
 ├── src/
 │   ├── data/
 │   │   └── palettes.ts               # ⭐ Palette definitions
@@ -616,7 +616,7 @@ After modifying palette or variance behavior:
 
 ## Summary
 
-The palette and variance system in BitLab provides:
+The palette and variance system in Pixli provides:
 - **Flexible Color Control**: Select from many palettes or create custom ones
 - **Color Variation**: Variance creates unique colors per sprite
 - **Hue Shifting**: Rotate entire palette around color wheel

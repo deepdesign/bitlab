@@ -73,6 +73,11 @@ export function ControlSlider({
         onValueChange={handleSliderChange}
         disabled={disabled}
         aria-labelledby={`${id}-label`}
+        aria-describedby={tooltipId ? `${tooltipId}` : undefined}
+        aria-valuemin={min}
+        aria-valuemax={max}
+        aria-valuenow={sliderValue}
+        aria-valuetext={displayValue}
       />
     </div>
   );

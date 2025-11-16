@@ -125,7 +125,11 @@ export function ControlSelect({
           onValueChange={onChange}
           disabled={disabled || locked}
         >
-          <SelectTrigger aria-labelledby={`${id}-label`}>
+          <SelectTrigger 
+            aria-labelledby={`${id}-label`}
+            aria-describedby={tooltipId ? `${tooltipId}` : undefined}
+            aria-disabled={disabled || locked}
+          >
             <SelectValue placeholder={placeholder ?? "Select"}>
               {resolvedLabel}
             </SelectValue>

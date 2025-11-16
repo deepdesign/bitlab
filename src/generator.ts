@@ -1,4 +1,6 @@
 import p5 from "p5";
+import type { P5WithCanvas, HTMLElementWithResizeObserver } from "./types/p5-extensions";
+import { hasRedraw, hasResizeObserver } from "./types/p5-extensions";
 
 import {
   defaultPaletteId,
@@ -221,6 +223,19 @@ const generateSeedString = () =>
     () => SEED_ALPHABET[Math.floor(Math.random() * SEED_ALPHABET.length)],
   ).join("");
 
+/**
+ * Creates a Mulberry32 PRNG (Pseudo-Random Number Generator) from a seed
+ * 
+ * Mulberry32 is a fast, high-quality PRNG suitable for procedural generation.
+ * It produces deterministic random numbers based on the seed, ensuring reproducible results.
+ * 
+ * @param seed - Numeric seed value (will be converted to unsigned 32-bit integer)
+ * @returns A function that returns a random number between 0 and 1
+ * 
+ * @example
+ * const rng = createMulberry32(12345);
+ * const randomValue = rng(); // Returns a number between 0 and 1
+ */
 const createMulberry32 = (seed: number) => {
   let t = seed >>> 0;
   return () => {
@@ -231,6 +246,15 @@ const createMulberry32 = (seed: number) => {
   };
 };
 
+/**
+ * Hashes a seed string to a numeric value
+ * 
+ * Uses a custom hash function based on MurmurHash3 for deterministic seed conversion.
+ * This ensures the same seed string always produces the same numeric hash.
+ * 
+ * @param seed - Seed string (typically 8 hex characters)
+ * @returns 32-bit signed integer hash value
+ */
 const hashSeed = (seed: string) => {
   let h = 1779033703 ^ seed.length;
   for (let i = 0; i < seed.length; i += 1) {
@@ -346,6 +370,22 @@ const blendModePool: BlendModeKey[] = [
   "LIGHTEST",
 ];
 
+/**
+ * Computes movement offsets and scale multipliers for a tile based on its movement mode
+ * 
+ * This function implements various motion algorithms (drift, pulse, spiral, etc.) to create
+ * animated sprite movement. Each mode uses different mathematical functions to calculate
+ * position offsets and scale variations over time.
+ * 
+ * @param mode - Movement mode (drift, pulse, spiral, etc.)
+ * @param tileIndex - Index of the tile within its layer
+ * @param layerIndex - Index of the layer (0, 1, or 2)
+ * @param layerTileSize - Base tile size for the layer
+ * @param baseUnit - Base unit size for calculations
+ * @param phase - Animation phase (0-1) representing progress through animation cycle
+ * @param motionScale - Motion intensity multiplier (0-1.5)
+ * @returns Object containing offsetX, offsetY, and scaleMultiplier
+ */
 const computeMovementOffsets = (
   mode: MovementMode,
   data: {
@@ -528,7 +568,21 @@ const computeMovementOffsets = (
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
-
+/**
+ * Computes the complete sprite configuration from generator state
+ * 
+ * This is the main sprite generation function that:
+ * 1. Creates a seeded RNG from the state seed
+ * 2. Generates layers based on density
+ * 3. Creates tiles for each layer with positions, colors, and shapes
+ * 4. Applies motion offsets, rotation, and scaling
+ * 5. Generates background color/gradient
+ * 
+ * The result is a "prepared" sprite ready for rendering by p5.js.
+ * 
+ * @param state - Complete generator state (palette, density, motion, etc.)
+ * @returns Prepared sprite with layers, tiles, and background configuration
+ */
 const computeSprite = (state: GeneratorState): PreparedSprite => {
   const rng = createMulberry32(hashSeed(state.seed));
   const palette = getPalette(state.paletteId);
@@ -760,6 +814,20 @@ export interface SpriteController {
   resumeAnimation: () => void;
 }
 
+/**
+ * Creates a sprite controller instance that manages p5.js canvas rendering
+ * 
+ * The controller handles:
+ * - Canvas initialization and resizing
+ * - Sprite state management
+ * - Animation loop (draw function)
+ * - State updates and notifications
+ * - Cleanup and resource management
+ * 
+ * @param container - HTML element to mount the p5.js canvas
+ * @param options - Optional callbacks for state changes and frame rate updates
+ * @returns SpriteController instance with methods to control sprite generation
+ */
 export const createSpriteController = (
   container: HTMLElement,
   options: SpriteControllerOptions = {},
@@ -775,7 +843,9 @@ export const createSpriteController = (
   };
   let state = stateRef.current;
   let prepared = computeSprite(state);
-  let p5Instance: p5 | null = null;
+  let p5Instance: P5WithCanvas | null = null;
+  let destroyTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  let pauseTimeoutId: ReturnType<typeof setTimeout> | null = null;
   
   // Getter function to always return current state from the ref
   // This ensures the draw loop always reads the latest state, even after HMR
@@ -821,8 +891,8 @@ export const createSpriteController = (
     });
     
     // Force a redraw by updating the p5 instance if available
-    if (p5Instance && typeof (p5Instance as any).redraw === 'function') {
-      (p5Instance as any).redraw();
+    if (hasRedraw(p5Instance)) {
+      p5Instance.redraw();
     }
   };
 
@@ -848,23 +918,48 @@ export const createSpriteController = (
     let targetSpeedFactor = 1.0; // Target speed factor from slider
 
     p.setup = () => {
-      // Use the same sizing logic as resizeCanvas to ensure consistency
-      // Canvas should match the card's intended size, accounting for padding and border
-      const cardPadding = 40; // 20px each side = 40px total (spacing.5)
-      const cardBorder = 4; // 2px each side = 4px total
-      const containerWidth = container.clientWidth || 0;
-      // Minimum card width is 320px, so minimum canvas size accounting for padding/border
-      const minCardWidth = 320;
-      const minCanvasSize = Math.max(0, minCardWidth - cardPadding - cardBorder); // 276px minimum canvas
-      // Calculate canvas size: container width, clamped between min (276px) and max (960px)
-      const size = Math.min(960, Math.max(minCanvasSize, containerWidth));
-      canvas = p.createCanvas(size, size);
-      canvas.parent(container);
-      p.pixelDensity(1);
-      p.noStroke();
-      p.noSmooth();
-      p.imageMode(p.CENTER);
-
+      try {
+        // Use the same sizing logic as resizeCanvas to ensure consistency
+        // Canvas should match the card's intended size, accounting for padding and border
+        const cardPadding = 40; // 20px each side = 40px total (spacing.5)
+        const cardBorder = 4; // 2px each side = 4px total
+        const containerWidth = container.clientWidth || 0;
+        // Minimum card width is 320px, so minimum canvas size accounting for padding/border
+        const minCardWidth = 320;
+        const minCanvasSize = Math.max(0, minCardWidth - cardPadding - cardBorder); // 276px minimum canvas
+        // Calculate canvas size: container width, clamped between min (276px) and max (960px)
+        const size = Math.min(960, Math.max(minCanvasSize, containerWidth));
+        
+        // Validate size before creating canvas
+        if (size <= 0 || !isFinite(size)) {
+          console.error("Invalid canvas size:", size);
+          canvas = p.createCanvas(720, 720); // Fallback to default size
+        } else {
+          canvas = p.createCanvas(size, size);
+        }
+        
+        if (!container || !container.parentNode) {
+          console.error("Container is not attached to DOM");
+          return;
+        }
+        
+        canvas.parent(container);
+        p.pixelDensity(1);
+        p.noStroke();
+        p.noSmooth();
+        p.imageMode(p.CENTER);
+      } catch (error) {
+        console.error("Error in p5.setup:", error);
+        // Fallback to safe defaults
+        canvas = p.createCanvas(720, 720);
+        if (container && container.parentNode) {
+          canvas.parent(container);
+        }
+        p.pixelDensity(1);
+        p.noStroke();
+        p.noSmooth();
+        p.imageMode(p.CENTER);
+      }
     };
 
     // Flag to prevent recursive resize calls
@@ -951,7 +1046,12 @@ export const createSpriteController = (
       containerResizeObserver.observe(container);
       
       // Store observer for cleanup
-      (container as any)._resizeObserver = containerResizeObserver;
+      if (hasResizeObserver(container)) {
+        container._resizeObserver = containerResizeObserver;
+      } else {
+        // Type assertion needed for initial assignment
+        (container as HTMLElementWithResizeObserver)._resizeObserver = containerResizeObserver;
+      }
     }
     
     // Also resize on fullscreen changes
@@ -978,7 +1078,7 @@ export const createSpriteController = (
       const motionScale = clamp(currentState.motionIntensity / 100, 0, 1.5);
       const deltaMs = typeof p.deltaTime === "number" ? p.deltaTime : 16.666;
       // Delta time for time-based effects
-      (p as any).deltaMs = deltaMs;
+      (p as P5WithCanvas).deltaMs = deltaMs;
       const backgroundHueShiftDegrees = (currentState.backgroundHueShift / 100) * 360;
       const MOTION_SPEED_MAX_INTERNAL = 12.5;
       // Apply mode-specific speed multiplier to normalize perceived speed across modes
@@ -1507,7 +1607,7 @@ export const createSpriteController = (
     };
   };
 
-  p5Instance = new p5(sketch);
+  p5Instance = new p5(sketch) as P5WithCanvas;
 
   const applyState = (
     partial: Partial<GeneratorState>,
@@ -1869,21 +1969,33 @@ export const createSpriteController = (
       updateSprite();
     },
     destroy: () => {
-      // Clean up container ResizeObserver if it exists
-      if ((container as any)._resizeObserver) {
-        (container as any)._resizeObserver.disconnect();
-        delete (container as any)._resizeObserver;
+      // Clear any pending timeouts
+      if (destroyTimeoutId) {
+        clearTimeout(destroyTimeoutId);
+        destroyTimeoutId = null;
       }
+      if (pauseTimeoutId) {
+        clearTimeout(pauseTimeoutId);
+        pauseTimeoutId = null;
+      }
+      
+      // Clean up container ResizeObserver if it exists
+      if (hasResizeObserver(container)) {
+        container._resizeObserver?.disconnect();
+        delete container._resizeObserver;
+      }
+      
       // Stop the draw loop before removing to prevent any race conditions
       if (p5Instance) {
         try {
           p5Instance.noLoop();
           // Small delay to ensure loop stops before removal
-          setTimeout(() => {
+          destroyTimeoutId = setTimeout(() => {
             if (p5Instance) {
               p5Instance.remove();
               p5Instance = null;
             }
+            destroyTimeoutId = null;
           }, 10);
         } catch (e) {
           // If removal fails, try direct removal
@@ -1900,14 +2012,23 @@ export const createSpriteController = (
     },
     getP5Instance: () => p5Instance,
     pauseAnimation: () => {
+      // Clear any existing pause timeout
+      if (pauseTimeoutId) {
+        clearTimeout(pauseTimeoutId);
+        pauseTimeoutId = null;
+      }
+      
       if (p5Instance) {
         // Redraw once to ensure the canvas has the latest frame before pausing
-        p5Instance.redraw();
+        if (hasRedraw(p5Instance)) {
+          p5Instance.redraw();
+        }
         // Small delay to ensure redraw completes before pausing
-        setTimeout(() => {
+        pauseTimeoutId = setTimeout(() => {
           if (p5Instance) {
             p5Instance.noLoop();
           }
+          pauseTimeoutId = null;
         }, 10);
       }
     },
