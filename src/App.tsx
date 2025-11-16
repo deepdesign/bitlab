@@ -529,8 +529,16 @@ const App = () => {
   // Theme selection handlers are now handled by Header component
 
   const handleRandomiseAll = useCallback(() => {
-    controllerRef.current?.randomizeAll();
-  }, []);
+    const controller = controllerRef.current;
+    if (!controller) return;
+    // Randomise core state
+    controller.randomizeAll();
+    // Also randomise blend mode when not locked.
+    // Do NOT change the user's auto toggle preference.
+    if (!lockedBlendMode) {
+      controller.randomizeBlendMode();
+    }
+  }, [lockedBlendMode]);
 
   // Fullscreen management is now handled by useFullscreen hook
 

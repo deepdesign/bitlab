@@ -217,6 +217,36 @@ All spacing in Pixli should use `theme("spacing.n")` for consistency.
 
 ### Modals
 
+#### Modal Spacing Rules (Authoritative)
+
+Use these tokens for all modals to ensure consistent rhythm.
+
+- Inside padding (modal content box): `spacing.5` (all sides)
+- Header row padding (x/y): `spacing.3`
+- Header → content gap: `spacing.4`
+- Tabs bottom margin: `spacing.4`
+- Image export tab
+  - Tabs → Preview: `spacing.4`
+  - Preview → Advanced options: `spacing.4`
+  - Advanced options (Accordion.Content) bottom spacing: `0` (no implicit gap)
+  - Advanced options → Primary CTA: `spacing.4`
+- Movie export tab
+  - Tabs → Section title: `spacing.4`
+  - Title → Fields row: `spacing.3`
+  - Fields row internal gap: `spacing.3`
+  - Fields → Primary CTA: `spacing.4`
+  - CTA → Tip text: `spacing.2`
+- Labels to inputs: `spacing.2`
+
+Implementation notes
+- Normalize section spacing inside export modals to avoid hidden vertical gaps from the base `.section`:
+  - `.export-modal .section { gap: 0; }`
+  - Prefer explicit `mt-[theme(spacing.n)]` between stacked blocks
+- Enforce compact inputs row spacing:
+  - `.export-modal .export-dimension-inputs-compact { gap: theme("spacing.3"); }`
+- Zero bottom spacing on the last content section when followed by a primary CTA:
+  - Set container bottom to `0`, then apply explicit `mt-[theme(spacing.4)]` on the CTA
+
 #### Modal Overlays
 - **Padding**: `spacing.4` (16px) typically
 - **Gap**: `spacing.3` to `spacing.5` - Varies by modal

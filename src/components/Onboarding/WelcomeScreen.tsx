@@ -78,16 +78,16 @@ export function WelcomeScreen({ onClose, onStartTour }: WelcomeScreenProps) {
         <div className="space-y-4 mb-6">
           <p className="text-sm leading-relaxed">
             Create beautiful, animated pixel art with just a few clicks! 
-            Choose shapes, pick colors, and watch your canvas come to life.
+            Choose shapes, pick colours, and watch your canvas come to life.
           </p>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="flex items-start gap-2 p-3 rounded border border-[var(--card-border)] bg-[var(--card-bg)]">
               <Palette className="h-5 w-5 text-[var(--accent-primary)] flex-shrink-0 mt-0.5" />
               <div>
-                <div className="text-xs font-semibold uppercase mb-1">Colors</div>
+                <div className="text-xs font-semibold uppercase mb-1">Colours</div>
                 <div className="text-xs text-[var(--text-muted)]">
-                  Pick from 20+ color palettes or create your own
+                  Pick from 20+ colour palettes or create your own
                 </div>
               </div>
             </div>

@@ -134,7 +134,7 @@ export function FxControls({
               <span className="field-label">Use gradients</span>
               <TooltipIcon
                 id="sprite-fill-mode-tip"
-                text="Enable gradient fills for sprites instead of solid colors."
+                text="Enable gradient fills for sprites instead of solid colours."
                 label="Use gradients"
               />
             </div>
@@ -162,7 +162,7 @@ export function FxControls({
           displayValue={`${spriteState.hueShift ?? 0}%`}
           onChange={(value) => controller?.setHueShift(value)}
           disabled={!ready}
-          tooltip="Shifts all palette colors around the color wheel (0-360°)."
+          tooltip="Shifts all palette colours around the colour wheel (0–360°)."
         />
       </div>
 
@@ -213,7 +213,7 @@ export function FxControls({
           displayValue={`${Math.round(spriteState.backgroundHueShift ?? 0)}%`}
           onChange={(value) => controller?.setBackgroundHueShift(value)}
           disabled={!ready}
-          tooltip="Shifts the canvas colors around the color wheel (0-360°)."
+          tooltip="Shifts the canvas colours around the colour wheel (0–360°)."
         />
         <ControlSlider
           id="background-brightness"

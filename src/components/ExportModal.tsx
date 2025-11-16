@@ -2,11 +2,21 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { Accordion } from "@/components/retroui/Accordion";
+import { Input } from "@/components/retroui/Input";
+import { Label } from "@/components/retroui/Label";
+import {
+  Tabs,
+  TabsTriggerList,
+  TabsTrigger,
+  TabsPanels,
+  TabsContent,
+} from "@/components/retroui/Tab";
 import { X, Settings2 } from "lucide-react";
 import p5 from "p5";
 import { exportCanvas, downloadImage, createThumbnail, getCanvasFromP5 } from "@/lib/services";
 import { animateSuccess } from "@/lib/utils/animations";
 import type { SpriteController } from "../generator";
+// Loop recording uses MediaRecorder on the canvas stream
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -56,10 +66,14 @@ export const ExportModal = ({
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordFps, setRecordFps] = useState(30);
+  const [recordDuration, setRecordDuration] = useState(3); // seconds
   const [lockAspectRatio, setLockAspectRatio] = useState(true);
   const [aspectRatio, setAspectRatio] = useState(1); // Store the aspect ratio when locked
   const [selectedPreset, setSelectedPreset] = useState<string | null>("Quick-Current"); // Track selected preset
   const exportButtonRef = useRef<HTMLButtonElement>(null);
+  const [selectedTabIndex, setSelectedTabIndex] = useState(0);
 
   // Update dimensions when canvas size changes
   useEffect(() => {
@@ -299,7 +313,7 @@ export const ExportModal = ({
     <div className="export-modal-overlay" onClick={handleOverlayClick}>
       <Card className="export-modal export-modal--compact" onClick={(e) => e.stopPropagation()}>
         <div className="export-modal-header">
-          <h2 className="export-modal-title">Export Canvas</h2>
+          <h2 className="export-modal-title">Export canvas</h2>
           <Button
             type="button"
             variant="outline"
@@ -314,139 +328,309 @@ export const ExportModal = ({
         </div>
 
         <div className="export-modal-content">
-          {/* Compact Preview & Quick Export */}
-          <div className="export-quick-section">
-            <div className="export-preview-compact">
-              {thumbnail ? (
-                <img
-                  src={thumbnail}
-                  alt="Canvas preview"
-                  className="export-thumbnail-compact"
-                />
-              ) : (
-                <div className="export-thumbnail-placeholder-compact">Loading...</div>
-              )}
-              <div className="export-quick-info">
-                <div className="export-quick-size">
-                  {quickExportSize.width} × {quickExportSize.height}px
-                </div>
-                <div className="export-quick-format">
-                  PNG
-                </div>
-                <div className="export-quick-size-label">Current size</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Advanced Options Accordion */}
-          <Accordion type="single" collapsible className="export-accordion">
-            <Accordion.Item value="advanced">
-              <Accordion.Header>
-                <Settings2 className="export-accordion-icon" />
-                <span>Advanced Options</span>
-              </Accordion.Header>
-              <Accordion.Content>
-              {/* Dimensions */}
-              <div className="section">
-                <div className="field-heading">
-                  <span className="section-title">Dimensions</span>
-                </div>
-                <div className="control-field">
-                  <div className="field-heading">
-                    <span className="field-label">Size</span>
-                  </div>
-                  <div className="export-dimension-inputs-compact">
-                    <input
-                      type="number"
-                      className="preset-name-input"
-                      value={width}
-                      onChange={(e) => handleWidthChange(parseInt(e.target.value) || 0)}
-                      min={100}
-                      max={16384}
-                      disabled={isExporting}
-                      placeholder="Width"
-                    />
-                    <span className="export-dimension-separator-compact">×</span>
-                    <input
-                      type="number"
-                      className="preset-name-input"
-                      value={height}
-                      onChange={(e) => handleHeightChange(parseInt(e.target.value) || 0)}
-                      min={100}
-                      max={16384}
-                      disabled={isExporting}
-                      placeholder="Height"
-                    />
-                  </div>
-                  <div className="export-aspect-ratio-control">
-                    <input
-                      type="checkbox"
-                      id="aspect-ratio-lock"
-                      checked={lockAspectRatio}
-                      onChange={(e) => setLockAspectRatio(e.target.checked)}
-                      disabled={isExporting}
-                      className="export-aspect-ratio-checkbox"
-                    />
-                    <label htmlFor="aspect-ratio-lock" className="export-aspect-ratio-label">
-                      Lock aspect ratio to {getSimplifiedRatio(width, height)}
-                    </label>
+          <Tabs selectedIndex={selectedTabIndex} onChange={setSelectedTabIndex}>
+            <TabsTriggerList className="retro-tabs mb-[theme(spacing.4)]">
+              <TabsTrigger>Image</TabsTrigger>
+              <TabsTrigger>Movie</TabsTrigger>
+            </TabsTriggerList>
+            <TabsPanels>
+              <TabsContent>
+                {/* Compact Preview & Quick Export */}
+                <div className="export-quick-section mb-[theme(spacing.4)]">
+                  <div className="export-preview-compact">
+                    {thumbnail ? (
+                      <img
+                        src={thumbnail}
+                        alt="Canvas preview"
+                        className="export-thumbnail-compact"
+                      />
+                    ) : (
+                      <div className="export-thumbnail-placeholder-compact">Loading...</div>
+                    )}
+                    <div className="export-quick-info">
+                      <div className="export-quick-size">
+                        {quickExportSize.width} × {quickExportSize.height}px
+                      </div>
+                      <div className="export-quick-format">
+                        PNG
+                      </div>
+                      <div className="export-quick-size-label">Current size</div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Presets - Compact Grid */}
-                <div className="export-presets-compact">
-                  {Object.entries(DIMENSION_PRESETS).map(([category, presets]) => (
-                    <div key={category} className="export-preset-category">
-                      <div className="export-preset-category-label">{category}</div>
-                      <div className="export-presets-row">
-                        {presets.map((preset) => {
-                          const presetKey = `${category}-${preset.label}`;
-                          const isSelected = selectedPreset === presetKey;
-                          return (
-                            <Button
-                              key={presetKey}
-                              type="button"
-                              variant={isSelected ? "default" : "outline"}
-                              size="sm"
-                              onClick={() => handlePresetSelect(preset, presetKey)}
-                              disabled={isExporting}
-                              title={preset.label}
-                              className="export-preset-button-compact"
-                              aria-label={`Select ${preset.label} preset (${preset.width}x${preset.height}px)`}
-                              aria-pressed={isSelected}
-                            >
-                              {preset.label}
-                            </Button>
-                          );
-                        })}
+                {/* Advanced Options Accordion */}
+                <Accordion type="single" collapsible className="export-accordion mt-[theme(spacing.4)]">
+                  <Accordion.Item value="advanced">
+                    <Accordion.Header>
+                      <Settings2 className="export-accordion-icon" />
+                      <span>Advanced options</span>
+                    </Accordion.Header>
+                    <Accordion.Content className="mb-0 pb-0">
+                    {/* Dimensions */}
+                    <div className="section">
+                      <div className="field-heading">
+                        <span className="section-title">Dimensions</span>
+                      </div>
+                      <div className="control-field">
+                        <div className="field-heading">
+                          <span className="field-label">Size</span>
+                        </div>
+                        <div className="export-dimension-inputs-compact">
+                          <input
+                            type="number"
+                            className="preset-name-input"
+                            value={width}
+                            onChange={(e) => handleWidthChange(parseInt(e.target.value) || 0)}
+                            min={100}
+                            max={16384}
+                            disabled={isExporting}
+                            placeholder="Width"
+                          />
+                          <span className="export-dimension-separator-compact">×</span>
+                          <input
+                            type="number"
+                            className="preset-name-input"
+                            value={height}
+                            onChange={(e) => handleHeightChange(parseInt(e.target.value) || 0)}
+                            min={100}
+                            max={16384}
+                            disabled={isExporting}
+                            placeholder="Height"
+                          />
+                        </div>
+                        <div className="export-aspect-ratio-control">
+                          <input
+                            type="checkbox"
+                            id="aspect-ratio-lock"
+                            checked={lockAspectRatio}
+                            onChange={(e) => setLockAspectRatio(e.target.checked)}
+                            disabled={isExporting}
+                            className="export-aspect-ratio-checkbox"
+                          />
+                          <label htmlFor="aspect-ratio-lock" className="export-aspect-ratio-label">
+                            Lock aspect ratio to {getSimplifiedRatio(width, height)}
+                          </label>
+                        </div>
+                      </div>
+
+                      {/* Presets - Compact Grid */}
+                      <div className="export-presets-compact">
+                        {Object.entries(DIMENSION_PRESETS).map(([category, presets]) => (
+                          <div key={category} className="export-preset-category">
+                            <div className="export-preset-category-label">{category}</div>
+                            <div className="export-presets-row">
+                              {presets.map((preset) => {
+                                const presetKey = `${category}-${preset.label}`;
+                                const isSelected = selectedPreset === presetKey;
+                                return (
+                                  <Button
+                                    key={presetKey}
+                                    type="button"
+                                    variant={isSelected ? "default" : "outline"}
+                                    size="sm"
+                                    onClick={() => handlePresetSelect(preset, presetKey)}
+                                    disabled={isExporting}
+                                    title={preset.label}
+                                    className="export-preset-button-compact"
+                                    aria-label={`Select ${preset.label} preset (${preset.width}x${preset.height}px)`}
+                                    aria-pressed={isSelected}
+                                  >
+                                    {preset.label}
+                                  </Button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  ))}
+
+                    {/* File size estimate */}
+                    <div className="export-file-size-compact">
+                      ~{fileSizeEstimate}
+                      {isLargeExport && <span className="export-warning-compact"> · Large export</span>}
+                    </div>
+                    </Accordion.Content>
+                  </Accordion.Item>
+                </Accordion>
+
+                {/* Export Button */}
+                <Button
+                  ref={exportButtonRef}
+                  type="button"
+                  variant="default"
+                  size="md"
+                  onClick={handleExport}
+                  disabled={isExporting || !p5Instance}
+                  className="export-button-full-width mt-[theme(spacing.4)]"
+                  aria-label={isExporting ? "Exporting canvas" : "Export canvas"}
+                >
+                  {isExporting ? "Exporting..." : "Export"}
+                </Button>
+              </TabsContent>
+              <TabsContent>
+                {/* Looping Video Export */}
+                <div className="section">
+                  <div className="field-heading">
+                    <span className="section-title">Seamless loop (WebM)</span>
+                  </div>
+                  <div className="export-dimension-inputs-compact items-center gap-[theme(spacing.3)] mt-[theme(spacing.3)]">
+                    <div className="grid w-full max-w-sm items-center gap-1.5">
+                      <Label htmlFor="export-fps">Frames per second</Label>
+                      <Input
+                        id="export-fps"
+                        type="number"
+                        min={1}
+                        max={120}
+                        value={recordFps}
+                        onChange={(e) =>
+                          setRecordFps(Math.max(1, Math.min(120, parseInt(e.target.value) || 30)))
+                        }
+                        placeholder="30"
+                        aria-label="Frames per second"
+                      />
+                    </div>
+                    <span className="export-dimension-separator-compact mx-[theme(spacing.2)]">×</span>
+                    <div className="grid w-full max-w-sm items-center gap-1.5">
+                      <Label htmlFor="export-seconds">Duration (seconds)</Label>
+                      <Input
+                        id="export-seconds"
+                        type="number"
+                        min={1}
+                        max={20}
+                        value={recordDuration}
+                        onChange={(e) =>
+                          setRecordDuration(Math.max(1, Math.min(20, parseInt(e.target.value) || 3)))
+                        }
+                        placeholder="3"
+                        aria-label="Duration in seconds"
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    size="md"
+                    variant="default"
+                    onClick={async () => {
+                        try {
+                        if (typeof MediaRecorder === "undefined") {
+                          setError("Recording is not supported in this browser.");
+                          return;
+                        }
+                        if (!window.isSecureContext) {
+                          setError("Recording requires a secure context (HTTPS or localhost).");
+                          return;
+                        }
+                        if (!p5Instance) {
+                            setError("Canvas not available");
+                            return;
+                          }
+                          const canvas = getCanvasFromP5(p5Instance);
+                          if (!canvas) {
+                            setError("Canvas not found");
+                            return;
+                          }
+                        const fps = Math.max(1, Math.min(120, recordFps));
+                        const duration = Math.max(1, Math.min(20, recordDuration));
+                        const stream = (canvas as HTMLCanvasElement).captureStream?.(fps);
+                        if (!stream) {
+                          setError("Failed to capture canvas stream.");
+                          return;
+                        }
+                        const mimeCandidates = [
+                          "video/webm;codecs=vp9",
+                          "video/webm;codecs=vp8",
+                          "video/webm",
+                        ];
+                        const mime = mimeCandidates.find((t) => MediaRecorder.isTypeSupported(t)) ?? "";
+                        if (!mime) {
+                          setError("No supported WebM codec found for recording.");
+                          return;
+                        }
+                        const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 6_000_000 });
+                          const chunks: BlobPart[] = [];
+                        // Deterministic frame stepping to guarantee seamless loop
+                        const totalFrames = Math.max(1, Math.floor(fps * duration));
+                        let frameIndex = 0;
+                        let stepTimer: number | null = null;
+                          recorder.ondataavailable = (e) => {
+                            if (e.data && e.data.size > 0) chunks.push(e.data);
+                          };
+                          recorder.onstop = () => {
+                            const blob = new Blob(chunks, { type: mime });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement("a");
+                            a.href = url;
+                            const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, -5);
+                          a.download = `pixli-seamless-loop-${currentCanvasSize.width}x${currentCanvasSize.height}-${fps}fps-${duration}s-${timestamp}.webm`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                            setIsRecording(false);
+                            // Disable loop override
+                            // @ts-ignore
+                            controller?.__setLoopMode(false);
+                          // @ts-ignore
+                          controller?.__clearLoopFrame?.();
+                          if (stepTimer !== null) {
+                            window.clearInterval(stepTimer);
+                          }
+                          };
+                          // Enable loop override to keep motion periodic over period seconds
+                          // @ts-ignore
+                          controller?.__setLoopMode(true, duration);
+                        // Enable deterministic frame stepping for perfect loop alignment
+                        // @ts-ignore
+                        controller?.__setLoopFrame?.(0, totalFrames);
+                        stepTimer = window.setInterval(() => {
+                          frameIndex = (frameIndex + 1) % totalFrames;
+                          // @ts-ignore
+                          controller?.__setLoopFrame?.(frameIndex, totalFrames);
+                        }, Math.max(4, Math.floor(1000 / fps)));
+                          setIsRecording(true);
+                        try {
+                          recorder.start();
+                        } catch (recErr) {
+                          setIsRecording(false);
+                          // @ts-ignore
+                          controller?.__setLoopMode(false);
+                          // @ts-ignore
+                          controller?.__clearLoopFrame?.();
+                          throw recErr instanceof Error ? recErr : new Error("Unable to start recorder.");
+                        }
+                          // Stop after duration seconds
+                          setTimeout(() => {
+                            try {
+                              recorder.stop();
+                            } catch {}
+                          }, duration * 1000);
+                        } catch (err) {
+                        console.error(err);
+                        const message = err instanceof Error ? err.message : "Unknown error";
+                        setError(`Failed to record video: ${message}`);
+                          setIsRecording(false);
+                          // @ts-ignore
+                          controller?.__setLoopMode(false);
+                        // @ts-ignore
+                        controller?.__clearLoopFrame?.();
+                        }
+                      }}
+                    disabled={!p5Instance || isExporting || isRecording}
+                    aria-label="Export seamless looping video"
+                    title="Export seamless looping video (WebM)"
+                    className="export-button-full-width mt-[theme(spacing.4)]"
+                  >
+                    {isRecording ? "Recording..." : "Export seamless loop"}
+                  </Button>
+                  <div className="text-xs text-[var(--text-muted)] mt-[theme(spacing.2)]">
+                    Tip: Exports a seamless loop by syncing animation time to your chosen duration and FPS.
+                  </div>
                 </div>
-              </div>
-
-              {/* File size estimate */}
-              <div className="export-file-size-compact">
-                ~{fileSizeEstimate}
-                {isLargeExport && <span className="export-warning-compact"> · Large export</span>}
-              </div>
-              </Accordion.Content>
-            </Accordion.Item>
-          </Accordion>
-
-          {/* Export Button */}
-          <Button
-            ref={exportButtonRef}
-            type="button"
-            variant="default"
-            size="md"
-            onClick={handleExport}
-            disabled={isExporting || !p5Instance}
-            className="export-button-full-width"
-            aria-label={isExporting ? "Exporting canvas" : "Export canvas"}
-          >
-            {isExporting ? "Exporting..." : "Export"}
-          </Button>
+              </TabsContent>
+            </TabsPanels>
+          </Tabs>
 
           {/* Progress */}
           {isExporting && (

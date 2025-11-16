@@ -3,15 +3,6 @@
 <br />
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="public/logo/SVG/pixli-logo-p-white.svg" />
-    <source media="(prefers-color-scheme: light)" srcset="public/logo/SVG/pixli-logo-p-black.svg" />
-    <img
-      src="public/logo/SVG/pixli-logo-p-black.svg"
-      alt="Pixli modular logomark"
-      width="120"
-    />
-  </picture>
 </p>
 
 ## 🎨 Generative Pixel Playground
@@ -28,8 +19,7 @@ Pixli is a vibrant generative art workbench built with React, p5.js, Tailwind, a
 </p>
 
 <p align="center">
-  <img src="public/screengrabs/Screenshot%202025-11-10%20105941.png" width="48%" alt="Pixli Canvas view" />
-  <img src="public/screengrabs/Screenshot%202025-11-10%20105947.png" width="48%" alt="Pixli Control panels" />
+  <img src="public/screengrabs/Screenshot%202025-11-16%20161543.png" width="90%" alt="Pixli screenshot" />
 </p>
 
 <p align="center">

@@ -508,7 +508,7 @@ const computeMovementOffsets = (
       // Calculate distance based on sprite size and canvas size
       // Use a fraction of the layer tile size (which represents canvas scale)
       // Combined with sprite size for sensible travel distance
-      const maxDistance = (layerTileSize * 0.4 * motionScale + baseUnit * 0.3) * speedMultiplier;
+      const maxDistance = (layerTileSize * 0.7 * motionScale + baseUnit * 0.5) * speedMultiplier;
       
       // Create oscillating motion - use sine wave directly for smooth, consistent speed
       // Use a slower frequency for smoother oscillation
@@ -543,7 +543,7 @@ const computeMovementOffsets = (
       const speedMultiplier = 0.3 + sizeRatio * 0.7; // Range: 0.3 to 1.0
       
       // Calculate distance based on sprite size and canvas size
-      const maxDistance = (layerTileSize * 0.4 * motionScale + baseUnit * 0.3) * speedMultiplier;
+      const maxDistance = (layerTileSize * 0.7 * motionScale + baseUnit * 0.5) * speedMultiplier;
       
       // Create oscillating motion - use sine wave directly for smooth, consistent speed
       // Remove phase from oscillation to ensure all sprites with same angle move in sync
@@ -846,6 +846,15 @@ export const createSpriteController = (
   let p5Instance: P5WithCanvas | null = null;
   let destroyTimeoutId: ReturnType<typeof setTimeout> | null = null;
   let pauseTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  // Loop capture override: when enabled, draw uses time modulo a fixed period
+  const loopOverrideRef = {
+    enabled: false,
+    periodSeconds: 3,
+    // Optional deterministic frame stepping for offline capture (unused for realtime)
+    frameIndex: 0,
+    totalFrames: 0,
+    useFrameIndex: false,
+  };
   
   // Getter function to always return current state from the ref
   // This ensures the draw loop always reads the latest state, even after HMR
@@ -1101,6 +1110,18 @@ export const createSpriteController = (
       // Use the average of previous and current speed for this frame to ensure smoothness
       const averageSpeedFactor = (previousSpeedFactor + currentSpeedFactor) / 2;
       scaledAnimationTime += deltaTime * averageSpeedFactor;
+      // Loop override: force time to wrap for seamless looping (and optional deterministic stepping)
+      if (loopOverrideRef.enabled) {
+        const period = Math.max(0.25, loopOverrideRef.periodSeconds);
+        if (loopOverrideRef.useFrameIndex && loopOverrideRef.totalFrames > 0) {
+          // Deterministic time for a specific frame index (exclude last frame to avoid duplicate)
+          const t = (loopOverrideRef.frameIndex % loopOverrideRef.totalFrames) / loopOverrideRef.totalFrames;
+          scaledAnimationTime = t * period;
+        } else {
+          // Realtime recording: wrap time modulo period
+          scaledAnimationTime = scaledAnimationTime % period;
+        }
+      }
       
       const ctx = p.drawingContext as CanvasRenderingContext2D;
       ctx.imageSmoothingEnabled = false;
@@ -1220,7 +1241,7 @@ export const createSpriteController = (
 
             p.push();
             const halfSize = shapeSize / 2;
-            const allowableOverflow = Math.max(drawSize * 0.35, shapeSize * 0.8);
+            const allowableOverflow = Math.max(drawSize * 0.6, shapeSize * 1.25);
             
             // Clamp positions to canvas bounds with overflow allowance
             const clampedX = clamp(
@@ -2036,6 +2057,28 @@ export const createSpriteController = (
       if (p5Instance) {
         p5Instance.loop();
       }
+    },
+    // Internal API for loop control
+    // Not exposed on type to avoid breaking external imports; still callable where imported locally
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    __setLoopMode: (enabled: boolean, periodSeconds?: number) => {
+      loopOverrideRef.enabled = enabled;
+      if (typeof periodSeconds === "number" && isFinite(periodSeconds) && periodSeconds > 0) {
+        loopOverrideRef.periodSeconds = periodSeconds;
+      }
+    },
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    __setLoopFrame: (frameIndex: number, totalFrames: number) => {
+      loopOverrideRef.useFrameIndex = true;
+      loopOverrideRef.frameIndex = Math.max(0, Math.floor(frameIndex));
+      loopOverrideRef.totalFrames = Math.max(1, Math.floor(totalFrames));
+    },
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    __clearLoopFrame: () => {
+      loopOverrideRef.useFrameIndex = false;
     },
   };
 

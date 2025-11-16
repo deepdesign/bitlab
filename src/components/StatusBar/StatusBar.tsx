@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/Button";
 import { Badge } from "@/components/retroui/Badge";
-import { Maximize2, X, RefreshCw, Bookmark, Camera, HelpCircle, Info } from "lucide-react";
+import { Maximize2, X, RefreshCw, Bookmark, Download, HelpCircle, Info } from "lucide-react";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { animatePulse } from "@/lib/utils/animations";
 import type { GeneratorState, MovementMode } from "@/types/generator";
@@ -325,10 +325,10 @@ export function StatusBar({
           onClick={onShowExport}
           disabled={!ready}
           className="status-bar-export-button"
-          aria-label="Export canvas"
-          title="Export canvas"
+          aria-label="Export"
+          title="Export"
         >
-          <Camera className="status-bar-icon" />
+          <Download className="status-bar-icon" />
         </Button>
         <Button
           type="button"

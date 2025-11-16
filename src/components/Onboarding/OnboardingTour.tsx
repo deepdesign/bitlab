@@ -30,8 +30,8 @@ const TOUR_STEPS: TourStep[] = [
   },
   {
     id: "colors",
-    title: "Pick Your Colors",
-    description: "Select a color palette or create your own from images. Mix and match to find your style!",
+    title: "Pick your colours",
+    description: "Select a colour palette or create your own from images. Mix and match to find your style!",
     image: "/tour/colors.png",
     position: "center",
   },

@@ -1371,7 +1371,7 @@ html[data-theme="dark"][data-theme-color="gold"] body {
   @apply grid items-end text-[var(--text-primary)];
   gap: theme("spacing.5");
   padding-inline: theme("spacing.6");
-  padding-top: theme("spacing.5");
+  padding-top: theme("spacing.7");
   padding-bottom: theme("spacing.5");
   grid-template-columns: minmax(0, min(100%, var(--control-column-width))) 1fr;
   max-width: 100%;
@@ -4056,6 +4056,16 @@ body:has(.app-layout--wide) .app-footer {
   gap: theme("spacing.4");
 }
 
+/* Normalize section spacing inside export modal - use explicit margins instead of section gap */
+.export-modal .section {
+  gap: 0;
+}
+
+/* Ensure compact inputs row uses theme spacing token within export modal */
+.export-modal .export-dimension-inputs-compact {
+  gap: theme("spacing.3");
+}
+
 /* Quick Export Section - Compact Preview */
 .export-quick-section {
   @apply flex items-center gap-4;
@@ -5027,17 +5037,5 @@ body:has(.app-frame--stacked) .app-header {
   min-height: auto !important; /* Prevent extra vertical space from min-height in stacked */
 }
 
-/* DEBUG: Colored outlines for header containers - remove when done inspecting */
-.app-frame--header { outline: 2px solid #ff3b30 !important; } /* red */
-.app-header { outline: 2px solid #007aff !important; } /* blue */
-.header-toolbar { outline: 2px solid #34c759 !important; } /* green */
-.header-actions { outline: 2px solid #ff9f0a !important; } /* orange */
-.header-actions--overflow { outline: 2px solid #bf5af2 !important; } /* purple */
-.header-overflow-trigger { outline: 2px solid #5ac8fa !important; } /* light blue */
-.header-overflow-content { outline: 2px solid #64d2ff !important; } /* cyan */
-.header-overflow-theme-section { outline: 2px dashed #ffd60a !important; } /* yellow dashed */
-.header-theme-menu { outline: 2px solid #30d158 !important; } /* mint */
-.app-logo-button { outline: 2px solid #ffcc00 !important; } /* yellow */
-.app-logo-svg, .footer-logo { outline: 2px solid #ff375f !important; } /* pink */
 /* End DEBUG */
 
