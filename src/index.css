@@ -36,6 +36,9 @@ html {
   /* Use small viewport height to avoid mobile browser UI issues */
   height: 100svh;
   height: 100vh; /* Fallback for browsers that don't support svh */
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
 }
 
 *,
@@ -1181,6 +1184,10 @@ body {
   color: var(--text-primary);
   display: flex;
   justify-content: center;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 html[data-theme="light"] body {
@@ -1391,12 +1398,19 @@ html[data-theme="dark"][data-theme-color="gold"] body {
 
 #app {
   width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 .app-shell {
   @apply min-h-screen flex flex-col;
   padding-bottom: 0; /* Footer uses internal padding only */
   gap: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 .app-frame {
@@ -1404,7 +1418,9 @@ html[data-theme="dark"][data-theme-color="gold"] body {
   margin-inline: auto;
   position: relative;
   box-sizing: border-box;
-  overflow: visible;
+  overflow-x: hidden;
+  overflow-y: visible;
+  max-width: 100%;
 }
 
 .app-frame--header {
@@ -2006,6 +2022,13 @@ body:has(.app-layout--wide) .app-header {
 }
 
 @media (max-width: 420px) {
+  /* Ensure no horizontal overflow on very small devices */
+  html, body, #app, .app-shell, .app-frame {
+    overflow-x: hidden !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  
   /* Scale down logo to prevent overlap with overflow button at very small viewports */
   .app-logo-button {
     max-width: calc(100% - 60px) !important; /* Leave room for overflow button (36px) + gap + padding */
@@ -2027,6 +2050,13 @@ body:has(.app-layout--wide) .app-header {
   /* Ensure small-canvas gap is locked at spacing.5 */
   .app-layout--small-canvas {
     gap: theme("spacing.5") !important;
+  }
+  
+  /* Allow control column to shrink below 320px on very small devices */
+  .control-column {
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
   
   /* CRITICAL: Lock .app-main padding at 420px and below - DO NOT ALLOW TO COLLAPSE */
