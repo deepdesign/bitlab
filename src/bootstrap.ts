@@ -112,7 +112,22 @@ window.addEventListener("DOMContentLoaded", () => {
         stopProgress();
         updateLoadingPercent(100);
         window.clearTimeout(maxTimeout); // Clear fallback since app loaded successfully
-        // Small delay before hiding loader (handled by App.tsx)
+        // Safety: hide loader after a short delay in case the app doesn't signal readiness
+        window.setTimeout(() => {
+          const loader = document.getElementById("initial-loader");
+          if (loader) {
+            const loaderText = document.getElementById("initial-loader-text");
+            if (loaderText) {
+              loaderText.textContent = "loading 100%";
+            }
+            loader.classList.add("initial-loader--hidden");
+            window.setTimeout(() => {
+              if (loader.parentNode) {
+                loader.parentNode.removeChild(loader);
+              }
+            }, 400);
+          }
+        }, 2500);
       })
       .catch((err) => {
         console.error("Failed to load main application module:", err);

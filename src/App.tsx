@@ -540,6 +540,8 @@ const App = () => {
     }
   }, [lockedBlendMode]);
 
+  // Keyboard shortcuts removed
+
   // Fullscreen management is now handled by useFullscreen hook
 
   // Theme management is now handled by useTheme hook
@@ -863,6 +865,10 @@ const App = () => {
             <SettingsModal
               isOpen={showSettings}
               onClose={() => setShowSettings(false)}
+              onStartTour={() => {
+                setShowSettings(false);
+                setShowTour(true);
+              }}
             />
           </Suspense>
         </ErrorBoundary>

@@ -3,7 +3,8 @@ import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { Switch } from "@/components/retroui/Switch";
 import { Accordion } from "@/components/retroui/Accordion";
-import { X, Settings, Keyboard, Info, RotateCcw, Download, Upload } from "lucide-react";
+import { X, Settings, Info, RotateCcw, Download, Upload, Sparkles, BookOpen } from "lucide-react";
+// Tabs removed
 import {
   getSettings,
   saveSettings,
@@ -15,20 +16,12 @@ import { resetOnboarding } from "@/lib/storage/onboardingStorage";
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onStartTour?: () => void;
 }
 
-const KEYBOARD_SHORTCUTS = [
-  { key: "R", description: "Randomise all sprites" },
-  { key: "F / F11", description: "Toggle fullscreen mode" },
-  { key: "P", description: "Open Presets manager" },
-  { key: "E", description: "Open Export modal" },
-  { key: "T", description: "Cycle theme mode (System → Light → Dark)" },
-  { key: "1, 2, 3, 4", description: "Switch between control tabs" },
-  { key: "ESC", description: "Exit fullscreen / Close modals" },
-  { key: "?", description: "Open Help menu" },
-];
+// Keyboard shortcuts removed
 
-export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
+export const SettingsModal = ({ isOpen, onClose, onStartTour }: SettingsModalProps) => {
   const [settings, setSettings] = useState<AppSettings>(getSettings());
   const [hasChanges, setHasChanges] = useState(false);
 
@@ -172,17 +165,69 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
         </div>
 
         <div className="settings-modal-content">
-          {/* Accessibility Section */}
+          {/* About at top */}
+          <div className="settings-section">
+            <h3 className="settings-section-title">About</h3>
+            <div className="space-y-3">
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-wider mb-1">
+                  Version
+                </div>
+                <div className="text-sm text-[var(--text-muted)]">
+                  {__APP_VERSION__}
+                </div>
+                  </div>
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-wider mb-1">Pixli</div>
+                <div className="text-sm text-[var(--text-muted)]">
+                  Create beautiful, animated pixel art
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Help */}
+          <div className="settings-section">
+            <h3 className="settings-section-title">Help</h3>
+            <div className="space-y-2">
+              <Button
+                type="button"
+                variant="default"
+                size="sm"
+                onClick={() => {
+                  onClose();
+                  onStartTour?.();
+                }}
+                className="justify-start gap-2"
+              >
+                <Sparkles className="h-4 w-4" />
+                Start tour
+              </Button>
+              <a
+                href="https://www.pixli.art"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 text-xs text-[var(--accent-primary)] hover:underline"
+                aria-label="Open Pixli website"
+                title="Open Pixli website"
+              >
+                <BookOpen className="h-3 w-3" />
+                Pixli website
+              </a>
+            </div>
+          </div>
+
+          {/* Accessibility */}
           <div className="settings-section">
             <h3 className="settings-section-title">Accessibility</h3>
             <div className="settings-item">
               <div className="flex items-center justify-between gap-4">
                 <div className="flex-1">
                   <div className="field-heading-left mb-1">
-                    <span className="field-label">Reduce Motion</span>
+                    <span className="field-label">Reduce motion</span>
                   </div>
                   <p className="text-xs text-[var(--text-muted)]">
-                    Minimize animations and transitions for better accessibility
+                    Minimise animations and transitions for better accessibility
                   </p>
                 </div>
                 <Switch
@@ -195,52 +240,9 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
             </div>
           </div>
 
-          {/* Keyboard Shortcuts Section */}
+          {/* Data */}
           <div className="settings-section">
-            <h3 className="settings-section-title">Keyboard Shortcuts</h3>
-            <div className="settings-shortcuts">
-              {KEYBOARD_SHORTCUTS.map((shortcut, index) => (
-                <div key={index} className="settings-shortcut-item">
-                  <kbd className="settings-shortcut-key">{shortcut.key}</kbd>
-                  <span className="settings-shortcut-description">
-                    {shortcut.description}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* About Section */}
-          <Accordion type="single" collapsible className="settings-accordion">
-            <Accordion.Item value="about">
-              <Accordion.Header className="settings-accordion-trigger">
-                <Info className="h-4 w-4" />
-                <span>About</span>
-              </Accordion.Header>
-              <Accordion.Content className="settings-accordion-content">
-                <div className="space-y-3">
-                  <div>
-                    <div className="text-xs font-semibold uppercase tracking-wider mb-1">
-                      Version
-                    </div>
-                    <div className="text-sm text-[var(--text-muted)]">
-                      {__APP_VERSION__}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs font-semibold uppercase tracking-wider mb-1">Pixli</div>
-                    <div className="text-sm text-[var(--text-muted)]">
-                      Create beautiful, animated pixel art
-                    </div>
-                  </div>
-                </div>
-              </Accordion.Content>
-            </Accordion.Item>
-          </Accordion>
-
-          {/* Data Management Section */}
-          <div className="settings-section">
-            <h3 className="settings-section-title">Data Management</h3>
+            <h3 className="settings-section-title">Data management</h3>
             <div className="space-y-2">
               <Button
                 type="button"
@@ -250,7 +252,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                 className="w-full justify-start gap-2"
               >
                 <Download className="h-4 w-4" />
-                Export All Data
+                Export all data
               </Button>
               <Button
                 type="button"
@@ -260,12 +262,12 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                 className="w-full justify-start gap-2"
               >
                 <Upload className="h-4 w-4" />
-                Import Data
+                Import data
               </Button>
             </div>
           </div>
 
-          {/* Reset Section */}
+          {/* Reset */}
           <div className="settings-section">
             <h3 className="settings-section-title">Reset</h3>
             <div className="space-y-2">
@@ -277,7 +279,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                 className="w-full justify-start gap-2"
               >
                 <RotateCcw className="h-4 w-4" />
-                Reset Onboarding
+                Reset onboarding
               </Button>
               <Button
                 type="button"
@@ -287,7 +289,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                 className="w-full justify-start gap-2 text-[var(--destructive)]"
               >
                 <RotateCcw className="h-4 w-4" />
-                Reset All Settings
+                Reset all settings
               </Button>
             </div>
           </div>
@@ -302,7 +304,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                 onClick={handleSave}
                 className="w-full"
               >
-                Save Changes
+                Save changes
               </Button>
             </div>
           )}

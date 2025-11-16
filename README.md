@@ -5,9 +5,9 @@
 <p align="center">
 </p>
 
-## 🎨 Generative Pixel Playground
+## 🎨 Generative sprite workbench
 
-Pixli is a vibrant generative art workbench built with React, p5.js, Tailwind, and RetroUI. Mix pixel iconography, palette theory, and motion envelopes to compose shimmering sprite tapestries in real time.
+Pixli is a vibrant generative art workbench built with React, p5.js, Tailwind and RetroUI. Combine sprite iconography, colour palettes, blend modes and motion envelopes to compose shimmering, real‑time canvases.
 
 <p align="center">
   <img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=20232A" alt="React" />
@@ -28,7 +28,7 @@ Pixli is a vibrant generative art workbench built with React, p5.js, Tailwind, a
 
 ---
 
-### 📚 Table of Contents
+### 📚 Table of contents
 
 - [✨ Highlights](#-highlights)
 - [🗺 Experience Map](#-experience-map)
@@ -55,14 +55,14 @@ Pixli is a vibrant generative art workbench built with React, p5.js, Tailwind, a
 
 ## ✨ Highlights
 
-- **Generative Sprite Canvas** – Multi-layer p5.js engine with dialed-in controls for density (UI 0–100 ≙ 50–1000%), scale base/spread, palette variance, opacity, and animation tempo.
+- **Generative sprite canvas** – Multi-layer p5.js engine with dialled‑in controls for density (UI 0–100 ≙ 50–1000%), scale base/spread, palette variance, opacity, and animation tempo.
 - **Expanded Sprite Modes** – Tiles, circles, hexagons, rings, diamonds, stars, long neon scanlines, pixels (3x3 grid), and more—each selectable via icon buttons for instant previews.
 - **Random Sprites** – Toggle to randomize sprite shapes across the canvas, with a refresh button to re-roll the selection instantly.
 - **Motion Lab** – Density-driven layering paired with ten motion envelopes (sway → wavefront) and a master speed dial, now normalised so every mode feels punchy at the same slider value.
 - **Rotation System** – Independent rotation offsets (Sprites tab) and spin animation (Motion tab) with per-sprite direction, speed and angle variance.
 - **Blend Architectures** – Layer-specific blend modes (multiply, screen, hard light, overlay) with optional per-sprite randomisation.
-- **Custom Palette Management** – Create custom color palettes from images (upload or URL), extract dominant colors using k-means clustering, and manage up to 10 custom palettes. Custom palettes automatically generate gradients and work with canvas backgrounds (solid and gradient modes), just like built-in palettes. Export/import palettes as JSON for easy sharing.
-- **Organized Color Palettes** – 20+ built-in palettes organized by category (Neon/Cyber, Warm/Fire, Cool/Ocean, Nature, Soft/Pastel, Dark/Mysterious) with color preview squares in dropdowns.
+- **Custom palette management** – Create custom colour palettes from images (upload or URL), extract dominant colours using k-means clustering, and manage up to 10 custom palettes. Custom palettes automatically generate gradients and work with canvas backgrounds (solid and gradient modes), just like built‑in palettes. Export/import palettes as JSON for easy sharing.
+- **Organised colour palettes** – 20+ built‑in palettes organised by category (Neon/Cyber, Warm/Fire, Cool/Ocean, Nature, Soft/Pastel, Dark/Mysterious) with colour preview squares in dropdowns.
 - **Theme Designer** – System/light/dark cycling, 11 colourway accents (Sunburst, Neon Grid, Nebula, Ember Glow, Lagoon Tide, Rose Quartz, Battleship, Electric Cyan, Midnight, Deep Indigo, Metallic Gold), and RetroUI Box/Rounded chassis toggle applied across the entire shell. Each theme includes custom backgrounds, shadows, and UI styling for both light and dark modes.
 - **Status HUD** – Live palette, sprite mode, blend, motion, density, and FPS read-outs follow you into fullscreen.
 - **Instant Loader** – Lightweight inline bootstrapper renders the Pixli spinner before the bundle downloads, then hands off seamlessly to React once the generator is ready.
@@ -75,7 +75,7 @@ Pixli is a vibrant generative art workbench built with React, p5.js, Tailwind, a
 
 ---
 
-## 🗺 Experience Map
+## 🗺 Experience map
 
 | Area             | Highlights                                                                                                                                                                                                                              |
 | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -90,27 +90,27 @@ Pixli is a vibrant generative art workbench built with React, p5.js, Tailwind, a
 
 ---
 
-## 🎨 Custom Palettes
+## 🎨 Custom palettes
 
-Pixli includes a powerful custom palette management system that lets you create color palettes from your own images.
+Pixli includes a powerful custom palette management system that lets you create colour palettes from your own images.
 
 ### Creating Custom Palettes
 
-1. **From Image Upload** – Click the palette management button (📷 icon) next to the palette selector, then use the "Upload" tab to select an image file from your device.
-2. **From Image URL** – Use the "URL" tab to paste an image URL. Pixli will extract colors from the image.
+1. **From image upload** – Click the palette management button (📷 icon) next to the palette selector, then use the "Upload" tab to select an image file from your device.
+2. **From image URL** – Use the "URL" tab to paste an image URL. Pixli will extract colours from the image.
 3. **From JSON Import** – Use the "Import" tab to load a previously exported palette JSON file.
 
 ### Features
 
-- **Smart Color Extraction** – Uses k-means clustering to extract 5 dominant colors from images
+- **Smart colour extraction** – Uses k-means clustering to extract 5 dominant colours from images
 - **Up to 10 Custom Palettes** – Store and manage multiple custom palettes
-- **Automatic Gradient Generation** – Custom palettes automatically generate gradients for sprite fills, just like built-in palettes
-- **Canvas Background Support** – Use custom palettes for canvas backgrounds in both solid and gradient modes
-- **Export & Share** – Export any palette as JSON to share with others
-- **Import Palettes** – Import shared palette JSON files to use others' color schemes
-- **Edit & Delete** – Rename or remove custom palettes as needed
-- **Category Organization** – Custom palettes appear in a "Custom" category in the palette dropdown
-- **Color Previews** – See color swatches in both the manager and dropdown selectors
+- **Automatic gradient generation** – Custom palettes automatically generate gradients for sprite fills, just like built‑in palettes
+- **Canvas background support** – Use custom palettes for canvas backgrounds in both solid and gradient modes
+- **Export & share** – Export any palette as JSON to share with others
+- **Import palettes** – Import shared palette JSON files to use others' colour schemes
+- **Edit & delete** – Rename or remove custom palettes as needed
+- **Category organisation** – Custom palettes appear in a "Custom" category in the palette dropdown
+- **Colour previews** – See colour swatches in both the manager and dropdown selectors
 
 ### Palette JSON Format
 
@@ -123,7 +123,7 @@ Pixli includes a powerful custom palette management system that lets you create 
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick start
 
 ### Prerequisites
 
@@ -168,7 +168,7 @@ The build artifacts land in `/dist` ready for static hosting.
 
 ---
 
-## ⚙️ Tech Stack
+## ⚙️ Tech stack
 
 - [React 19](https://react.dev/) for a modern component model
 - [Vite 7](https://vitejs.dev/) to power development and production builds
@@ -176,7 +176,7 @@ The build artifacts land in `/dist` ready for static hosting.
 - [p5.js](https://p5js.org/) driving the generative engine
 - [Tailwind CSS](https://tailwindcss.com/) + [RetroUI](https://www.retroui.dev/) supplying the retro design system
 
-## 🗂 Project Structure
+## 🗂 Project structure
 
 ```
 ├── public/
@@ -207,6 +207,6 @@ Bug reports and enhancement ideas are always welcome via [GitHub issues](https:/
 
 ---
 
-## 📜 License
+## 📜 Licence
 
 All rights reserved. Please contact the maintainers at [deepdesign](https://github.com/deepdesign) for licensing discussions.

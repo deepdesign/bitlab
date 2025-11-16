@@ -17,9 +17,9 @@ import {
   THEME_COLOR_PREVIEW,
   type ThemeColor,
 } from "@/constants/theme";
-import { Moon, Monitor, Sun, HelpCircle, Settings } from "lucide-react";
+import { Moon, Monitor, Sun, Settings } from "lucide-react";
 import type { CSSProperties } from "react";
-import { HelpMenu } from "../Onboarding/HelpMenu";
+// Help has moved under Settings; header Help menu removed
 
 interface HeaderProps {
   themeMode: "system" | "light" | "dark";
@@ -305,17 +305,7 @@ export function Header({
                 >
                   <Settings className="h-4 w-4" />
                 </Button>
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="outline"
-                  className="header-icon-button"
-                  onClick={() => setShowHelpMenu(true)}
-                  aria-label="Help"
-                  title="Help"
-                >
-                  <HelpCircle className="h-4 w-4" />
-                </Button>
+                {/* Help moved under Settings */}
                 <Select value={themeColor} onValueChange={handleThemeSelect}>
                   <SelectTrigger
                     className="header-theme-trigger"
@@ -400,19 +390,7 @@ export function Header({
         </>
       )}
 
-      {/* Help Menu */}
-      <HelpMenu
-        isOpen={showHelpMenu}
-        onClose={() => setShowHelpMenu(false)}
-        onStartTour={() => {
-          setShowHelpMenu(false);
-          onStartTour?.();
-        }}
-        onOpenSettings={() => {
-          setShowHelpMenu(false);
-          onOpenSettings?.();
-        }}
-      />
+      {/* Help menu removed; access Help via Settings */}
     </header>
   );
 }

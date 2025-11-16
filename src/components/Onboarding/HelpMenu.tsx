@@ -151,20 +151,20 @@ export function HelpMenu({ isOpen, onClose, onStartTour }: HelpMenuProps) {
               </div>
             </div>
 
-            {/* Documentation Links */}
+            {/* External Link */}
             <div className="pt-4 border-t border-[var(--card-border)]">
               <h4 className="text-xs font-semibold uppercase tracking-wider mb-2 text-[var(--text-muted)]">
-                Learn More
+                Learn more
               </h4>
               <div className="space-y-1">
                 <a
-                  href="https://github.com/Logging-Studio/RetroUI"
+                  href="https://www.pixli.art"
                   target="_blank"
                   rel="noreferrer"
                   className="text-xs text-[var(--accent-primary)] hover:underline flex items-center gap-1"
                 >
                   <BookOpen className="h-3 w-3" />
-                  RetroUI Documentation
+                  Pixli website
                 </a>
               </div>
             </div>

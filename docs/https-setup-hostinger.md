@@ -4,7 +4,7 @@ This guide documents the successful process for enabling HTTPS/SSL certificates 
 
 **Last Updated:** November 2025  
 **Server:** Hostinger VPS with Nginx  
-**Note:** Hostinger uses a CDN/proxy layer that forces HTTP→HTTPS redirects, so DNS verification is required.
+**Note:** Hostinger’s default DNS often points to their CDN/proxy (`*.cdn.hstgr.net`). To serve from your VPS, point DNS directly to your VPS IP (disable the CDN records). For SSL issuance, use DNS verification.
 
 ---
 
@@ -17,7 +17,28 @@ This guide documents the successful process for enabling HTTPS/SSL certificates 
 
 ---
 
-## Step-by-Step Instructions
+## Step-by-Step Instructions (Working Recipe)
+
+### Step 0: Point DNS to your VPS (disable Hostinger CDN)
+
+In your DNS zone:
+
+- Remove CDN records (if present):
+  - Remove `ALIAS @ -> yourdomain.com.cdn.hstgr.net`
+  - Remove `CNAME www -> www.yourdomain.com.cdn.hstgr.net`
+- Add/keep direct records to your VPS:
+  - `A @ -> YOUR_VPS_IPV4` (TTL 300)
+  - Optional: `AAAA @ -> YOUR_VPS_IPV6` (only if your VPS has IPv6 and Nginx listens on it)
+  - Optional: `CNAME www -> @` (or `www -> yourdomain.com`) for the www host
+
+Verify (after a few minutes):
+
+```bash
+dig +short A yourdomain.com
+dig +short A www.yourdomain.com
+```
+
+These must return only your VPS IPs (not `hstgr.net`). If you still see Hostinger’s holding page over HTTPS, your DNS is still pointing at the CDN.
 
 ### Step 1: Find Your Nginx Config File
 
@@ -25,7 +46,7 @@ This guide documents the successful process for enabling HTTPS/SSL certificates 
 sudo nginx -T | grep -A 10 "yourdomain.com"
 ```
 
-Note the config file path (usually `/etc/nginx/sites-enabled/yourdomain.com`).
+Note the config file path (usually `/etc/nginx/sites-available/yourdomain.com`, enabled via a symlink in `sites-enabled`).
 
 ### Step 2: Add ACME Challenge Location Block
 
@@ -39,7 +60,7 @@ Add this location block **inside** the `server { ... }` block, **before** the `l
 
 ```nginx
 location /.well-known/acme-challenge/ {
-    root /var/www/yourdomain.com;
+    root /var/www/yourdomain.com;  # parent dir (not /dist or /html)
 }
 ```
 
@@ -71,7 +92,7 @@ sudo certbot certonly --manual --preferred-challenges dns -d yourdomain.com
 **Follow the prompts:**
 1. Certbot will display a TXT record to add to your DNS
 2. Add the TXT record at your DNS provider
-3. Wait 2-5 minutes for DNS propagation
+3. Wait 2–10 minutes for DNS propagation (use the lowest TTL your provider allows, e.g. 300)
 4. Press Enter to continue verification
 5. Certificate will be saved to `/etc/letsencrypt/live/yourdomain.com/`
 
@@ -105,7 +126,9 @@ server {
     ssl_ciphers HIGH:!aNULL:!MD5;
     ssl_prefer_server_ciphers on;
 
-    root /var/www/yourdomain.com/dist;
+    # Serve your built app via a stable docroot symlink
+    # (We recommend linking /var/www/yourdomain.com/html -> dist on each deploy)
+    root /var/www/yourdomain.com/html;
     index index.html;
 
     location /.well-known/acme-challenge/ {
@@ -130,6 +153,15 @@ sudo systemctl reload nginx
 ### Step 8: Verify HTTPS
 
 Visit `https://yourdomain.com` in your browser. You should see a valid SSL certificate.
+
+From the server:
+
+```bash
+curl -I http://yourdomain.com/
+curl -I https://yourdomain.com/
+```
+
+Headers should not include `server: hcdn` (Hostinger CDN). If they do, update DNS to point directly to your VPS (see Step 0).
 
 ---
 
@@ -157,7 +189,7 @@ server {
     ssl_ciphers HIGH:!aNULL:!MD5;
     ssl_prefer_server_ciphers on;
 
-    root /var/www/yourdomain.com/dist;
+    root /var/www/yourdomain.com/html;  # html -> dist symlink
     index index.html;
 
     location /.well-known/acme-challenge/ {
@@ -177,6 +209,10 @@ server {
 Replace `yourdomain.com` with your actual domain, then run:
 
 ```bash
+# 0. DNS to VPS (disable CDN)
+# - Remove ALIAS/CNAME to *.cdn.hstgr.net
+# - Add A @ -> YOUR_VPS_IP (TTL 300), CNAME www -> yourdomain.com (optional)
+
 # 1. Find config
 sudo nginx -T | grep -A 10 "yourdomain.com"
 
@@ -197,6 +233,10 @@ sudo certbot certonly --manual --preferred-challenges dns -d yourdomain.com
 
 # 7. Test and reload
 sudo nginx -t && sudo systemctl reload nginx
+
+# 8. Deploy app on updates
+# cd /var/www/yourdomain.com && npm ci && npx vite build
+# ln -sfn /var/www/yourdomain.com/dist /var/www/yourdomain.com/html
 ```
 
 ---
@@ -219,12 +259,14 @@ sudo systemctl reload nginx
 
 ---
 
-## Important Notes
+## Important Notes & Hostinger Gotchas
 
-- **DNS Verification Required:** Hostinger's CDN forces HTTP→HTTPS redirects, so HTTP verification won't work
-- **Directory Path:** The `.well-known` location uses parent directory (without `/dist`)
-- **Certificate Location:** Certificates are saved to `/etc/letsencrypt/live/yourdomain.com/`
-- **Domain Matching:** Ensure domain name matches exactly in certbot command and Nginx config
+- **Disable CDN for origin:** Remove `ALIAS/CNAME` to `*.cdn.hstgr.net` so traffic hits your VPS.
+- **Use DNS-01 validation:** Hostinger’s edge may interfere with HTTP validation; DNS TXT works reliably.
+- **Directory Path:** The `.well-known` location uses parent directory (without `/dist` or `/html`).
+- **Docroot pattern:** Use a stable docroot `/var/www/yourdomain.com/html` that symlinks to `dist` on deploys.
+- **Certificate Location:** Certificates are saved to `/etc/letsencrypt/live/yourdomain.com/`.
+- **Domain Matching:** Ensure `server_name` and Certbot `-d` match exactly.
 
 ---
 

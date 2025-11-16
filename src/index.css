@@ -3764,11 +3764,12 @@ body:has(.app-layout--wide) .app-footer {
   inset: 0;
   z-index: 1000;
   display: flex;
-  align-items: center;
+  align-items: center; /* Re-center modal vertically */
   justify-content: center;
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(4px);
   padding: theme("spacing.4");
+  /* remove extra top offset now that tabs are gone */
 }
 
 .settings-modal {
@@ -3777,13 +3778,13 @@ body:has(.app-layout--wide) .app-footer {
   max-height: 90vh;
   overflow-y: auto;
   overflow-x: visible;
-  padding: theme("spacing.6");
+  padding: theme("spacing.5"); /* Modal container inside padding per modal spacing rules */
   position: relative;
 }
 
 .settings-modal-header {
   @apply flex items-center justify-between;
-  margin-bottom: theme("spacing.5");
+  margin-bottom: theme("spacing.4"); /* Header to first content block spacing */
 }
 
 .settings-modal-title {
@@ -3801,7 +3802,7 @@ body:has(.app-layout--wide) .app-footer {
 
 .settings-modal-content {
   @apply flex flex-col;
-  gap: theme("spacing.5");
+  gap: theme("spacing.4"); /* Consistent vertical rhythm between sections */
 }
 
 .settings-section {
