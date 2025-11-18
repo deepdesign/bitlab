@@ -80,14 +80,7 @@ export function MotionControls({
         <hr className="section-divider" />
         <h3 className="section-title">Rotation</h3>
         <div className="control-field control-field--rotation">
-          <div className="switch-row">
-            <Switch
-              id="rotation-animate"
-              checked={spriteState.rotationAnimated}
-              onCheckedChange={onRotationAnimatedToggle}
-              disabled={!ready}
-              aria-labelledby="rotation-animate-label"
-            />
+          <div className="field-heading">
             <div className="field-heading-left">
               <span className="field-label" id="rotation-animate-label">
                 Animate Rotation
@@ -98,6 +91,15 @@ export function MotionControls({
                 label="Animate Rotation"
               />
             </div>
+          </div>
+          <div className="switch-row">
+            <Switch
+              id="rotation-animate"
+              checked={spriteState.rotationAnimated}
+              onCheckedChange={onRotationAnimatedToggle}
+              disabled={!ready}
+              aria-labelledby="rotation-animate-label"
+            />
           </div>
         </div>
         {spriteState.rotationAnimated && (

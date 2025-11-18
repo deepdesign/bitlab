@@ -30,7 +30,6 @@ import { hasSeenWelcome } from "./lib/storage/onboardingStorage";
 const PresetManager = lazy(() => import("./components/PresetManager").then(module => ({ default: module.PresetManager })));
 const ExportModal = lazy(() => import("./components/ExportModal").then(module => ({ default: module.ExportModal })));
 const CustomPaletteManager = lazy(() => import("./components/CustomPaletteManager").then(module => ({ default: module.CustomPaletteManager })));
-const SettingsModal = lazy(() => import("./components/SettingsModal").then(module => ({ default: module.SettingsModal })));
 import { Header } from "./components/Header";
 import { StatusBar } from "./components/StatusBar";
 import { PixliLogo } from "./components/Header/PixliLogo";
@@ -95,7 +94,6 @@ const App = () => {
   const [activeTab, setActiveTab] = useState<TabName | null>(null);
   const [showTabOnboarding, setShowTabOnboarding] = useState(false);
   const [showTour, setShowTour] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
   const tabRefs = {
     sprites: useRef<HTMLElement | null>(null),
     motion: useRef<HTMLElement | null>(null),
@@ -702,9 +700,6 @@ const App = () => {
           onStartTour={() => {
             setShowTour(true);
           }}
-          onOpenSettings={() => {
-            setShowSettings(true);
-          }}
         />
       </div>
 
@@ -898,20 +893,6 @@ const App = () => {
         />
       )}
 
-      {showSettings && (
-        <ErrorBoundary>
-          <Suspense fallback={<div className="modal-loading">Loading...</div>}>
-            <SettingsModal
-              isOpen={showSettings}
-              onClose={() => setShowSettings(false)}
-              onStartTour={() => {
-                setShowSettings(false);
-                setShowTour(true);
-              }}
-            />
-          </Suspense>
-        </ErrorBoundary>
-      )}
     </div>
     </>
   );

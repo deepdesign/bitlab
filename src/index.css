@@ -37,6 +37,7 @@ html {
   height: 100svh;
   height: 100vh; /* Fallback for browsers that don't support svh */
   overflow-x: hidden;
+  overflow-y: visible; /* Allow drop shadows to show */
   width: 100%;
   max-width: 100%;
 }
@@ -1194,6 +1195,7 @@ body {
   display: flex;
   justify-content: center;
   overflow-x: hidden;
+  overflow-y: visible; /* Allow drop shadows to show */
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
@@ -1409,6 +1411,7 @@ html[data-theme="dark"][data-theme-color="gold"] body {
   width: 100%;
   max-width: 100%;
   overflow-x: hidden;
+  overflow-y: visible; /* Allow drop shadows to show */
   box-sizing: border-box;
 }
 
@@ -1419,6 +1422,7 @@ html[data-theme="dark"][data-theme-color="gold"] body {
   width: 100%;
   max-width: 100%;
   overflow-x: hidden;
+  overflow-y: visible; /* Allow drop shadows to show */
   box-sizing: border-box;
 }
 
@@ -1457,24 +1461,25 @@ html[data-theme="dark"][data-theme-color="gold"] body {
   display: flex;
   flex-direction: column;
   margin-top: 0;
+  overflow: visible; /* Allow drop shadows to show */
 }
 
 .app-frame--footer {
   flex-shrink: 0;
-  margin-top: 64px; /* 64px space between footer and content */
+  margin-top: theme("spacing.16"); /* footer.frame.margin.top.desktop */
 }
 
 
 .app-header {
   @apply grid items-end text-[var(--text-primary)];
-  gap: theme("spacing.5");
-  padding-inline: theme("spacing.6");
-  padding-top: theme("spacing.7");
-  padding-bottom: theme("spacing.5");
+  gap: theme("spacing.5"); /* header.gap.desktop */
+  padding-inline: theme("spacing.6"); /* header.padding.inline.desktop */
+  padding-top: theme("spacing.7"); /* header.padding.top.desktop */
+  padding-bottom: theme("spacing.5"); /* header.padding.bottom.desktop */
   grid-template-columns: minmax(0, min(100%, var(--control-column-width))) 1fr;
   max-width: 100%;
   box-sizing: border-box;
-  min-height: 80px;
+  min-height: theme("spacing.20"); /* header.min-height.desktop */
 }
 
 /* When columns are split, constrain header grid to align with right column edge
@@ -1699,6 +1704,17 @@ body:has(.app-layout--wide) .app-header {
   @apply flex items-center justify-center gap-2;
 }
 
+.mobile-menu-icon-buttons {
+  @apply flex items-center gap-2;
+  width: 100%;
+}
+
+.mobile-menu-icon-button {
+  min-width: 44px;
+  min-height: 44px;
+  flex: 0 0 auto;
+}
+
 .mobile-menu-dropdown {
   z-index: 60;
 }
@@ -1763,11 +1779,16 @@ body:has(.app-layout--wide) .app-header {
 
 /* Mobile Layout */
 @media (max-width: 768px) {
+  /* Ensure app-main has space for drop shadows */
+  .app-main {
+    padding-bottom: theme("spacing.2"); /* Extra space for drop shadows */
+  }
+
   /* Stack layout vertically on mobile */
   /* BUT: Don't set gap if small-canvas is also present - let small-canvas rule handle it */
   .app-layout--mobile:not(.app-layout--small-canvas) {
     @apply flex-col;
-    gap: theme("spacing.4");
+    gap: theme("spacing.4"); /* layout.gap.mobile */
   }
 
   /* Ensure small-canvas always uses spacing.5, even on mobile */
@@ -1788,6 +1809,8 @@ body:has(.app-layout--wide) .app-header {
     max-width: 100% !important;
     min-width: 0 !important;
     flex: 1 1 auto !important;
+    overflow: visible !important; /* Allow drop shadows to show */
+    padding-bottom: theme("spacing.2"); /* layout.control-column.padding.bottom.mobile, layout.display-column.padding.bottom.mobile */
   }
 
   /* Even margins on cards */
@@ -1799,16 +1822,21 @@ body:has(.app-layout--wide) .app-header {
     width: 100%;
   }
 
+  /* Ensure control-card has space for drop shadow on mobile */
+  .app-layout--mobile .control-card:last-child {
+    margin-bottom: theme("spacing.1"); /* card.margin.bottom.mobile */
+  }
+
   /* Reduce tab padding on mobile */
   .app-layout--mobile .retro-tabs {
-    gap: theme("spacing.1.5");
-    margin-bottom: theme("spacing.5");
+    gap: theme("spacing.1.5"); /* section.tabs.gap.mobile */
+    margin-bottom: theme("spacing.6"); /* section.tabs.margin.bottom.mobile */
   }
 
   .app-layout--mobile .retro-tab {
     height: 2.25rem; /* h-9 = 36px - RetroUI standard */
-    padding-inline: theme("spacing.1.5");
-    padding-block: theme("spacing.2");
+    padding-inline: theme("spacing.1.5"); /* section.tabs.tab.padding.inline.mobile */
+    padding-block: theme("spacing.2"); /* section.tabs.tab.padding.block.mobile */
     font-size: 0.6rem;
   }
 
@@ -1826,8 +1854,8 @@ body:has(.app-layout--wide) .app-header {
 
   /* Header adjustments for mobile */
   .app-header {
-    padding-inline: theme("spacing.4");
-    padding-top: theme("spacing.5"); /* Spacing between top of header tools and top of viewport */
+    padding-inline: theme("spacing.4"); /* header.padding.inline.mobile */
+    padding-top: theme("spacing.5"); /* header.padding.top.mobile */
   }
 
   /* Reduce logo margin on mobile to prevent extra space at top */
@@ -1873,11 +1901,13 @@ body:has(.app-layout--wide) .app-header {
   }
 
   .app-logo-button--mobile {
-    flex: 1 1 auto; /* Can shrink to fit */
+    flex: 0 0 auto; /* Don't grow or shrink - stay at natural size */
     min-width: 0;
     max-width: none;
     height: auto;
     max-height: 40px; /* Reduced from 50px */
+    align-self: flex-start; /* Ensure left alignment */
+    margin-left: 0 !important; /* Ensure flush with left edge */
   }
 
   .app-logo-button--mobile .app-logo-svg {
@@ -1892,9 +1922,8 @@ body:has(.app-layout--wide) .app-header {
   }
 
   .status-bar-info-mobile {
-    @apply flex items-center;
+    @apply flex flex-col items-start;
     gap: theme("spacing.2");
-    flex-wrap: wrap;
     position: absolute;
     top: calc(100% + theme("spacing.2"));
     left: 0;
@@ -1926,14 +1955,85 @@ body:has(.app-layout--wide) .app-header {
     overflow: visible !important;
   }
 
+  /* Section spacing for mobile stacked layout - reduced by 5 tokens total */
+  .app-layout--mobile .section {
+    gap: theme("spacing.1"); /* section.gap.mobile */
+  }
+
+  .app-layout--mobile .section-title {
+    margin-bottom: theme("spacing.0"); /* section.heading.margin.bottom.mobile */
+  }
+
+  /* Ensure no margin between consecutive sections - use section--spaced instead */
+  .app-layout--mobile .section + .section {
+    margin-top: 0; /* Match desktop structure - use section--spaced for spacing */
+  }
+
+  /* Control field spacing for mobile stacked layout */
+  .app-layout--mobile .control-field {
+    gap: theme("spacing.0"); /* section.control.gap.mobile */
+  }
+
+  .app-layout--mobile .control-field + .control-field {
+    margin-top: theme("spacing.1"); /* section.control.margin.top.mobile */
+  }
+
+  .app-layout--mobile .control-field--spaced {
+    margin-bottom: theme("spacing.5"); /* section.control.margin.bottom.mobile */
+  }
+
+  .app-layout--mobile .control-field--rotation {
+    margin-bottom: theme("spacing.0"); /* section.control.rotation.margin.bottom.mobile */
+  }
+
+  .app-layout--mobile .rotation-slider-wrapper {
+    margin-top: theme("spacing.0"); /* section.control.rotation.margin.top.mobile */
+    margin-bottom: theme("spacing.6"); /* section.control.rotation.margin.bottom.mobile */
+  }
+
+  /* Increase spacing for control-field--spaced-top on mobile */
+  .app-layout--mobile .control-field--spaced-top {
+    margin-top: theme("spacing.4"); /* section.control.margin.top.spaced.mobile */
+  }
+
+  .app-layout--mobile .section-hint {
+    margin-top: calc(theme("spacing.1") * -1); /* section.heading.hint.margin.top.mobile */
+  }
+
+  /* Reduce section--spaced margin for mobile */
+  .app-layout--mobile .section--spaced {
+    margin-top: theme("spacing.2"); /* section.margin.top.spaced.mobile */
+  }
+
+  /* Override .section + .section margin-top: 0 for spaced sections on mobile */
+  .app-layout--mobile .section + .section--spaced {
+    margin-top: theme("spacing.2"); /* section.margin.top.spaced.mobile */
+  }
+
+  /* Reduce spacing between label and tooltip icon on mobile */
+  .app-layout--mobile .field-heading-left {
+    gap: theme("spacing.0"); /* section.control.label.gap.mobile */
+  }
+  
+  /* Pull tooltip icon closer to label on mobile using negative margin */
+  .app-layout--mobile .field-heading-left .retro-tooltip {
+    margin-left: calc(theme("spacing.1") * -1); /* section.control.label.margin.left.mobile */
+  }
+
+  /* Section divider spacing for mobile */
+  .app-layout--mobile .section-divider {
+    margin-top: theme("spacing.4"); /* section.margin.bottom.mobile (space at bottom of section above) */
+    margin-bottom: theme("spacing.4"); /* section.margin.top.mobile (space at top of section below) */
+  }
+
   /* Footer mobile styles */
   .app-footer--mobile {
     @apply flex-col items-center;
-    padding-inline: theme("spacing.4");
-    padding-top: theme("spacing.2");
-    padding-bottom: theme("spacing.5");
+    padding-inline: theme("spacing.4"); /* footer.padding.inline.mobile-variant */
+    padding-top: theme("spacing.2"); /* footer.padding.top.mobile */
+    padding-bottom: theme("spacing.5"); /* footer.padding.bottom.mobile */
     text-align: center;
-    gap: theme("spacing.2");
+    gap: theme("spacing.2"); /* footer.gap.mobile */
   }
 
   .app-footer--mobile .footer-brand {
@@ -1981,11 +2081,11 @@ body:has(.app-layout--wide) .app-header {
 @media (max-width: 800px) {
   /* Further reduce header and footer padding as viewport shrinks */
   .app-header {
-    padding-inline: theme("spacing.2");
+    padding-inline: theme("spacing.2"); /* header.padding.inline.small */
   }
 
   .app-footer {
-    padding-inline: theme("spacing.2");
+    padding-inline: theme("spacing.2"); /* footer.padding.inline.mobile */
   }
 }
 
@@ -2036,6 +2136,7 @@ body:has(.app-layout--wide) .app-header {
   /* Ensure no horizontal overflow on very small devices */
   html, body, #app, .app-shell, .app-frame {
     overflow-x: hidden !important;
+    overflow-y: visible !important; /* Allow drop shadows to show */
     max-width: 100% !important;
     width: 100% !important;
   }
@@ -2102,6 +2203,13 @@ body:has(.app-layout--wide) .app-header {
     margin-left: 0 !important; /* No margin - use padding instead */
     margin-right: 0 !important; /* No margin - use padding instead */
     width: 100% !important; /* Fill the frame width - padding is included in box-sizing */
+  }
+
+  /* Ensure mobile logo is left-aligned in stacked layout */
+  body:has(.app-frame--stacked) .app-logo-button--mobile {
+    flex: 0 0 auto !important; /* Don't grow or shrink - stay at natural size */
+    align-self: flex-start !important; /* Ensure left alignment */
+    margin-left: 0 !important; /* Ensure flush with left edge */
   }
 }
 
@@ -2327,7 +2435,7 @@ body:has(.app-frame--stacked) .header-toolbar {
  * This padding is accounted for in layout calculations (see responsiveLayout.ts)
  */
 .app-main {
-  padding-inline: theme("spacing.6");
+  padding-inline: theme("spacing.6"); /* main.padding.inline.desktop */
   box-sizing: border-box;
   overflow: visible;
   /* Removed overflow-x: hidden - handled at body level for better mobile behavior */
@@ -2338,9 +2446,9 @@ body:has(.app-frame--stacked) .header-toolbar {
 
 /* CRITICAL: Lock .app-main padding when cards are stacked - DO NOT ALLOW TO COLLAPSE */
 body:has(.app-frame--stacked) .app-main {
-  padding-left: theme("spacing.6") !important; /* Lock left padding at 24px - NEVER COLLAPSE */
-  padding-right: theme("spacing.6") !important; /* Lock right padding at 24px - NEVER COLLAPSE */
-  padding-inline: theme("spacing.6") !important; /* Also lock padding-inline to prevent any override */
+  padding-left: theme("spacing.6") !important; /* main.padding.inline.stacked */
+  padding-right: theme("spacing.6") !important; /* main.padding.inline.stacked */
+  padding-inline: theme("spacing.6") !important; /* main.padding.inline.stacked */
   margin-top: 0; /* Spacing handled by header padding-bottom in stacked layout */
 }
 
@@ -2351,7 +2459,7 @@ body:has(.app-frame--stacked) .app-main {
  */
 .app-layout {
   @apply w-full flex items-start justify-start;
-  gap: theme("spacing.5"); /* 20px gap between columns to mirror card padding */
+  gap: theme("spacing.5"); /* layout.gap.small-canvas */
   flex-wrap: nowrap;
   align-items: flex-start;
   max-width: 100%;
@@ -2362,12 +2470,12 @@ body:has(.app-frame--stacked) .app-main {
 
 /* Ensure small-canvas gap always wins - place after base app-layout rule */
 .app-layout--small-canvas {
-  gap: theme("spacing.5") !important;
+  gap: theme("spacing.5") !important; /* layout.gap.small-canvas */
 }
 
 .app-layout--studio:not(.app-layout--small-canvas) {
   @apply justify-start;
-  gap: theme("spacing.6");
+  gap: theme("spacing.6"); /* layout.gap.desktop */
 }
 
 /* Control Column (Left Column)
@@ -2385,8 +2493,9 @@ body:has(.app-frame--stacked) .app-main {
   flex-grow: 0 !important;
   flex-shrink: 1 !important; /* Allow shrinking */
   @apply flex flex-col;
-  gap: theme("spacing.6");
+  gap: theme("spacing.6"); /* layout.control-column.gap.desktop */
   box-sizing: border-box;
+  overflow: visible; /* Allow drop shadows to show */
 }
 
 /* Motion Column (Right Column - Only visible when split)
@@ -2397,7 +2506,7 @@ body:has(.app-frame--stacked) .app-main {
  */
 .motion-column {
   @apply flex flex-col;
-  gap: theme("spacing.6");
+  gap: theme("spacing.6"); /* layout.motion-column.gap.desktop */
   flex: 0 0 var(--control-column-width-narrow);
   width: var(--control-column-width-narrow);
   max-width: var(--control-column-width-narrow);
@@ -2440,7 +2549,7 @@ body:has(.app-frame--stacked) .app-main {
  */
 .display-column {
   @apply flex flex-1 flex-col items-start;
-  gap: theme("spacing.6");
+  gap: theme("spacing.6"); /* layout.display-column.gap.desktop */
   min-width: 0; /* Allow column to shrink freely, canvas card has its own min-width (320px) */
   max-width: 960px; /* Maximum width prevents column from growing beyond canvas max */
   flex-basis: 0; /* Start from zero for smooth flex growth */
@@ -2459,9 +2568,9 @@ body:has(.app-frame--stacked) .app-main {
 .utility-card,
 .canvas-card {
   @apply flex flex-col;
-  padding-inline: theme("spacing.5");
-  padding-block: theme("spacing.5");
-  gap: theme("spacing.4");
+  padding-inline: theme("spacing.5"); /* card.padding.inline.desktop */
+  padding-block: theme("spacing.5"); /* card.padding.block.desktop */
+  gap: theme("spacing.4"); /* card.gap.desktop */
   background: var(--panel-bg);
   width: 100%;
   max-width: 100%;
@@ -2484,11 +2593,88 @@ body:has(.app-frame--stacked) .canvas-card {
   box-sizing: border-box !important; /* Ensure padding is included in width calculation */
 }
 
+/* Section and control field spacing for stacked layout - reduced by 5 tokens total */
+body:has(.app-frame--stacked) .section {
+  gap: theme("spacing.1"); /* section.gap.mobile */
+}
+
+body:has(.app-frame--stacked) .section-title {
+  margin-bottom: theme("spacing.0"); /* section.heading.margin.bottom.mobile */
+}
+
+/* Ensure no margin between consecutive sections - use section--spaced instead */
+body:has(.app-frame--stacked) .section + .section {
+  margin-top: 0; /* Match desktop structure - use section--spaced for spacing */
+}
+
+body:has(.app-frame--stacked) .control-field {
+  gap: theme("spacing.0"); /* section.control.gap.mobile */
+}
+
+body:has(.app-frame--stacked) .control-field + .control-field {
+  margin-top: theme("spacing.1"); /* section.control.margin.top.mobile */
+}
+
+body:has(.app-frame--stacked) .control-field--spaced {
+  margin-bottom: theme("spacing.5"); /* section.control.margin.bottom.mobile */
+}
+
+body:has(.app-frame--stacked) .control-field--rotation {
+      margin-bottom: theme("spacing.0"); /* section.control.rotation.margin.bottom.mobile */
+}
+
+body:has(.app-frame--stacked) .rotation-slider-wrapper {
+      margin-top: theme("spacing.0"); /* section.control.rotation.margin.top.mobile */
+      margin-bottom: theme("spacing.6"); /* section.control.rotation.margin.bottom.mobile */
+}
+
+body:has(.app-frame--stacked) .section-hint {
+  margin-top: calc(theme("spacing.1") * -1); /* section.heading.hint.margin.top.mobile */
+}
+
+/* Increase spacing for control-field--spaced-top in stacked layout */
+body:has(.app-frame--stacked) .control-field--spaced-top {
+      margin-top: theme("spacing.4"); /* section.control.margin.top.spaced.mobile */
+}
+
+/* Reduce section--spaced margin for stacked layout */
+body:has(.app-frame--stacked) .section--spaced {
+  margin-top: theme("spacing.2"); /* section.margin.top.spaced.mobile */
+}
+
+/* Override .section + .section margin-top: 0 for spaced sections in stacked layout */
+body:has(.app-frame--stacked) .section + .section--spaced {
+  margin-top: theme("spacing.2"); /* section.margin.top.spaced.mobile */
+}
+
+/* Reduce spacing between label and tooltip icon in stacked layout */
+body:has(.app-frame--stacked) .field-heading-left {
+  gap: theme("spacing.0"); /* section.control.label.gap.mobile */
+}
+
+/* Pull tooltip icon closer to label in stacked layout using negative margin */
+body:has(.app-frame--stacked) .field-heading-left .retro-tooltip {
+      margin-left: calc(theme("spacing.1") * -1); /* section.control.label.margin.left.mobile */
+}
+
+/* Section divider spacing for stacked layout */
+body:has(.app-frame--stacked) .section-divider {
+  margin-top: theme("spacing.4"); /* section.margin.bottom.mobile (space at bottom of section above) */
+  margin-bottom: theme("spacing.4"); /* section.margin.top.mobile (space at top of section below) */
+}
+
 /* Allow control-column and canvas-card-shell to shrink when stacked */
 body:has(.app-frame--stacked) .control-column {
   min-width: 0 !important; /* Allow control column to shrink below 320px when stacked */
   max-width: 100% !important; /* Prevent exceeding container width */
   width: 100% !important; /* Fill available space */
+  overflow: visible !important; /* Allow drop shadows to show */
+    padding-bottom: theme("spacing.2"); /* layout.control-column.padding.bottom.mobile */
+}
+
+/* Ensure control-card has space for drop shadow in stacked layout */
+body:has(.app-frame--stacked) .control-card:last-child {
+  margin-bottom: theme("spacing.1"); /* card.margin.bottom.mobile */
 }
 
 body:has(.app-frame--stacked) .canvas-card-shell {
@@ -2505,8 +2691,8 @@ body:has(.app-frame--stacked) .canvas-card-shell {
 
 .panel-footer {
   @apply flex w-full;
-  margin-top: theme("spacing.5");
-  gap: theme("spacing.3");
+  margin-top: theme("spacing.5"); /* section.panel.footer.margin.top.desktop */
+  gap: theme("spacing.3"); /* section.panel.footer.gap.desktop */
 }
 
 .tab-panel[hidden] {
@@ -2515,8 +2701,8 @@ body:has(.app-frame--stacked) .canvas-card-shell {
 
 .retro-tabs {
   @apply flex items-stretch;
-  margin-bottom: theme("spacing.7");
-  gap: theme("spacing.3");
+  margin-bottom: theme("spacing.8"); /* section.tabs.margin.bottom.desktop */
+  gap: theme("spacing.3"); /* section.tabs.gap.desktop */
   flex-wrap: nowrap;
 }
 
@@ -2526,8 +2712,8 @@ body:has(.app-frame--stacked) .canvas-card-shell {
   align-items: center;
   justify-content: center;
   height: 2.25rem; /* h-9 = 36px - RetroUI standard */
-  padding-inline: theme("spacing.4");
-  padding-block: theme("spacing.2");
+  padding-inline: theme("spacing.4"); /* section.tabs.tab.padding.inline.desktop */
+  padding-block: theme("spacing.2"); /* section.tabs.tab.padding.block.desktop */
   font-size: 0.68rem;
   letter-spacing: 0.22em;
   text-transform: uppercase;
@@ -2551,11 +2737,11 @@ body:has(.app-frame--stacked) .canvas-card-shell {
 
 /* Reduce padding and gap when there are 4 tabs to fit better */
 .retro-tabs:has(.retro-tab:nth-child(4)) {
-  gap: theme("spacing.2");
+  gap: theme("spacing.2"); /* section.tabs.gap.desktop (4 tabs) */
 }
 
 .retro-tabs:has(.retro-tab:nth-child(4)) .retro-tab {
-  padding-inline: theme("spacing.2");
+  padding-inline: theme("spacing.2"); /* section.tabs.tab.padding.inline.desktop (4 tabs) */
   font-size: 0.65rem;
 }
 
@@ -2649,7 +2835,7 @@ body:has(.app-frame--stacked) .canvas-card-shell {
 
 .section {
   @apply flex flex-col;
-  gap: theme("spacing.5");
+  gap: theme("spacing.5"); /* section.gap.desktop */
 }
 
 .section + .section {
@@ -2658,14 +2844,14 @@ body:has(.app-frame--stacked) .canvas-card-shell {
 
 .section-divider {
   margin: 0;
-  margin-left: calc(-1 * theme("spacing.5"));
-  margin-right: calc(-1 * theme("spacing.5"));
-  margin-top: theme("spacing.5");
-  margin-bottom: theme("spacing.1");
+  margin-left: calc(-1 * theme("spacing.5")); /* Extends to card edges */
+  margin-right: calc(-1 * theme("spacing.5")); /* Extends to card edges */
+  margin-top: theme("spacing.4"); /* section.margin.bottom.desktop (space at bottom of section above) */
+  margin-bottom: theme("spacing.1"); /* section.margin.top.desktop (space at top of section below) */
   border: none;
   border-top: 2px solid var(--panel-border);
   opacity: 0.5;
-  width: calc(100% + 2 * theme("spacing.5"));
+  width: calc(100% + 2 * theme("spacing.5")); /* Extends to card edges */
 }
 
 .section-title {
@@ -2674,6 +2860,7 @@ body:has(.app-frame--stacked) .canvas-card-shell {
   text-transform: uppercase;
   color: var(--heading-color);
   margin: 0;
+  margin-bottom: theme("spacing.0"); /* section.heading.margin.bottom.desktop */
 }
 
 .section-hint {
@@ -2681,55 +2868,60 @@ body:has(.app-frame--stacked) .canvas-card-shell {
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--hint-color);
-  margin-top: calc(theme("spacing.1") * -1);
+  margin-top: calc(theme("spacing.1") * -1); /* section.heading.hint.margin.top.desktop */
 }
 
 .control-grid {
   @apply flex flex-col;
-  gap: theme("spacing.5");
+  gap: theme("spacing.5"); /* section.control.grid.gap.desktop */
 }
 
 .control-field {
   @apply flex flex-col;
-  gap: theme("spacing.3");
+  gap: theme("spacing.3"); /* section.control.gap.desktop */
   overflow: visible;
   position: relative;
 }
 
 .control-field--spaced {
-  margin-bottom: theme("spacing.5");
+  margin-bottom: theme("spacing.5"); /* section.control.margin.bottom.desktop */
 }
 
 .control-field--rotation {
-  margin-bottom: calc(theme("spacing.1") / 2);
+  margin-bottom: theme("spacing.0"); /* section.control.rotation.margin.bottom.desktop */
 }
 
 .rotation-slider-wrapper {
-  margin-top: 0;
-  margin-bottom: theme("spacing.6");
+  margin-top: theme("spacing.0"); /* section.control.rotation.margin.top.desktop */
+  margin-bottom: theme("spacing.6"); /* section.control.rotation.margin.bottom.desktop */
 }
 
 .sprite-icon-buttons {
-  margin-top: 0;
-  margin-bottom: 0;
+  margin-top: theme("spacing.0"); /* section.control.sprite.buttons.margin.top.desktop */
+  margin-bottom: theme("spacing.0"); /* section.control.sprite.buttons.margin.bottom.desktop */
 }
 
 .sprite-icon-buttons > div {
-  gap: theme("spacing.2");
+  gap: theme("spacing.2"); /* section.control.sprite.buttons.gap.desktop */
 }
 
 .section--spaced {
-  margin-top: theme("spacing.8");
+  margin-top: theme("spacing.2"); /* section.margin.top.spaced.desktop */
+}
+
+/* Override .section + .section margin-top: 0 for spaced sections */
+.section + .section--spaced {
+  margin-top: theme("spacing.2"); /* section.margin.top.spaced.desktop */
 }
 
 .control-field--spaced-top {
-  margin-top: theme("spacing.2");
+  margin-top: theme("spacing.2"); /* section.control.margin.top.spaced.desktop */
 }
 
 
 .control-select-with-lock {
   @apply flex items-center;
-  gap: theme("spacing.2");
+  gap: theme("spacing.2"); /* section.control.select.lock.gap.desktop */
 }
 
 .control-select-with-lock > :first-child {
@@ -2757,12 +2949,12 @@ body:has(.app-frame--stacked) .canvas-card-shell {
 
 .field-heading {
   @apply flex items-center justify-between;
-  gap: theme("spacing.2");
+  gap: theme("spacing.2"); /* section.control.heading.gap.desktop */
 }
 
 .field-heading-left {
   @apply inline-flex items-center;
-  gap: theme("spacing.1");
+  gap: theme("spacing.1"); /* section.control.label.gap.desktop */
 }
 
 .field-label {
@@ -2781,7 +2973,7 @@ body:has(.app-frame--stacked) .canvas-card-shell {
 
 .control-slider {
   width: 100%;
-  gap: theme("spacing.2");
+  gap: theme("spacing.2"); /* section.control.slider.gap.desktop */
 }
 
 .slider-track-theme {
@@ -2850,7 +3042,7 @@ body:has(.app-frame--stacked) .canvas-card-shell {
 }
 
 .control-switch[data-state="checked"] .control-switch-thumb {
-  transform: translateX(20px);
+  transform: translateX(18px); /* Reduced from 20px to provide equal spacing from right edge */
   background: var(--accent-primary-contrast);
   border-color: var(--accent-primary-contrast);
 }
@@ -2928,7 +3120,7 @@ body:has(.app-frame--stacked) .canvas-card-shell {
   }
 
   .control-switch[data-state="checked"] .control-switch-thumb {
-    transform: translateX(26px);
+    transform: translateX(24px); /* Reduced from 26px to provide equal spacing from right edge */
   }
 
   /* Dropdown triggers - 44px touch target on mobile */
@@ -2957,23 +3149,8 @@ body:has(.app-frame--stacked) .canvas-card-shell {
     font-size: 0.72rem;
   }
 
-  /* Control fields - increase spacing between controls */
-  .control-field {
-    gap: theme("spacing.4");
-  }
-
-  .control-field + .control-field {
-    margin-top: theme("spacing.5");
-  }
-
-  /* Section spacing - more breathing room */
-  .section {
-    gap: theme("spacing.6");
-  }
-
-  .section + .section {
-    margin-top: theme("spacing.6");
-  }
+  /* Note: Section and control-field spacing is handled by .app-layout--mobile and body:has(.app-frame--stacked) rules */
+  /* These are more specific and will override these base touch rules */
 
   /* Focus rings - larger and more visible for touch */
   button:focus-visible,
@@ -3495,7 +3672,7 @@ body:has(.app-frame--stacked) .canvas-card-shell {
 
 .switch-row {
   @apply flex flex-wrap items-center;
-  gap: theme("spacing.3");
+  gap: theme("spacing.3"); /* section.control.switch.gap.desktop */
 }
 
 .switch-label {
@@ -3546,7 +3723,7 @@ body:has(.app-frame--stacked) .canvas-card-shell {
 .canvas-card__content {
   display: flex;
   flex-direction: column;
-  gap: theme("spacing.5");
+  gap: theme("spacing.6"); /* card.canvas-shell.gap.desktop */
   padding: 0 !important;
 }
 
@@ -3820,11 +3997,11 @@ body:has(.app-frame--stacked) .canvas-card-shell {
 }
 
 .app-footer {
-  padding-inline: theme("spacing.6");
-  padding-top: theme("spacing.2");
-  padding-bottom: theme("spacing.5"); /* Internal bottom padding only */
+  padding-inline: theme("spacing.6"); /* footer.padding.inline.desktop */
+  padding-top: theme("spacing.2"); /* footer.padding.top.desktop */
+  padding-bottom: theme("spacing.5"); /* footer.padding.bottom.desktop */
   @apply text-[0.7rem] uppercase tracking-[0.18em] text-[var(--text-muted)] flex items-center justify-between flex-wrap;
-  gap: theme("spacing.3");
+  gap: theme("spacing.3"); /* footer.gap.desktop */
   justify-items: center;
   max-width: 100%;
   box-sizing: border-box;

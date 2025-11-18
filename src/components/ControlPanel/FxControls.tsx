@@ -122,14 +122,7 @@ export function FxControls({
           }
         />
         <div className="control-field">
-          <div className="switch-row" style={{ gap: "0.75rem" }}>
-            <Switch
-              checked={spriteState.spriteFillMode === "gradient"}
-              onCheckedChange={(checked) =>
-                controller?.setSpriteFillMode(checked ? "gradient" : "solid")
-              }
-              disabled={!ready}
-            />
+          <div className="field-heading">
             <div className="field-heading-left">
               <span className="field-label">Use gradients</span>
               <TooltipIcon
@@ -138,6 +131,15 @@ export function FxControls({
                 label="Use gradients"
               />
             </div>
+          </div>
+          <div className="switch-row">
+            <Switch
+              checked={spriteState.spriteFillMode === "gradient"}
+              onCheckedChange={(checked) =>
+                controller?.setSpriteFillMode(checked ? "gradient" : "solid")
+              }
+              disabled={!ready}
+            />
           </div>
         </div>
         <ControlSlider
@@ -255,14 +257,7 @@ export function FxControls({
           onLockToggle={() => onLockCanvasPalette(!lockedCanvasPalette)}
         />
         <div className="control-field">
-          <div className="switch-row">
-            <Switch
-              checked={isCanvasGradient}
-              onCheckedChange={(checked) =>
-                controller?.setCanvasFillMode(checked ? "gradient" : "solid")
-              }
-              disabled={!ready}
-            />
+          <div className="field-heading">
             <div className="field-heading-left">
               <span className="field-label">Use gradients</span>
               <TooltipIcon
@@ -271,6 +266,15 @@ export function FxControls({
                 label="Use gradients"
               />
             </div>
+          </div>
+          <div className="switch-row">
+            <Switch
+              checked={isCanvasGradient}
+              onCheckedChange={(checked) =>
+                controller?.setCanvasFillMode(checked ? "gradient" : "solid")
+              }
+              disabled={!ready}
+            />
           </div>
         </div>
         <ControlSlider

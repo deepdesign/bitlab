@@ -1,15 +1,48 @@
 # Complete Guide: Spacing System in Pixli
 
+## Spacing Taxonomy
+
+All spacing labels follow a consistent taxonomy pattern:
+
+```
+[component].[subcomponent].[property].[direction].[device]
+```
+
+### Properties
+- **`gap`** - CSS `gap` property (flexbox/grid spacing between children) - *no direction component*
+- **`margin`** - CSS `margin` property (space outside element) - *requires direction*
+- **`padding`** - CSS `padding` property (space inside element) - *requires direction*
+
+### Directions (for margin/padding only)
+- `top` - Top margin/padding
+- `bottom` - Bottom margin/padding
+- `left` - Left margin/padding
+- `right` - Right margin/padding
+- `inline` - Horizontal margin/padding (left + right)
+- `block` - Vertical margin/padding (top + bottom)
+
+### Examples
+- `section.gap.desktop` - Gap between section children (no direction for gap)
+- `section.margin.bottom.desktop` - Margin at bottom of section
+- `section.heading.margin.top.desktop` - Margin above section heading
+- `header.padding.inline.desktop` - Horizontal padding inside header
+- `section.control.label.margin.left.desktop` - Negative margin-left on tooltip icon
+
+**Note:** Every spacing label explicitly includes the property type (`gap`, `margin`, or `padding`) to make it clear which CSS property is being used. This helps engineers understand the implementation.
+
+---
+
 ## Table of Contents
 1. [Project Overview](#project-overview)
 2. [Spacing Token System](#spacing-token-system)
 3. [Spacing Patterns by Area](#spacing-patterns-by-area)
-4. [Component-Level Spacing](#component-level-spacing)
-5. [Responsive Spacing](#responsive-spacing)
-6. [Current Inconsistencies](#current-inconsistencies)
-7. [Recommended Improvements](#recommended-improvements)
-8. [Implementation Guide](#implementation-guide)
-9. [Testing & Verification](#testing--verification)
+4. [Control Card Spacing Labels](#control-card-spacing-labels)
+5. [Component-Level Spacing](#component-level-spacing)
+6. [Responsive Spacing](#responsive-spacing)
+7. [Current Inconsistencies](#current-inconsistencies)
+8. [Recommended Improvements](#recommended-improvements)
+9. [Implementation Guide](#implementation-guide)
+10. [Testing & Verification](#testing--verification)
 
 ---
 
@@ -186,6 +219,313 @@ All spacing in Pixli should use `theme("spacing.n")` for consistency.
 #### Rotation Slider Wrapper (`.rotation-slider-wrapper`)
 - **Margin (top)**: `0`
 - **Margin (bottom)**: `spacing.6` (24px) - Below slider
+
+---
+
+## Layout-Level Spacing Labels
+
+This section defines all spacing labels for layout containers, header, footer, main content, and cards. Labels include `.desktop` and `.mobile` suffixes where values differ between layouts, even when values are identical to allow for future independent modifications.
+
+### Header Spacing
+
+#### Header Container
+- **header.padding.top.desktop** - Space between the top of the viewport and the header content (desktop: `spacing.7`)
+- **header.padding.top.mobile** - Space between the top of the viewport and the header content (mobile: `spacing.5`)
+- **header.padding.bottom.desktop** - Space between the header content and the main content area below (desktop: `spacing.5`)
+- **header.padding.bottom.mobile** - Space between the header content and the main content area below (mobile: `spacing.5`)
+- **header.padding.inline.desktop** - Horizontal padding on the left and right sides of the header (desktop: `spacing.6`)
+- **header.padding.inline.mobile** - Horizontal padding on the left and right sides of the header (mobile: `spacing.4`)
+- **header.padding.inline.small** - Horizontal padding on very small screens (max-width: 800px: `spacing.2`)
+- **header.gap.desktop** - Space between the logo and the toolbar (theme controls, help button) (desktop: `spacing.5`)
+- **header.gap.mobile** - Space between the logo and the toolbar (theme controls, help button) (mobile: `spacing.5`)
+- **header.min-height.desktop** - Minimum height of the header container (desktop: `spacing.20` = 80px)
+- **header.min-height.mobile** - Minimum height of the header container (mobile: `spacing.20` = 80px)
+
+### Footer Spacing
+
+#### Footer Container
+- **footer.padding.top.desktop** - Space between the main content above and the footer content (desktop: `spacing.2`)
+- **footer.padding.top.mobile** - Space between the main content above and the footer content (mobile: `spacing.2`)
+- **footer.padding.bottom.desktop** - Space between the footer content and the bottom of the viewport (desktop: `spacing.5`)
+- **footer.padding.bottom.mobile** - Space between the footer content and the bottom of the viewport (mobile: `spacing.5`)
+- **footer.padding.inline.desktop** - Horizontal padding on the left and right sides of the footer (desktop: `spacing.6`)
+- **footer.padding.inline.mobile** - Horizontal padding on the left and right sides of the footer (mobile: `spacing.2`)
+- **footer.padding.inline.mobile-variant** - Horizontal padding for the mobile variant footer layout (mobile: `spacing.4`)
+- **footer.gap.desktop** - Space between the footer logo/brand and the footer text (desktop: `spacing.3`)
+- **footer.gap.mobile** - Space between the footer logo/brand and the footer text (mobile: `spacing.2`)
+- **footer.frame.margin.top.desktop** - Margin between the bottom of the main content area and the top of the footer frame (desktop: `spacing.16` = 64px)
+- **footer.frame.margin.top.mobile** - Margin between the bottom of the main content area and the top of the footer frame (mobile: `spacing.16` = 64px)
+
+### Main Container Spacing
+
+#### Main Container
+- **main.padding.inline.desktop** - Horizontal padding on the left and right sides of the main content area (desktop: `spacing.6`)
+- **main.padding.inline.mobile** - Horizontal padding on the left and right sides of the main content area (mobile: `spacing.6`)
+- **main.padding.inline.stacked** - Horizontal padding when cards are stacked vertically (stacked: `spacing.6`)
+
+### Layout Spacing
+
+#### App Layout
+- **layout.gap.desktop** - Space between the control column, display column, and motion column (desktop: `spacing.6` for studio, `spacing.5` for small-canvas)
+- **layout.gap.mobile** - Space between columns when stacked vertically on mobile (mobile: `spacing.4`)
+- **layout.gap.small-canvas** - Space between columns when small-canvas mode is active (small-canvas: `spacing.5`)
+
+#### Control Column
+- **layout.control-column.gap.desktop** - Space between consecutive control cards stacked vertically in the control column (desktop: `spacing.6`)
+- **layout.control-column.gap.mobile** - Space between consecutive control cards stacked vertically in the control column (mobile: `spacing.6`)
+- **layout.control-column.padding.bottom.desktop** - Extra space at the bottom of the control column to prevent drop shadows from being clipped (desktop: `0`)
+- **layout.control-column.padding.bottom.mobile** - Extra space at the bottom of the control column to prevent drop shadows from being clipped (mobile: `spacing.2`)
+
+#### Motion Column
+- **layout.motion-column.gap.desktop** - Space between consecutive motion cards stacked vertically in the motion column (desktop: `spacing.6`)
+- **layout.motion-column.gap.mobile** - Space between consecutive motion cards stacked vertically in the motion column (mobile: `spacing.6`)
+
+#### Display Column
+- **layout.display-column.gap.desktop** - Space between the canvas card and any controls below it in the display column (desktop: `spacing.6`)
+- **layout.display-column.gap.mobile** - Space between the canvas card and any controls below it in the display column (mobile: `spacing.6`)
+- **layout.display-column.padding.bottom.desktop** - Extra space at the bottom of the display column to prevent drop shadows from being clipped (desktop: `0`)
+- **layout.display-column.padding.bottom.mobile** - Extra space at the bottom of the display column to prevent drop shadows from being clipped (mobile: `spacing.2`)
+
+### Card Spacing
+
+#### Card Padding
+- **card.padding.inline.desktop** - Horizontal padding on the left and right sides inside all cards (control-card, motion-card, canvas-card, etc.) (desktop: `spacing.5`)
+- **card.padding.inline.mobile** - Horizontal padding on the left and right sides inside all cards (control-card, motion-card, canvas-card, etc.) (mobile: `spacing.5`)
+- **card.padding.block.desktop** - Vertical padding on the top and bottom inside all cards (desktop: `spacing.5`)
+- **card.padding.block.mobile** - Vertical padding on the top and bottom inside all cards (mobile: `spacing.5`)
+- **card.gap.desktop** - Space between direct children inside cards (e.g., between sections, between tabs and content) (desktop: `spacing.4`)
+- **card.gap.mobile** - Space between direct children inside cards (e.g., between sections, between tabs and content) (mobile: `spacing.4`)
+
+#### Card-to-Card Spacing
+- **card.margin.bottom.desktop** - Extra space below the last card in a column to prevent drop shadows from being clipped (desktop: `0`)
+- **card.margin.bottom.mobile** - Extra space below the last card in a column to prevent drop shadows from being clipped (mobile: `spacing.1`)
+
+#### Canvas Card Shell
+- **card.canvas-shell.gap.desktop** - Space between the canvas element and the status bar below it (desktop: `spacing.6`)
+- **card.canvas-shell.gap.mobile** - Space between the canvas element and the status bar below it (mobile: `spacing.6`)
+
+### Layout Spacing Values Reference
+
+#### Desktop
+- `header.padding.top.desktop`: `spacing.7` (28px)
+- `header.padding.bottom.desktop`: `spacing.5` (20px)
+- `header.padding.inline.desktop`: `spacing.6` (24px)
+- `header.gap.desktop`: `spacing.5` (20px)
+- `header.min-height.desktop`: `spacing.20` (80px)
+- `footer.padding.top.desktop`: `spacing.2` (8px)
+- `footer.padding.bottom.desktop`: `spacing.5` (20px)
+- `footer.padding.inline.desktop`: `spacing.6` (24px)
+- `footer.gap.desktop`: `spacing.3` (12px)
+- `footer.frame.margin.top.desktop`: `spacing.16` (64px)
+- `main.padding.inline.desktop`: `spacing.6` (24px)
+- `layout.gap.desktop`: `spacing.6` (24px) for studio, `spacing.5` (20px) for small-canvas
+- `layout.control-column.gap.desktop`: `spacing.6` (24px)
+- `layout.control-column.padding.bottom.desktop`: `0`
+- `layout.motion-column.gap.desktop`: `spacing.6` (24px)
+- `layout.display-column.gap.desktop`: `spacing.6` (24px)
+- `layout.display-column.padding.bottom.desktop`: `0`
+- `card.padding.inline.desktop`: `spacing.5` (20px)
+- `card.padding.block.desktop`: `spacing.5` (20px)
+- `card.gap.desktop`: `spacing.4` (16px)
+- `card.margin.bottom.desktop`: `0`
+- `card.canvas-shell.gap.desktop`: `spacing.6` (24px)
+
+#### Mobile
+- `header.padding.top.mobile`: `spacing.5` (20px)
+- `header.padding.bottom.mobile`: `spacing.5` (20px)
+- `header.padding.inline.mobile`: `spacing.4` (16px)
+- `header.padding.inline.small`: `spacing.2` (8px)
+- `header.gap.mobile`: `spacing.5` (20px)
+- `header.min-height.mobile`: `spacing.20` (80px)
+- `footer.padding.top.mobile`: `spacing.2` (8px)
+- `footer.padding.bottom.mobile`: `spacing.5` (20px)
+- `footer.padding.inline.mobile`: `spacing.2` (8px)
+- `footer.padding.inline.mobile-variant`: `spacing.4` (16px)
+- `footer.gap.mobile`: `spacing.2` (8px)
+- `footer.frame.margin.top.mobile`: `spacing.16` (64px)
+- `main.padding.inline.mobile`: `spacing.6` (24px)
+- `layout.gap.mobile`: `spacing.4` (16px)
+- `layout.control-column.gap.mobile`: `spacing.6` (24px)
+- `layout.control-column.padding.bottom.mobile`: `spacing.2` (8px)
+- `layout.motion-column.gap.mobile`: `spacing.6` (24px)
+- `layout.display-column.gap.mobile`: `spacing.6` (24px)
+- `layout.display-column.padding.bottom.mobile`: `spacing.2` (8px)
+- `card.padding.inline.mobile`: `spacing.5` (20px)
+- `card.padding.block.mobile`: `spacing.5` (20px)
+- `card.gap.mobile`: `spacing.4` (16px)
+- `card.margin.bottom.mobile`: `spacing.1` (4px)
+- `card.canvas-shell.gap.mobile`: `spacing.6` (24px)
+
+---
+
+## Control Card Spacing Labels
+
+This section defines all spacing labels for control cards, following a hierarchical naming convention that matches the CSS structure. Labels include `.desktop` and `.mobile` suffixes where values differ between layouts.
+
+### Section Spacing
+
+#### Section Container
+- **section.gap.desktop** - Space between all direct children of a section (e.g., between section title and first control field, between consecutive control fields) (desktop: `spacing.5`)
+- **section.gap.mobile** - Space between all direct children of a section (e.g., between section title and first control field, between consecutive control fields) (mobile: `spacing.1`)
+- **section.margin.top.spaced.desktop** - Extra space above a section when it uses the `.section--spaced` class (adds additional separation above major sections like "Shape", "Density & Scale", "Rotation") (desktop: `spacing.2`)
+- **section.margin.top.spaced.mobile** - Extra space above a section when it uses the `.section--spaced` class (adds additional separation above major sections like "Shape", "Density & Scale", "Rotation") (mobile: `spacing.2`)
+- **section.margin.bottom.desktop** - Space at the bottom of a section (after its last control, before the divider line) - implemented as margin-top on the divider element (desktop: `spacing.4`)
+- **section.margin.bottom.mobile** - Space at the bottom of a section (after its last control, before the divider line) - implemented as margin-top on the divider element (mobile: `spacing.4`)
+- **section.margin.top.desktop** - Space at the top of a section (after the divider line, before the section heading) - implemented as margin-bottom on the divider element (desktop: `spacing.1`)
+- **section.margin.top.mobile** - Space at the top of a section (after the divider line, before the section heading) - implemented as margin-bottom on the divider element (mobile: `spacing.4`)
+
+#### Section Heading
+- **section.heading.margin.top.desktop** - Margin above the section title/heading (desktop: 0, relies on parent gap)
+- **section.heading.margin.top.mobile** - Margin above the section title/heading (mobile: 0, relies on parent gap)
+- **section.heading.margin.bottom.desktop** - Margin below the section title/heading, before the first control field or content below (desktop: `spacing.0`)
+- **section.heading.margin.bottom.mobile** - Margin below the section title/heading, before the first control field or content below (mobile: `spacing.0`)
+- **section.heading.hint.margin.top.desktop** - Negative margin to pull the section hint text up closer to the section title (desktop: `-spacing.1`)
+- **section.heading.hint.margin.top.mobile** - Negative margin to pull the section hint text up closer to the section title (mobile: `-spacing.1`)
+
+### Tabs Spacing
+
+- **section.tabs.margin.bottom.desktop** - Margin below the tab bar, before the first section heading or content (desktop: `spacing.8`)
+- **section.tabs.margin.bottom.mobile** - Margin below the tab bar, before the first section heading or content (mobile: `spacing.6`)
+- **section.tabs.gap.desktop** - Space between individual tab buttons (desktop: `spacing.3`)
+- **section.tabs.gap.mobile** - Space between individual tab buttons (mobile: `spacing.1.5`)
+- **section.tabs.tab.padding.inline.desktop** - Horizontal padding inside each tab button (left and right) (desktop: `spacing.4`)
+- **section.tabs.tab.padding.inline.mobile** - Horizontal padding inside each tab button (left and right) (mobile: `spacing.1.5`)
+- **section.tabs.tab.padding.block.desktop** - Vertical padding inside each tab button (top and bottom) (desktop: `spacing.2`)
+- **section.tabs.tab.padding.block.mobile** - Vertical padding inside each tab button (top and bottom) (mobile: `spacing.2`)
+
+### Control Field Spacing
+
+#### Control Field Container
+- **section.control.gap.desktop** - Gap between the label/heading and the control component (slider, select, switch, etc.) below it (desktop: `spacing.3`)
+- **section.control.gap.mobile** - Gap between the label/heading and the control component (slider, select, switch, etc.) below it (mobile: `spacing.0`)
+- **section.control.margin.top.desktop** - Margin between consecutive control fields (between one control field and the next) (desktop: implicit via parent section gap)
+- **section.control.margin.top.mobile** - Margin between consecutive control fields (between one control field and the next) (mobile: `spacing.1`)
+- **section.control.margin.top.spaced.desktop** - Extra margin above a control field when using `.control-field--spaced-top` (e.g., space between sprite buttons and Random switch) (desktop: `spacing.2`)
+- **section.control.margin.top.spaced.mobile** - Extra margin above a control field when using `.control-field--spaced-top` (e.g., space between sprite buttons and Random switch) (mobile: `spacing.4`)
+- **section.control.margin.bottom.desktop** - Margin below a control field when using `.control-field--spaced` (desktop: `spacing.5`)
+- **section.control.margin.bottom.mobile** - Margin below a control field when using `.control-field--spaced` (mobile: `spacing.5`)
+
+#### Control Field Label
+- **section.control.label.gap.desktop** - Gap between the label text and the tooltip icon (`?`) to the right (desktop: `spacing.1`)
+- **section.control.label.gap.mobile** - Gap between the label text and the tooltip icon (`?`) to the right (mobile: `spacing.0`)
+- **section.control.label.margin.left.desktop** - Negative margin-left on tooltip icon to create effective space between label text and `?` icon (desktop: `-spacing.1`, effective gap: `spacing.1`)
+- **section.control.label.margin.left.mobile** - Negative margin-left on tooltip icon to create effective space between label text and `?` icon (mobile: `-spacing.1`, effective gap: `spacing.0`)
+
+#### Control Field Heading
+- **section.control.heading.gap.desktop** - Space between the label and the value display in a field heading (e.g., "Select Sprites" label and current selection value) (desktop: `spacing.2`)
+- **section.control.heading.gap.mobile** - Space between the label and the value display in a field heading (e.g., "Select Sprites" label and current selection value) (mobile: `spacing.2`)
+
+### Special Control Spacing
+
+#### Rotation Slider
+- **section.control.rotation.margin.top.desktop** - Margin above the rotation slider wrapper (desktop: `spacing.0`)
+- **section.control.rotation.margin.top.mobile** - Margin above the rotation slider wrapper (mobile: `spacing.0`)
+- **section.control.rotation.margin.bottom.desktop** - Margin below the rotation slider wrapper, before the next element (desktop: `spacing.6`)
+- **section.control.rotation.margin.bottom.mobile** - Margin below the rotation slider wrapper, before the next element (mobile: `spacing.6`)
+
+#### Sprite Icon Buttons
+- **section.control.sprite.buttons.margin.top.desktop** - Margin above sprite icon button groups (desktop: `spacing.0`)
+- **section.control.sprite.buttons.margin.top.mobile** - Margin above sprite icon button groups (mobile: `spacing.0`)
+- **section.control.sprite.buttons.margin.bottom.desktop** - Margin below sprite icon button groups (desktop: `spacing.0`)
+- **section.control.sprite.buttons.margin.bottom.mobile** - Margin below sprite icon button groups (mobile: `spacing.0`)
+- **section.control.sprite.buttons.gap.desktop** - Space between individual sprite icon button groups (desktop: `spacing.2`)
+- **section.control.sprite.buttons.gap.mobile** - Space between individual sprite icon button groups (mobile: `spacing.2`)
+
+#### Control Slider
+- **section.control.slider.gap.desktop** - Space between the slider track and the value display (desktop: `spacing.2`)
+- **section.control.slider.gap.mobile** - Space between the slider track and the value display (mobile: `spacing.2`)
+
+#### Switch Row
+- **section.control.switch.gap.desktop** - Space between the switch toggle and its label text (desktop: `spacing.3`)
+- **section.control.switch.gap.mobile** - Space between the switch toggle and its label text (mobile: `spacing.3`)
+
+#### Control Select with Lock
+- **section.control.select.lock.gap.desktop** - Space between the select dropdown and the lock button (desktop: `spacing.2`)
+- **section.control.select.lock.gap.mobile** - Space between the select dropdown and the lock button (mobile: `spacing.2`)
+
+#### Control Grid
+- **section.control.grid.gap.desktop** - Space between items in a control grid layout (desktop: `spacing.5`)
+- **section.control.grid.gap.mobile** - Space between items in a control grid layout (mobile: `spacing.5`)
+
+#### Panel Footer
+- **section.panel.footer.margin.top.desktop** - Margin above the panel footer (button group at bottom of panel) (desktop: `spacing.5`)
+- **section.panel.footer.margin.top.mobile** - Margin above the panel footer (button group at bottom of panel) (mobile: `spacing.5`)
+- **section.panel.footer.gap.desktop** - Space between buttons in the panel footer (desktop: `spacing.3`)
+- **section.panel.footer.gap.mobile** - Space between buttons in the panel footer (mobile: `spacing.3`)
+
+### Spacing Values Reference
+
+#### Desktop
+- `section.gap.desktop`: `spacing.5` (20px)
+- `section.margin.top.spaced.desktop`: `spacing.2` (8px)
+- `section.margin.bottom.desktop`: `spacing.4` (16px)
+- `section.margin.top.desktop`: `spacing.1` (4px)
+- `section.heading.margin.top.desktop`: `0`
+- `section.heading.margin.bottom.desktop`: `spacing.0` (0px)
+- `section.heading.hint.margin.top.desktop`: `-spacing.1` (-4px)
+- `section.tabs.margin.bottom.desktop`: `spacing.8` (32px)
+- `section.tabs.gap.desktop`: `spacing.3` (12px)
+- `section.tabs.tab.padding.inline.desktop`: `spacing.4` (16px)
+- `section.tabs.tab.padding.block.desktop`: `spacing.2` (8px)
+- `section.control.gap.desktop`: `spacing.3` (12px)
+- `section.control.margin.top.desktop`: implicit via parent section gap
+- `section.control.margin.top.spaced.desktop`: `spacing.2` (8px)
+- `section.control.margin.bottom.desktop`: `spacing.5` (20px)
+- `section.control.label.gap.desktop`: `spacing.1` (4px)
+- `section.control.label.margin.left.desktop`: `-spacing.1` (-4px, effective gap: `spacing.1`)
+- `section.control.heading.gap.desktop`: `spacing.2` (8px)
+- `section.control.rotation.margin.top.desktop`: `spacing.0` (0px)
+- `section.control.rotation.margin.bottom.desktop`: `spacing.6` (24px)
+- `section.control.sprite.buttons.margin.top.desktop`: `spacing.0` (0px)
+- `section.control.sprite.buttons.margin.bottom.desktop`: `spacing.0` (0px)
+- `section.control.sprite.buttons.gap.desktop`: `spacing.2` (8px)
+- `section.control.slider.gap.desktop`: `spacing.2` (8px)
+- `section.control.switch.gap.desktop`: `spacing.3` (12px)
+- `section.control.select.lock.gap.desktop`: `spacing.2` (8px)
+- `section.control.grid.gap.desktop`: `spacing.5` (20px)
+- `section.panel.footer.margin.top.desktop`: `spacing.5` (20px)
+- `section.panel.footer.gap.desktop`: `spacing.3` (12px)
+
+#### Mobile
+- `section.gap.mobile`: `spacing.1` (4px)
+- `section.margin.top.spaced.mobile`: `spacing.2` (8px)
+- `section.margin.bottom.mobile`: `spacing.4` (16px)
+- `section.margin.top.mobile`: `spacing.4` (16px)
+- `section.heading.margin.top.mobile`: `0`
+- `section.heading.margin.bottom.mobile`: `spacing.0` (0px)
+- `section.heading.hint.margin.top.mobile`: `-spacing.1` (-4px)
+- `section.tabs.margin.bottom.mobile`: `spacing.6` (24px)
+- `section.tabs.gap.mobile`: `spacing.1.5` (6px)
+- `section.tabs.tab.padding.inline.mobile`: `spacing.1.5` (6px)
+- `section.tabs.tab.padding.block.mobile`: `spacing.2` (8px)
+- `section.control.gap.mobile`: `spacing.0` (0px)
+- `section.control.margin.top.mobile`: `spacing.1` (4px)
+- `section.control.margin.top.spaced.mobile`: `spacing.4` (16px)
+- `section.control.margin.bottom.mobile`: `spacing.5` (20px)
+- `section.control.label.gap.mobile`: `spacing.0` (0px)
+- `section.control.label.margin.left.mobile`: `-spacing.1` (-4px, effective gap: `spacing.0`)
+- `section.control.heading.gap.mobile`: `spacing.2` (8px)
+- `section.control.rotation.margin.top.mobile`: `spacing.0` (0px)
+- `section.control.rotation.margin.bottom.mobile`: `spacing.6` (24px)
+- `section.control.sprite.buttons.margin.top.mobile`: `spacing.0` (0px)
+- `section.control.sprite.buttons.margin.bottom.mobile`: `spacing.0` (0px)
+- `section.control.sprite.buttons.gap.mobile`: `spacing.2` (8px)
+- `section.control.slider.gap.mobile`: `spacing.2` (8px)
+- `section.control.switch.gap.mobile`: `spacing.3` (12px)
+- `section.control.select.lock.gap.mobile`: `spacing.2` (8px)
+- `section.control.grid.gap.mobile`: `spacing.5` (20px)
+- `section.panel.footer.margin.top.mobile`: `spacing.5` (20px)
+- `section.panel.footer.gap.mobile`: `spacing.3` (12px)
+
+#### Stacked Layout
+- Same values as mobile (uses `body:has(.app-frame--stacked)` selectors)
+
+### Notes
+
+- All spacing uses Tailwind's spacing token system (4px base unit)
+- Mobile and stacked layouts share the same spacing values
+- The structure is consistent across layouts - only values change, not properties
+- Negative margins are used for fine-tuning (e.g., tooltip icon positioning)
 
 ---
 

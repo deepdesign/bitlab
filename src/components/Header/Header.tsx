@@ -17,7 +17,7 @@ import {
   THEME_COLOR_PREVIEW,
   type ThemeColor,
 } from "@/constants/theme";
-import { Moon, Monitor, Sun, Settings } from "lucide-react";
+import { Moon, Monitor, Sun, HelpCircle } from "lucide-react";
 import type { CSSProperties } from "react";
 // Help has moved under Settings; header Help menu removed
 
@@ -29,7 +29,6 @@ interface HeaderProps {
   onThemeColorChange: (color: ThemeColor) => void;
   onThemeShapeChange: (shape: "box" | "rounded") => void;
   onStartTour?: () => void;
-  onOpenSettings?: () => void;
 }
 
 export function Header({
@@ -40,7 +39,6 @@ export function Header({
   onThemeColorChange,
   onThemeShapeChange,
   onStartTour,
-  onOpenSettings,
 }: HeaderProps) {
   const [showHelpMenu, setShowHelpMenu] = useState(false);
   const isMobile = useIsMobile();
@@ -187,19 +185,6 @@ export function Header({
                         size="sm"
                         onClick={() => {
                           setIsHeaderOverflowOpen(false);
-                          onOpenSettings?.();
-                        }}
-                        className="w-full justify-start gap-2"
-                      >
-                        <Settings className="h-4 w-4" />
-                        Settings
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setIsHeaderOverflowOpen(false);
                           setShowHelpMenu(true);
                         }}
                         className="w-full justify-start gap-2"
@@ -294,18 +279,6 @@ export function Header({
               </div>
             ) : (
               <div className="header-actions" ref={headerActionsRef}>
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="outline"
-                  className="header-icon-button"
-                  onClick={() => onOpenSettings?.()}
-                  aria-label="Settings"
-                  title="Settings"
-                >
-                  <Settings className="h-4 w-4" />
-                </Button>
-                {/* Help moved under Settings */}
                 <Select value={themeColor} onValueChange={handleThemeSelect}>
                   <SelectTrigger
                     className="header-theme-trigger"

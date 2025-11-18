@@ -109,6 +109,18 @@ export function SpriteControls({
 
         {/* Random sprites switch */}
         <div className="control-field control-field--spaced-top">
+          <div className="field-heading">
+            <div className="field-heading-left">
+              <span className="field-label" id="random-sprites-label">
+                Random
+              </span>
+              <TooltipIcon
+                id="random-sprites-tip"
+                text="When enabled, each sprite on the canvas uses a random shape from the selection."
+                label="Random"
+              />
+            </div>
+          </div>
           <div className="switch-row">
             <Switch
               id="random-sprites"
@@ -134,16 +146,6 @@ export function SpriteControls({
             >
               <RefreshCw className="h-4 w-4" />
             </Button>
-            <div className="field-heading-left">
-              <span className="field-label" id="random-sprites-label">
-                Random sprites
-              </span>
-              <TooltipIcon
-                id="random-sprites-tip"
-                text="When enabled, each sprite on the canvas uses a random shape from the selection."
-                label="Random sprites"
-              />
-            </div>
           </div>
         </div>
       </div>
@@ -190,6 +192,18 @@ export function SpriteControls({
         <hr className="section-divider" />
         <h3 className="section-title">Rotation</h3>
         <div className="control-field control-field--rotation">
+          <div className="field-heading">
+            <div className="field-heading-left">
+              <span className="field-label" id="rotation-toggle-label">
+                Rotation offsets
+              </span>
+              <TooltipIcon
+                id="rotation-toggle-tip"
+                text="Allow sprites to inherit a static rotation offset based on the slider below."
+                label="Rotation offsets"
+              />
+            </div>
+          </div>
           <div className="switch-row">
             <Switch
               id="rotation-toggle"
@@ -198,16 +212,6 @@ export function SpriteControls({
               disabled={!ready}
               aria-labelledby="rotation-toggle-label"
             />
-            <div className="field-heading-left">
-              <span className="field-label" id="rotation-toggle-label">
-                Allow Rotation Offsets
-              </span>
-              <TooltipIcon
-                id="rotation-toggle-tip"
-                text="Allow sprites to inherit a static rotation offset based on the slider below."
-                label="Allow Rotation Offsets"
-              />
-            </div>
           </div>
         </div>
         {spriteState.rotationEnabled && (
