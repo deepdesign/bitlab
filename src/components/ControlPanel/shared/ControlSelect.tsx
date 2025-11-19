@@ -273,8 +273,8 @@ export function ControlSelect({
             disabled={disabled}
             className={
               locked
-                ? "control-lock-button control-lock-button-locked"
-                : "control-lock-button"
+                ? "icon-button control-lock-button control-lock-button-locked"
+                : "icon-button control-lock-button"
             }
             aria-label={locked ? "Unlock" : "Lock"}
             title={locked ? "Unlock this value" : "Lock this value"}

@@ -113,6 +113,7 @@ html {
   --shadow-lg: 6px 6px 0 0 var(--border);
   --shadow-xl: 10px 10px 0 1px var(--border);
   --shadow-2xl: 16px 16px 0 1px var(--border);
+  --shadow-none: 0px 0px 0 0 transparent;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -153,8 +154,10 @@ html {
   --muted-foreground: var(--accent-muted-text);
   --shadow-primary: 6px 6px 0 var(--accent-primary-shadow);
   --shadow-default: 6px 6px 0 var(--panel-shadow);
-  --shadow-md: 6px 6px 0 var(--panel-shadow);
-  --shadow-sm: 4px 4px 0 var(--panel-shadow);
+  --shadow-md: 4px 4px 0 var(--panel-shadow);
+  --shadow: 5px 5px 0 var(--panel-shadow);
+  --shadow-sm: 2px 2px 0 var(--panel-shadow);
+  --shadow-none: 0px 0px 0 0 transparent;
   --radius-sm: 0px;
   --radius-md: 0px;
   --radius-lg: 0px;
@@ -3081,6 +3084,7 @@ body:has(.app-frame--stacked) .canvas-card-shell {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  transform: translateX(0) translateY(0);
 }
 
 /* Reduce padding and gap when there are 4 tabs to fit better */
@@ -3093,23 +3097,43 @@ body:has(.app-frame--stacked) .canvas-card-shell {
   font-size: 0.65rem;
 }
 
-.retro-tab:hover,
-.retro-tab:focus-visible {
+/* Default state: Position (0, 0), Shadow 4px × 4px at (4px, 4px) - already set above */
+
+/* Hover state: Position (0, -1px), Shadow moves 1px right and 1px down from default */
+/* Default shadow is 4px 4px, so hover should be 5px 5px to move 1px right and 1px down */
+.retro-tab:hover:not(:active):not(.retro-tab-active),
+.retro-tab:focus-visible:not(:active):not(.retro-tab-active) {
   color: var(--accent-primary);
   outline: none;
+  transform: translateX(0) translateY(-1px);
+  box-shadow: 5px 5px 0 var(--panel-shadow);
 }
 
+/* Click/Active state: Position (2px, 2px), Shadow 0px 0px for smooth transition */
+.retro-tab:active:not(.retro-tab-active) {
+  transform: translateX(2px) translateY(2px);
+  box-shadow: 0px 0px 0 0 transparent;
+}
+
+/* Selected/Active tab state: Position (0, 0), Shadow 3px × 3px at (3px, 3px), Border matches background */
 .retro-tab-active {
   color: var(--accent-primary-contrast);
   background: var(--accent-primary);
   border-color: var(--accent-primary);
-  box-shadow: 4px 4px 0 var(--accent-primary-shadow);
-  transform: translateY(-2px);
+  box-shadow: 3px 3px 0 var(--panel-shadow);
+  transform: translateX(0) translateY(0);
 }
 
-.retro-tab-active:hover,
-.retro-tab-active:focus-visible {
+.retro-tab-active:hover:not(:active),
+.retro-tab-active:focus-visible:not(:active) {
   color: var(--accent-primary-contrast);
+  transform: translateX(0) translateY(-1px);
+  box-shadow: 4px 4px 0 var(--panel-shadow);
+}
+
+.retro-tab-active:active {
+  transform: translateX(2px) translateY(2px);
+  box-shadow: 0px 0px 0 0 transparent;
 }
 
 /* Button Group (Segmented Control) */
@@ -3280,6 +3304,72 @@ body:has(.app-frame--stacked) .canvas-card-shell {
   flex-shrink: 0;
 }
 
+.icon-button {
+  box-shadow: 4px 4px 0 0 var(--panel-shadow) !important;
+  transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.icon-button:hover:not(:disabled) {
+  box-shadow: 5px 5px 0 0 var(--panel-shadow) !important;
+}
+
+/* Selected button state - default variant buttons (selected) */
+button.bg-primary.border-black {
+  border-color: var(--accent-primary) !important;
+  box-shadow: 3px 3px 0 0 var(--panel-shadow) !important;
+}
+
+/* Selected button hover - shadow animates from 3px to 5px */
+button.bg-primary.border-black:hover:not(:active) {
+  box-shadow: 5px 5px 0 0 var(--panel-shadow) !important;
+}
+
+/* Selected button active/click - shadow animates to 0px for smooth transition */
+button.bg-primary.border-black:active {
+  box-shadow: 0px 0px 0 0 transparent !important;
+}
+
+/* Also support data-selected and button-selected class for explicit selection */
+button[data-selected="true"],
+.button-selected {
+  box-shadow: 3px 3px 0 0 var(--panel-shadow) !important;
+}
+
+button[data-selected="true"]:hover:not(:active),
+.button-selected:hover:not(:active) {
+  box-shadow: 5px 5px 0 0 var(--panel-shadow) !important;
+}
+
+button[data-selected="true"]:active,
+.button-selected:active {
+  box-shadow: 0px 0px 0 0 transparent !important;
+}
+
+button[data-selected="true"].border-black,
+.button-selected.border-black,
+button.bg-primary[data-selected="true"],
+button.bg-primary.button-selected {
+  border-color: var(--accent-primary) !important;
+}
+
+button[data-selected="true"].border-black:hover:not(:active),
+.button-selected.border-black:hover:not(:active),
+button.bg-primary[data-selected="true"]:hover:not(:active),
+button.bg-primary.button-selected:hover:not(:active) {
+  box-shadow: 5px 5px 0 0 var(--panel-shadow) !important;
+}
+
+button[data-selected="true"].border-black:active,
+.button-selected.border-black:active,
+button.bg-primary[data-selected="true"]:active,
+button.bg-primary.button-selected:active {
+  box-shadow: 0px 0px 0 0 transparent !important;
+}
+
+.icon-button:active:not(:disabled) {
+  box-shadow: 0px 0px 0 0 transparent !important;
+}
+
 .control-lock-button-locked {
   color: var(--accent-primary-contrast);
   background: var(--accent-primary);
@@ -3398,7 +3488,8 @@ body:has(.app-frame--stacked) .canvas-card-shell {
 .control-switch[data-state="checked"] .control-switch-thumb {
   transform: translateX(18px); /* Reduced from 20px to provide equal spacing from right edge */
   background: var(--accent-primary-contrast);
-  border-color: var(--accent-primary-contrast);
+  border-color: transparent;
+  box-shadow: none;
 }
 
 /* Touch-Optimised UI Styling */
@@ -3527,14 +3618,22 @@ body:has(.app-frame--stacked) .canvas-card-shell {
   /* Improved active states for touch feedback */
   button:active,
   .control-dropdown-trigger:active,
-  .retro-tab:active {
-    transform: translateY(1px) translateX(1px);
+  .retro-tab:active:not(.retro-tab-active) {
+    transform: translateY(2px) translateX(2px);
+  }
+
+  .retro-tab-active:active {
+    transform: translateY(2px) translateX(2px);
   }
 
   /* Disable hover effects that don't work well on touch */
   button:hover:not(:active),
   .control-dropdown-trigger:hover:not(:active),
-  .retro-tab:hover:not(:active) {
+  .retro-tab:hover:not(:active):not(.retro-tab-active) {
+    transform: none;
+  }
+
+  .retro-tab-active:hover:not(:active) {
     transform: none;
   }
 

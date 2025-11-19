@@ -150,7 +150,7 @@ export function Header({
                   type="button"
                   size="icon"
                   variant="outline"
-                  className="header-icon-button header-overflow-trigger"
+                  className="icon-button header-icon-button header-overflow-trigger"
                   onClick={() => setIsHeaderOverflowOpen((prev) => !prev)}
                   aria-label="Theme options"
                   aria-expanded={isHeaderOverflowOpen}
@@ -181,7 +181,7 @@ export function Header({
                       <Button
                         type="button"
                         variant="outline"
-                        size="sm"
+                        size="md"
                         onClick={() => {
                           setIsHeaderOverflowOpen(false);
                           setShowHelpMenu(true);
@@ -227,7 +227,7 @@ export function Header({
                         type="button"
                         size="icon"
                         variant="outline"
-                        className="header-icon-button"
+                        className="icon-button header-icon-button"
                         onClick={cycleThemeShape}
                         aria-label={`Switch theme shape (current ${themeShape === "rounded" ? "rounded" : "box"})`}
                         title={`Shape: ${themeShape === "rounded" ? "Rounded" : "Box"}`}
@@ -264,7 +264,7 @@ export function Header({
                         type="button"
                         size="icon"
                         variant="outline"
-                        className="header-icon-button"
+                        className="icon-button header-icon-button"
                         onClick={cycleThemeMode}
                         aria-label={`Switch theme mode (current ${themeModeText})`}
                         title={`Theme: ${themeModeText}`}
@@ -312,7 +312,7 @@ export function Header({
                   type="button"
                   size="icon"
                   variant="outline"
-                  className="header-icon-button"
+                  className="icon-button header-icon-button"
                   onClick={cycleThemeShape}
                   aria-label={`Switch theme shape (current ${themeShape === "rounded" ? "rounded" : "box"})`}
                   title={`Shape: ${themeShape === "rounded" ? "Rounded" : "Box"}`}
@@ -349,7 +349,7 @@ export function Header({
                   type="button"
                   size="icon"
                   variant="outline"
-                  className="header-icon-button"
+                  className="icon-button header-icon-button"
                   onClick={cycleThemeMode}
                   aria-label={`Switch theme mode (current ${themeModeText})`}
                   title={`Theme: ${themeModeText}`}

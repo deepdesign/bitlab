@@ -174,7 +174,7 @@ export function TabOnboarding({
           <Button
             type="button"
             variant="default"
-            size="sm"
+            size="md"
             onClick={handleGotIt}
             className="w-full"
           >

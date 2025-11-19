@@ -659,7 +659,7 @@ export const ExportModal = ({
                                     key={presetKey}
                                     type="button"
                                     variant={isSelected ? "default" : "outline"}
-                                    size="sm"
+                                    size="md"
                                     onClick={() => handlePresetSelect(preset, presetKey)}
                                     disabled={isExporting}
                                     title={preset.label}

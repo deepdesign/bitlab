@@ -128,7 +128,7 @@ export function HelpMenu({ isOpen, onClose, onStartTour }: HelpMenuProps) {
                 <Button
                   type="button"
                   variant="default"
-                  size="sm"
+                  size="md"
                   onClick={() => {
                     onClose();
                     onStartTour();
@@ -141,7 +141,7 @@ export function HelpMenu({ isOpen, onClose, onStartTour }: HelpMenuProps) {
                 <Button
                   type="button"
                   variant="outline"
-                  size="sm"
+                  size="md"
                   onClick={handleResetOnboarding}
                   className="w-full justify-start gap-2"
                 >

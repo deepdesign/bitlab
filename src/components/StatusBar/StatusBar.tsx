@@ -198,7 +198,7 @@ export function StatusBar({
               size="icon"
               variant="outline"
               onClick={() => setShowStatusInfo(!showStatusInfo)}
-              className="status-bar-info-toggle"
+              className="icon-button status-bar-info-toggle"
               aria-label="Toggle status information"
               title="Status information"
             >
@@ -232,6 +232,7 @@ export function StatusBar({
                   type="button"
                   size="icon"
                   variant="outline"
+                  className="icon-button"
                   aria-label="Show status summary"
                   title="Show status summary"
                   onClick={() =>
@@ -300,7 +301,7 @@ export function StatusBar({
             onRandomiseAll();
           }}
           disabled={!ready}
-          className="status-bar-randomise-button"
+          className="icon-button status-bar-randomise-button"
           aria-label="Randomise all sprites"
           title="Randomise all sprites"
         >
@@ -312,7 +313,7 @@ export function StatusBar({
           variant="outline"
           onClick={onShowPresets}
           disabled={!ready}
-          className="status-bar-presets-button"
+          className="icon-button status-bar-presets-button"
           aria-label="Manage presets"
           title="Manage presets"
         >
@@ -324,7 +325,7 @@ export function StatusBar({
           variant="outline"
           onClick={onShowExport}
           disabled={!ready}
-          className="status-bar-export-button"
+          className="icon-button status-bar-export-button"
           aria-label="Share & Export"
           title="Share & Export"
         >
@@ -336,7 +337,7 @@ export function StatusBar({
           variant="outline"
           onClick={isFullscreen ? onFullscreenClose : onFullscreenToggle}
           disabled={!ready}
-          className="status-bar-fullscreen-button"
+          className="icon-button status-bar-fullscreen-button"
           aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
           title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
         >

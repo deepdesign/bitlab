@@ -16,7 +16,6 @@ interface SpriteControlsProps {
   lockedSpriteMode: boolean;
   onLockSpriteMode: (locked: boolean) => void;
   onModeChange: (mode: SpriteMode) => void;
-  onRandomSpritesToggle: (checked: boolean) => void;
   onRotationToggle: (checked: boolean) => void;
   onRotationAmountChange: (value: number) => void;
 }
@@ -25,7 +24,7 @@ interface SpriteControlsProps {
  * SpriteControls Component
  * 
  * Renders controls for sprite shape selection, density, scale, and rotation.
- * Includes shape buttons, random sprites toggle, and rotation settings.
+ * Includes shape buttons, regenerate button, and rotation settings.
  */
 export function SpriteControls({
   spriteState,
@@ -35,7 +34,6 @@ export function SpriteControls({
   lockedSpriteMode,
   onLockSpriteMode,
   onModeChange,
-  onRandomSpritesToggle,
   onRotationToggle,
   onRotationAmountChange,
 }: SpriteControlsProps) {
@@ -78,6 +76,7 @@ export function SpriteControls({
                   disabled={!ready || lockedSpriteMode}
                   title={mode.label}
                   aria-label={mode.label}
+                  className={isSelected ? undefined : "icon-button"}
                 >
                   <ShapeIcon shape={mode.value} size={24} />
                 </Button>
@@ -93,8 +92,8 @@ export function SpriteControls({
               title={lockedSpriteMode ? "Unlock sprite mode" : "Lock sprite mode"}
               className={
                 lockedSpriteMode
-                  ? "control-lock-button control-lock-button-locked"
-                  : "control-lock-button"
+                  ? "icon-button control-lock-button control-lock-button-locked"
+                  : "icon-button control-lock-button"
               }
             >
               {lockedSpriteMode ? (
@@ -107,28 +106,9 @@ export function SpriteControls({
           </div>
         </div>
 
-        {/* Random sprites switch */}
+        {/* Regenerate sprites button */}
         <div className="control-field control-field--spaced-top">
-          <div className="field-heading">
-            <div className="field-heading-left">
-              <span className="field-label" id="random-sprites-label">
-                Random
-              </span>
-              <TooltipIcon
-                id="random-sprites-tip"
-                text="When enabled, each sprite on the canvas uses a random shape from the selection."
-                label="Random"
-              />
-            </div>
-          </div>
           <div className="switch-row">
-            <Switch
-              id="random-sprites"
-              checked={spriteState.randomSprites ?? false}
-              onCheckedChange={onRandomSpritesToggle}
-              disabled={!ready || lockedSpriteMode}
-              aria-labelledby="random-sprites-label"
-            />
             <Button
               ref={randomizeButtonRef}
               type="button"
@@ -138,14 +118,33 @@ export function SpriteControls({
                 if (randomizeButtonRef.current) {
                   animatePulse(randomizeButtonRef.current);
                 }
-                controller?.randomizeSpriteShapes();
+                // Regenerate sprites by updating the seed
+                if (controller) {
+                  const currentState = controller.getState();
+                  // Update seed to regenerate sprites with new positions and shapes
+                  controller.applyState({
+                    ...currentState,
+                    seed: `${currentState.seed}-regenerate-${Date.now()}`,
+                  });
+                }
               }}
-              disabled={!ready || !spriteState.randomSprites}
-              aria-label="Randomise sprite shapes"
-              title="Randomise sprite shapes"
+              disabled={!ready}
+              aria-label="Regenerate sprites"
+              title="Regenerate all sprites on the canvas with new positions and sizes"
+              className="icon-button"
             >
               <RefreshCw className="h-4 w-4" />
             </Button>
+            <div className="field-heading-left">
+              <span className="field-label" id="regenerate-sprites-label">
+                Regenerate
+              </span>
+              <TooltipIcon
+                id="regenerate-sprites-tip"
+                text="Regenerate all sprites on the canvas with new positions and sizes."
+                label="Regenerate"
+              />
+            </div>
           </div>
         </div>
       </div>

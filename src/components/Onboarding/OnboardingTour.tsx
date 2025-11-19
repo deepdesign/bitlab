@@ -216,7 +216,7 @@ export function OnboardingTour({ isOpen, onClose }: OnboardingTourProps) {
                     <Button
                       type="button"
                       variant="outline"
-                      size="sm"
+                      size="md"
                       onClick={handlePrevious}
                     >
                       <ChevronLeft className="h-4 w-4" />
@@ -225,7 +225,7 @@ export function OnboardingTour({ isOpen, onClose }: OnboardingTourProps) {
                   <Button
                     type="button"
                     variant="default"
-                    size="sm"
+                    size="md"
                     onClick={handleNext}
                   >
                     {isLast ? "Finish" : "Next"}

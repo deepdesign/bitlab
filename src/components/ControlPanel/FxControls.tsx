@@ -72,6 +72,7 @@ export function FxControls({
 }: FxControlsProps) {
   const blendAutoLabelId = "blend-auto-label";
   const refreshPaletteButtonRef = useRef<HTMLButtonElement>(null);
+  const randomizeBlendButtonRef = useRef<HTMLButtonElement>(null);
   const isCanvasGradient = spriteState.canvasFillMode === "gradient";
   const currentCanvasLabel =
     canvasPaletteOptions.find(
@@ -122,7 +123,7 @@ export function FxControls({
               disabled={!ready || lockedSpritePalette}
               aria-label="Refresh palette application"
               title="Re-apply the selected palette randomly across sprites"
-              className="flex-shrink-0"
+              className="flex-shrink-0 icon-button"
             >
               <RefreshCw className="h-4 w-4" />
             </Button>
@@ -136,7 +137,7 @@ export function FxControls({
               disabled={!ready}
               aria-label="Manage custom palettes"
               title="Manage custom palettes"
-              className="flex-shrink-0"
+              className="flex-shrink-0 icon-button"
             >
               <ImagePlus className="h-4 w-4" />
             </Button>
@@ -228,6 +229,7 @@ export function FxControls({
               disabled={!ready}
             />
             <Button
+              ref={randomizeBlendButtonRef}
               type="button"
               size="icon"
               variant="outline"
@@ -240,7 +242,7 @@ export function FxControls({
               disabled={!ready || !spriteState.blendModeAuto}
               aria-label="Randomise sprite blend modes"
               title="Randomise sprite blend modes"
-              className="blend-random-button"
+              className="icon-button"
             >
               <RefreshCw className="h-4 w-4" />
             </Button>

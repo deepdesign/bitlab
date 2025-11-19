@@ -1791,6 +1791,23 @@ export const createSpriteController = (
       if (stateRef.current.blendModeAuto) {
         reassignAutoBlendModes();
         notifyState();
+        // Force a redraw to show the updated blend modes
+        // The draw loop will pick up the changes from the prepared object
+        if (p5Instance) {
+          // Ensure the loop is running first
+          if (typeof p5Instance.loop === 'function') {
+            p5Instance.loop();
+          }
+          // Then force a redraw
+          if (hasRedraw(p5Instance)) {
+            // Use requestAnimationFrame to ensure redraw happens after state update
+            requestAnimationFrame(() => {
+              if (p5Instance && hasRedraw(p5Instance)) {
+                p5Instance.redraw();
+              }
+            });
+          }
+        }
         return;
       }
       const nextBlend = randomBlendMode();

@@ -542,9 +542,6 @@ const App = () => {
     controllerRef.current?.setRotationEnabled(checked);
   }, []);
 
-  const handleRandomSpritesToggle = useCallback((checked: boolean) => {
-    controllerRef.current?.setRandomSprites(checked);
-  }, []);
 
   const handleRotationAmountChange = useCallback((value: number) => {
     controllerRef.current?.setRotationAmount(value);
@@ -735,7 +732,6 @@ const App = () => {
                         lockedSpriteMode={lockedSpriteMode}
                         onLockSpriteMode={setLockedSpriteMode}
                         onModeChange={handleModeChange}
-                        onRandomSpritesToggle={handleRandomSpritesToggle}
                         onRotationToggle={handleRotationToggle}
                         onRotationAmountChange={handleRotationAmountChange}
                       />
