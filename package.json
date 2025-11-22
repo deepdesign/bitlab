@@ -1,9 +1,12 @@
 {
   "name": "pixli",
   "private": true,
-  "version": "1.0.9",
+  "version": "1.0.10",
   "type": "module",
   "scripts": {
+    "generate:collections": "node scripts/generate-sprite-collections.js",
+    "predev": "npm run generate:collections",
+    "prebuild": "npm run generate:collections",
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
@@ -40,6 +43,8 @@
     "pixelarticons": "^1.8.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "svg-path-bounds": "^1.0.2",
+    "svgo": "^4.0.0",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7"
   }

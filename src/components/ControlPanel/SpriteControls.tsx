@@ -1,8 +1,16 @@
-import { useRef } from "react";
+import { useRef, useMemo } from "react";
 import { Button } from "@/components/Button";
 import { Switch } from "@/components/retroui/Switch";
 import { Lock, Unlock, RefreshCw } from "lucide-react";
 import { SPRITE_MODES } from "@/constants/sprites";
+import { getAllCollections, getCollection } from "@/constants/spriteCollections";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/retroui/Select";
 import { ControlSlider, ShapeIcon, TooltipIcon } from "./shared";
 import { densityToUi, uiToDensity } from "@/lib/utils";
 import { animatePulse } from "@/lib/utils/animations";
@@ -40,21 +48,85 @@ export function SpriteControls({
   const randomizeButtonRef = useRef<HTMLButtonElement>(null);
   const densityValueUi = densityToUi(spriteState.scalePercent);
 
+  // Get all collections and current collection
+  const allCollections = useMemo(() => getAllCollections(), []);
+  const currentCollection = useMemo(
+    () => getCollection(spriteState.spriteCollectionId || "primitives"),
+    [spriteState.spriteCollectionId]
+  );
+
+  // Filter available sprites based on current collection
+  const availableSprites = useMemo(() => {
+    if (!currentCollection) {
+      return SPRITE_MODES;
+    }
+
+    if (currentCollection.isShapeBased) {
+      // For primitives, filter SPRITE_MODES to only include sprites in the collection
+      return SPRITE_MODES.filter(mode =>
+        currentCollection.sprites.some(s => s.spriteMode === mode.value)
+      );
+    } else {
+      // For SVG collections, return the SVG sprites
+      // Map them to match SPRITE_MODES format for UI compatibility
+      return currentCollection.sprites
+        .filter(sprite => sprite.svgPath)
+        .map(sprite => ({
+          value: sprite.id as SpriteMode, // Use sprite ID as the mode value
+          label: sprite.name,
+          description: `${sprite.name} from ${currentCollection.label}`,
+          svgPath: sprite.svgPath,
+        }));
+    }
+  }, [currentCollection]);
+
   return (
     <>
       <div className="section">
         <h3 className="section-title">Shape</h3>
+        {/* Collection selector */}
+        {/* <div className="control-field">
+          <div className="field-heading">
+            <div className="field-heading-left">
+              <span className="field-label" id="collection-label">
+                Collection
+              </span>
+              <TooltipIcon
+                id="collection-tip"
+                text="Choose which sprite collection to use. Collections are organized in folders."
+                label="Collection"
+              />
+            </div>
+          </div>
+          <Select
+            value={spriteState.spriteCollectionId || "primitives"}
+            onValueChange={(value) => controller?.setSpriteCollection(value)}
+            disabled={!ready}
+          >
+            <SelectTrigger aria-labelledby="collection-label">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {allCollections.map((collection) => (
+                <SelectItem key={collection.id} value={collection.id}>
+                  {collection.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div> */}
+
         {/* Label, status, and tooltip for sprite selection */}
         <div className="control-field">
           <div className="field-heading">
             <div className="field-heading-left">
               <span className="field-label" id="render-mode-label">
-                Select Sprites
+                Select sprites
               </span>
               <TooltipIcon
                 id="render-mode-tip"
                 text="Choose the geometric shape used for sprites."
-                label="Select Sprites"
+                label="Select sprites"
               />
             </div>
             {currentModeLabel && (
@@ -62,26 +134,31 @@ export function SpriteControls({
             )}
           </div>
           {/* Icon button row for sprite selection */}
-          <div className="sprite-icon-buttons">
-          <div className="flex flex-wrap items-center">
-            {SPRITE_MODES.map((mode) => {
-              const isSelected = spriteState.spriteMode === mode.value;
-              return (
-                <Button
-                  key={mode.value}
-                  type="button"
-                  size="icon"
-                  variant={isSelected ? "default" : "outline"}
-                  onClick={() => onModeChange(mode.value)}
-                  disabled={!ready || lockedSpriteMode}
-                  title={mode.label}
-                  aria-label={mode.label}
-                  className={isSelected ? undefined : "icon-button"}
-                >
-                  <ShapeIcon shape={mode.value} size={24} />
-                </Button>
-              );
-            })}
+          {availableSprites.length > 0 ? (
+            <div className="sprite-icon-buttons">
+              <div className="flex flex-wrap items-center">
+                {availableSprites.map((mode) => {
+                  const isSelected = spriteState.spriteMode === mode.value;
+                  return (
+                    <Button
+                      key={mode.value}
+                      type="button"
+                      size="icon"
+                      variant={isSelected ? "default" : "outline"}
+                      onClick={() => onModeChange(mode.value)}
+                      disabled={!ready || lockedSpriteMode}
+                      title={mode.label}
+                      aria-label={mode.label}
+                      className={isSelected ? undefined : "icon-button"}
+                    >
+                      <ShapeIcon 
+                        shape={mode.value} 
+                        size={24} 
+                        svgPath={(mode as any).svgPath}
+                      />
+                    </Button>
+                  );
+                })}
             <Button
               type="button"
               size="icon"
@@ -104,6 +181,13 @@ export function SpriteControls({
             </Button>
           </div>
           </div>
+          ) : (
+            <div className="control-field">
+              <p className="text-sm text-muted-foreground">
+                No sprites available in this collection. Add SVG files to the collection folder to enable sprites.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Regenerate sprites button */}
@@ -151,10 +235,10 @@ export function SpriteControls({
 
       <div className="section section--spaced">
         <hr className="section-divider" />
-        <h3 className="section-title">Density &amp; Scale</h3>
+        <h3 className="section-title">Density &amp; scale</h3>
         <ControlSlider
           id="density-range"
-          label="Tile Density"
+          label="Tile density"
           min={0}
           max={100}
           value={densityValueUi}
@@ -165,7 +249,7 @@ export function SpriteControls({
         />
         <ControlSlider
           id="scale-base"
-          label="Scale Base"
+          label="Scale base"
           min={0}
           max={100}
           value={Math.round(spriteState.scaleBase)}
@@ -176,7 +260,7 @@ export function SpriteControls({
         />
         <ControlSlider
           id="scale-range"
-          label="Scale Range"
+          label="Scale range"
           min={0}
           max={100}
           value={Math.round(spriteState.scaleSpread)}
@@ -194,12 +278,12 @@ export function SpriteControls({
           <div className="field-heading">
             <div className="field-heading-left">
               <span className="field-label" id="depth-of-field-toggle-label">
-                Depth of Field
+                Depth of field
               </span>
               <TooltipIcon
                 id="depth-of-field-toggle-tip"
                 text="Blur sprites based on their distance from a focus plane. Larger sprites (closer) and smaller sprites (farther) get different blur amounts."
-                label="Depth of Field"
+                label="Depth of field"
               />
             </div>
           </div>
@@ -228,7 +312,7 @@ export function SpriteControls({
             />
             <ControlSlider
               id="depth-strength"
-              label="Blur Strength"
+              label="Blur strength"
               min={0}
               max={100}
               value={Math.round(spriteState.depthOfFieldStrength)}
@@ -271,7 +355,7 @@ export function SpriteControls({
           <div className="rotation-slider-wrapper">
             <ControlSlider
               id="rotation-amount"
-              label="Rotation Amount"
+              label="Rotation amount"
               min={0}
               max={180}
               value={Math.round(spriteState.rotationAmount)}

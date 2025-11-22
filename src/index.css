@@ -1307,6 +1307,22 @@ html[data-theme="dark"][data-theme-color="gold"] body {
   animation: app-loader-bottom 2400ms steps(32, end) infinite;
 }
 
+@keyframes tab-icon-spring {
+  0% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(20deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+.tab-icon-spring {
+  animation: tab-icon-spring 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
 @keyframes app-loader-top {
   0%,
   8% {
@@ -1888,16 +1904,34 @@ body:has(.app-layout--wide) .app-header {
 
   /* Reduce tab padding on mobile */
   .app-layout--mobile .retro-tabs {
-    gap: theme("spacing.1.5"); /* section.tabs.gap.mobile */
-    margin-bottom: theme("spacing.6"); /* section.tabs.margin.bottom.mobile */
+    gap: theme("spacing.1.5");
+    margin-bottom: theme("spacing.6");
   }
 
   .app-layout--mobile .retro-tab {
-    height: 2.25rem; /* h-9 = 36px - RetroUI standard */
+    min-height: 44px; /* Touch target */
+    height: 44px;
+    padding-inline: theme("spacing.3");
+    padding-block: theme("spacing.3");
+    font-size: 0.7rem;
+  }
+
+  .app-layout--mobile .tabs-top {
+    gap: 0; /* Tabs butt together */
+    margin-bottom: theme("spacing.6"); /* section.tabs.margin.bottom.mobile */
+    margin-left: calc(-1 * theme("spacing.3")); /* Extend to left edge of card */
+    margin-right: calc(-1 * theme("spacing.3")); /* Extend to right edge of card */
+    margin-top: calc(-1 * theme("spacing.3")); /* Extend to top edge of card */
+  }
+
+  .app-layout--mobile .tab-top {
+    height: calc(2.25rem + 0.25rem + 0.25rem); /* h-9 + 1 spacing unit (4px) + 1 more for increased padding */
     padding-inline: theme("spacing.1.5"); /* section.tabs.tab.padding.inline.mobile */
-    padding-block: theme("spacing.2"); /* section.tabs.tab.padding.block.mobile */
+    padding-block: theme("spacing.4"); /* section.tabs.tab.padding.block.mobile */
     font-size: 0.6rem;
   }
+
+
 
   /* Adjust canvas card for mobile */
   .app-layout--mobile .canvas-card-shell,
@@ -3050,10 +3084,11 @@ body:has(.app-frame--stacked) .canvas-card-shell {
   display: none;
 }
 
+/* Original RetroUI Tabs - simple, pure RetroUI styling */
 .retro-tabs {
   @apply flex items-stretch;
-  margin-bottom: theme("spacing.8"); /* section.tabs.margin.bottom.desktop */
-  gap: theme("spacing.3"); /* section.tabs.gap.desktop */
+  margin-bottom: theme("spacing.8");
+  gap: theme("spacing.3");
   flex-wrap: nowrap;
 }
 
@@ -3062,9 +3097,9 @@ body:has(.app-frame--stacked) .canvas-card-shell {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 2.25rem; /* h-9 = 36px - RetroUI standard */
-  padding-inline: theme("spacing.4"); /* section.tabs.tab.padding.inline.desktop */
-  padding-block: theme("spacing.2"); /* section.tabs.tab.padding.block.desktop */
+  height: 2.25rem; /* h-9 */
+  padding-inline: theme("spacing.4");
+  padding-block: theme("spacing.2");
   font-size: 0.68rem;
   letter-spacing: 0.22em;
   text-transform: uppercase;
@@ -3072,68 +3107,180 @@ body:has(.app-frame--stacked) .canvas-card-shell {
   color: var(--text-muted);
   border: 2px solid var(--panel-border);
   border-radius: var(--radius-sm);
-  box-shadow: 4px 4px 0 var(--panel-shadow);
   cursor: pointer;
   transition:
     color 0.18s ease,
-    transform 0.18s ease,
-    box-shadow 0.18s ease,
-    border-color 0.18s ease,
-    border-radius 0.18s ease;
+    background 0.18s ease,
+    transform 0.18s ease;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  transform: translateX(0) translateY(0);
+  box-shadow: 4px 4px 0 var(--panel-shadow);
 }
 
-/* Reduce padding and gap when there are 4 tabs to fit better */
-.retro-tabs:has(.retro-tab:nth-child(4)) {
-  gap: theme("spacing.2"); /* section.tabs.gap.desktop (4 tabs) */
-}
-
-.retro-tabs:has(.retro-tab:nth-child(4)) .retro-tab {
-  padding-inline: theme("spacing.2"); /* section.tabs.tab.padding.inline.desktop (4 tabs) */
-  font-size: 0.65rem;
-}
-
-/* Default state: Position (0, 0), Shadow 4px × 4px at (4px, 4px) - already set above */
-
-/* Hover state: Position (0, -1px), Shadow moves 1px right and 1px down from default */
-/* Default shadow is 4px 4px, so hover should be 5px 5px to move 1px right and 1px down */
+/* Hover state for inactive tabs */
 .retro-tab:hover:not(:active):not(.retro-tab-active),
 .retro-tab:focus-visible:not(:active):not(.retro-tab-active) {
   color: var(--accent-primary);
   outline: none;
-  transform: translateX(0) translateY(-1px);
-  box-shadow: 5px 5px 0 var(--panel-shadow);
 }
 
-/* Click/Active state: Position (2px, 2px), Shadow 0px 0px for smooth transition */
+/* Click/Active state for inactive tabs */
 .retro-tab:active:not(.retro-tab-active) {
-  transform: translateX(2px) translateY(2px);
-  box-shadow: 0px 0px 0 0 transparent;
+  transform: translateY(1px) translateX(1px);
+  box-shadow: 2px 2px 0 var(--panel-shadow);
 }
 
-/* Selected/Active tab state: Position (0, 0), Shadow 3px × 3px at (3px, 3px), Border matches background */
+/* Selected/Active tab state */
 .retro-tab-active {
   color: var(--accent-primary-contrast);
   background: var(--accent-primary);
   border-color: var(--accent-primary);
-  box-shadow: 3px 3px 0 var(--panel-shadow);
-  transform: translateX(0) translateY(0);
+  box-shadow: 4px 4px 0 var(--accent-primary-shadow);
+  transform: translateY(-2px);
 }
 
 .retro-tab-active:hover:not(:active),
 .retro-tab-active:focus-visible:not(:active) {
   color: var(--accent-primary-contrast);
-  transform: translateX(0) translateY(-1px);
-  box-shadow: 4px 4px 0 var(--panel-shadow);
+  background: var(--accent-primary);
 }
 
 .retro-tab-active:active {
-  transform: translateX(2px) translateY(2px);
-  box-shadow: 0px 0px 0 0 transparent;
+  transform: translateY(1px) translateX(1px);
+  box-shadow: 2px 2px 0 var(--accent-primary-shadow);
+}
+
+/* Tabs Top - for top of card placement (same as retro-tabs but with explicit naming) */
+.tabs-top {
+  @apply flex items-stretch;
+  margin-bottom: theme("spacing.8"); /* section.tabs.margin.bottom.desktop */
+  margin-left: calc(-1 * theme("spacing.5")); /* Extend to left edge of card */
+  margin-right: calc(-1 * theme("spacing.5")); /* Extend to right edge of card */
+  margin-top: calc(-1 * theme("spacing.5")); /* Extend to top edge of card */
+  gap: 0; /* Tabs butt together */
+  flex-wrap: nowrap;
+  position: relative;
+  z-index: 1; /* Ensure tabs are above content */
+  overflow: visible; /* Allow tab shadows to be visible */
+}
+
+.tab-top {
+  flex: 1 1 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: calc(2.25rem + 0.25rem + 0.25rem); /* h-9 + 1 spacing unit (4px) + 1 more for increased padding */
+  padding-inline: theme("spacing.4"); /* section.tabs.tab.padding.inline.desktop */
+  padding-block: theme("spacing.4"); /* section.tabs.tab.padding.block.desktop */
+  font-size: 0.68rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.1)), var(--panel-bg);
+  color: var(--text-muted);
+  border: 2px solid var(--panel-border);
+  border-top: none; /* No top border for traditional tabs */
+  border-bottom: none; /* Bottom border handled by inset shadow */
+  border-radius: 0; /* No border radius by default */
+  box-shadow: inset 0 -2px 0 0 var(--panel-border); /* Inside bottom border for unselected tabs */
+  cursor: pointer;
+  transition:
+    color 0.18s ease,
+    background 0.18s ease;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.tab-top:first-child {
+  border-left: none;
+  border-top-left-radius: var(--radius-sm);
+}
+
+.tab-top:last-child {
+  border-right: none;
+  border-top-right-radius: var(--radius-sm);
+}
+
+.tab-top:not(:first-child):not(:last-child) {
+  border-left: none;
+  border-right: none;
+}
+
+.tabs-top:has(.tab-top:nth-child(4)) .tab-top {
+  padding-inline: theme("spacing.2"); /* section.tabs.tab.padding.inline.desktop (4 tabs) */
+  font-size: 0.65rem;
+}
+
+.tab-top:hover:not(:active):not(.tab-top-active),
+.tab-top:focus-visible:not(:active):not(.tab-top-active) {
+  color: var(--accent-primary);
+  outline: none;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.05)), var(--panel-bg);
+}
+
+.tab-top:active:not(.tab-top-active) {
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.15)), var(--panel-bg);
+}
+
+.tab-top-active {
+  color: var(--text-color);
+  background: var(--panel-bg);
+  border-color: var(--panel-border);
+  border-bottom: none; /* No bottom border for selected tab */
+  box-shadow: none; /* Shadow handled by pseudo-element */
+  z-index: 2; /* Above other tabs */
+  position: relative;
+  overflow: visible; /* Allow shadow to be visible */
+}
+
+.tab-top-active:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  right: -6px; /* Offset 1px further right to not obscure border */
+  top: 0;
+  bottom: 2px; /* Stop 2px before bottom to avoid overlapping next tab's bottom border */
+  width: 4px;
+  background: var(--panel-shadow);
+  pointer-events: none;
+  z-index: -1; /* Behind the border */
+}
+
+.tab-top-active:first-child {
+  border-left: none;
+}
+
+/* Ensure first tab shadow matches middle tab exactly */
+.tab-top-active:first-child::after {
+  right: -6px;
+  top: 0;
+  bottom: 2px;
+  width: 4px;
+  background: var(--panel-shadow);
+}
+
+.tab-top-active:last-child {
+  border-right: none;
+  box-shadow: none; /* No shadow on rightmost tab */
+}
+
+.tab-top-active:not(:first-child):not(:last-child) {
+  border-left: none;
+  border-right: none;
+}
+
+.tab-top-active:hover:not(:active),
+.tab-top-active:focus-visible:not(:active) {
+  color: var(--text-color);
+  background: var(--panel-bg);
+}
+
+.tab-top-active:active {
+  background: var(--accent-primary);
 }
 
 /* Button Group (Segmented Control) */
@@ -3187,8 +3334,8 @@ body:has(.app-frame--stacked) .canvas-card-shell {
 .retro-button-group-item-active {
   color: var(--accent-primary-contrast);
   background: var(--accent-primary);
-  box-shadow: 4px 4px 0 var(--accent-primary-shadow);
-  transform: translateY(-2px);
+  box-shadow: none;
+  transform: none;
 }
 
 .retro-button-group-item-active:hover:not(:disabled),
@@ -3596,10 +3743,10 @@ button.bg-primary.button-selected:active {
 
   /* Tabs - 44px touch target on mobile */
   .retro-tab {
-    min-height: 44px;
-    height: 44px;
+    min-height: calc(44px + 4px + 4px); /* 44px + 1 spacing unit + 1 more for increased padding */
+    height: calc(44px + 4px + 4px); /* 44px + 1 spacing unit + 1 more for increased padding */
     padding-inline: theme("spacing.5");
-    padding-block: theme("spacing.3");
+    padding-block: theme("spacing.4");
     font-size: 0.72rem;
   }
 
@@ -3619,23 +3766,15 @@ button.bg-primary.button-selected:active {
   button:active,
   .control-dropdown-trigger:active,
   .retro-tab:active:not(.retro-tab-active) {
-    transform: translateY(2px) translateX(2px);
+    background: var(--panel-bg);
   }
 
   .retro-tab-active:active {
-    transform: translateY(2px) translateX(2px);
+    background: var(--panel-bg);
   }
 
   /* Disable hover effects that don't work well on touch */
-  button:hover:not(:active),
-  .control-dropdown-trigger:hover:not(:active),
-  .retro-tab:hover:not(:active):not(.retro-tab-active) {
-    transform: none;
-  }
-
-  .retro-tab-active:hover:not(:active) {
-    transform: none;
-  }
+  /* Traditional tabs don't need transform on hover */
 
   /* Tooltip triggers - ensure they're tappable */
   .tooltip-trigger {
@@ -4575,7 +4714,7 @@ body:has(.app-layout--wide) .app-footer {
 
 .preset-manager-header {
   @apply flex items-center justify-between;
-  margin-bottom: theme("spacing.5");
+  margin-bottom: theme("spacing.4"); /* modal.header.content.gap */
 }
 
 .preset-manager-title {
@@ -4605,7 +4744,7 @@ body:has(.app-layout--wide) .app-footer {
 
 .preset-manager-content {
   @apply flex flex-col;
-  gap: theme("spacing.5");
+  gap: theme("spacing.4"); /* modal.content.gap - follows modal spacing rules */
 }
 
 .preset-save-form {
@@ -4869,7 +5008,6 @@ body:has(.app-layout--wide) .app-footer {
 
 .preset-actions {
   @apply flex gap-2;
-  margin-top: theme("spacing.3");
 }
 
 .preset-export-actions {
@@ -4879,6 +5017,10 @@ body:has(.app-layout--wide) .app-footer {
 
 .preset-import-section {
   margin-top: theme("spacing.3");
+}
+
+.preset-share-backup-actions {
+  @apply flex flex-col gap-2;
 }
 
 .preset-import-input {
@@ -6033,6 +6175,13 @@ body:has(.app-frame--stacked) .app-frame--header {
     grid-template-columns: minmax(0, auto) minmax(44px, 1fr) !important; /* Ensure gap is maintained */
     min-height: auto !important; /* Prevent extra vertical space from min-height in stacked */
   }
+}
+
+/* Onboarding modal logo */
+.onboarding-logo-wrapper .app-logo-svg {
+  max-width: 100px !important;
+  min-height: 20px !important;
+  width: 100px !important;
 }
 
 /* End DEBUG */

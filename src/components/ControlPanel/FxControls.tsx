@@ -94,7 +94,7 @@ export function FxControls({
   return (
     <>
       <div className="section">
-        <h3 className="section-title">Palette &amp; Variance</h3>
+        <h3 className="section-title">Palette &amp; variance</h3>
         <ControlSelect
           id="palette-presets"
           label="Sprite palette"
@@ -192,10 +192,10 @@ export function FxControls({
 
       <div className="section section--spaced">
         <hr className="section-divider" />
-        <h3 className="section-title">Blend &amp; Opacity</h3>
+        <h3 className="section-title">Blend &amp; opacity</h3>
         <ControlSlider
           id="opacity-range"
-          label="Layer Opacity"
+          label="Layer opacity"
           min={15}
           max={100}
           value={Math.round(spriteState.layerOpacity)}
@@ -206,7 +206,7 @@ export function FxControls({
         />
         <ControlSelect
           id="blend-mode"
-          label="Blend Mode"
+          label="Blend mode"
           value={spriteState.blendMode as string}
           onChange={(value) => onBlendSelect(value as BlendModeOption)}
           disabled={!ready || spriteState.blendModeAuto}
@@ -262,7 +262,7 @@ export function FxControls({
 
       <div className="section section--spaced">
         <hr className="section-divider" />
-        <h3 className="section-title">CANVAS</h3>
+        <h3 className="section-title">Canvas</h3>
         <ControlSelect
           id={isCanvasGradient ? "canvas-gradient" : "background-mode"}
           label="Canvas"

@@ -2,13 +2,7 @@ import { useState, useCallback, useRef } from "react";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { Download, Upload } from "lucide-react";
-import {
-  Tabs,
-  TabsTriggerList,
-  TabsTrigger,
-  TabsPanels,
-  TabsContent,
-} from "@/components/retroui/Tab";
+import { ButtonGroup } from "@/components/retroui/ButtonGroup";
 import { Input } from "@/components/retroui/Input";
 import { Label } from "@/components/retroui/Label";
 import {
@@ -42,7 +36,7 @@ export const CustomPaletteManager = ({
   const [error, setError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
-  const [createTabIndex, setCreateTabIndex] = useState(0);
+  const [buttonGroupValue, setButtonGroupValue] = useState("upload");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const jsonImportInputRef = useRef<HTMLInputElement>(null);
 
@@ -295,93 +289,92 @@ export const CustomPaletteManager = ({
         <div className="custom-palette-manager-content">
           <div className="section">
             <h3 className="section-title">Create Palette</h3>
-            <Tabs
-              selectedIndex={createTabIndex}
-              onChange={setCreateTabIndex}
-            >
-              <TabsTriggerList className="retro-tabs">
-                <TabsTrigger>Upload</TabsTrigger>
-                <TabsTrigger>URL</TabsTrigger>
-                <TabsTrigger>Import</TabsTrigger>
-              </TabsTriggerList>
-              <TabsPanels>
-                <TabsContent>
-                  <div className="preset-import-section">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileUpload}
-                      className="preset-import-input"
-                      disabled={isMaxReached}
+            <ButtonGroup
+              value={buttonGroupValue}
+              onChange={setButtonGroupValue}
+              options={[
+                { value: "upload", label: "Upload" },
+                { value: "url", label: "URL" },
+                { value: "import", label: "Import" },
+              ]}
+            />
+            <div className="mt-4">
+              {buttonGroupValue === "upload" && (
+                <div className="preset-import-section">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="preset-import-input"
+                    disabled={isMaxReached}
+                  />
+                  <Button
+                    type="button"
+                    size="md"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isMaxReached}
+                  >
+                    Upload Image
+                  </Button>
+                </div>
+              )}
+              {buttonGroupValue === "url" && (
+                <div className="preset-import-section">
+                  <div className="grid w-full items-center gap-1.5">
+                    <Label htmlFor="image-url">IMAGE URL</Label>
+                    <Input
+                      id="image-url"
+                      type="text"
+                      placeholder="Enter image URL..."
+                      value={imageUrl}
+                      onChange={(e) => setImageUrl(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && imageUrl.trim()) {
+                          handleUrlExtract();
+                        }
+                      }}
+                      disabled={isMaxReached || isExtracting}
                     />
-                    <Button
-                      type="button"
-                      size="md"
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={isMaxReached}
-                    >
-                      Upload Image
-                    </Button>
                   </div>
-                </TabsContent>
-                <TabsContent>
-                  <div className="preset-import-section">
-                    <div className="grid w-full items-center gap-1.5">
-                      <Label htmlFor="image-url">IMAGE URL</Label>
-                      <Input
-                        id="image-url"
-                        type="text"
-                        placeholder="Enter image URL..."
-                        value={imageUrl}
-                        onChange={(e) => setImageUrl(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && imageUrl.trim()) {
-                            handleUrlExtract();
-                          }
-                        }}
-                        disabled={isMaxReached || isExtracting}
-                      />
-                    </div>
-                    <Button
-                      type="button"
-                      size="md"
-                      variant="outline"
-                      className="w-full mt-2"
-                      onClick={handleUrlExtract}
-                      disabled={isMaxReached || isExtracting || !imageUrl.trim()}
-                    >
-                      {isExtracting ? "Extracting..." : "Extract Colors"}
-                    </Button>
-                  </div>
-                </TabsContent>
-                <TabsContent>
-                  <div className="preset-import-section">
-                    <input
-                      ref={jsonImportInputRef}
-                      type="file"
-                      accept=".json,application/json"
-                      onChange={handleImportPalette}
-                      className="preset-import-input"
-                      disabled={isMaxReached}
-                    />
-                    <Button
-                      type="button"
-                      size="md"
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => jsonImportInputRef.current?.click()}
-                      disabled={isMaxReached}
-                    >
-                      <Upload className="h-4 w-4 mr-2" />
-                      Import Palette JSON
-                    </Button>
-                  </div>
-                </TabsContent>
-              </TabsPanels>
-            </Tabs>
+                  <Button
+                    type="button"
+                    size="md"
+                    variant="outline"
+                    className="w-full mt-2"
+                    onClick={handleUrlExtract}
+                    disabled={isMaxReached || isExtracting || !imageUrl.trim()}
+                  >
+                    {isExtracting ? "Extracting..." : "Extract Colors"}
+                  </Button>
+                </div>
+              )}
+              {buttonGroupValue === "import" && (
+                <div className="preset-import-section">
+                  <input
+                    ref={jsonImportInputRef}
+                    type="file"
+                    accept=".json,application/json"
+                    onChange={handleImportPalette}
+                    className="preset-import-input"
+                    disabled={isMaxReached}
+                  />
+                  <Button
+                    type="button"
+                    size="md"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => jsonImportInputRef.current?.click()}
+                    disabled={isMaxReached}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Import Palette JSON
+                  </Button>
+                </div>
+              )}
+            </div>
             <div className="grid w-full items-center gap-1.5">
               <Label htmlFor="palette-name">PALETTE NAME</Label>
               <Input

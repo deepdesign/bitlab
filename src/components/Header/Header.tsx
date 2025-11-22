@@ -28,7 +28,7 @@ interface HeaderProps {
   onThemeModeChange: (mode: "system" | "light" | "dark") => void;
   onThemeColorChange: (color: ThemeColor) => void;
   onThemeShapeChange: (shape: "box" | "rounded") => void;
-  onStartTour?: () => void;
+  onOpenOnboarding?: () => void;
 }
 
 export function Header({
@@ -38,7 +38,7 @@ export function Header({
   onThemeModeChange,
   onThemeColorChange,
   onThemeShapeChange,
-  onStartTour,
+  onOpenOnboarding,
 }: HeaderProps) {
   const [showHelpMenu, setShowHelpMenu] = useState(false);
   const isMobile = useIsMobile();
@@ -178,19 +178,21 @@ export function Header({
                     aria-label="Theme options"
                   >
                     <div className="header-overflow-content">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="md"
-                        onClick={() => {
-                          setIsHeaderOverflowOpen(false);
-                          setShowHelpMenu(true);
-                        }}
-                        className="w-full justify-start gap-2"
-                      >
-                        <HelpCircle className="h-4 w-4" />
-                        Help
-                      </Button>
+                      {onOpenOnboarding && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="md"
+                          onClick={() => {
+                            setIsHeaderOverflowOpen(false);
+                            onOpenOnboarding();
+                          }}
+                          className="w-full justify-start gap-2"
+                        >
+                          <HelpCircle className="h-4 w-4" />
+                          Help
+                        </Button>
+                      )}
                       <div className="header-overflow-divider"></div>
                       <div className="header-overflow-theme-section">
                         <Select value={themeColor} onValueChange={handleThemeSelect}>
@@ -278,6 +280,19 @@ export function Header({
               </div>
             ) : (
               <div className="header-actions" ref={headerActionsRef}>
+                {onOpenOnboarding && (
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="outline"
+                    className="icon-button header-icon-button"
+                    onClick={onOpenOnboarding}
+                    aria-label="Open help and onboarding"
+                    title="Help & Getting Started"
+                  >
+                    <HelpCircle className="h-4 w-4" aria-hidden="true" />
+                  </Button>
+                )}
                 <Select value={themeColor} onValueChange={handleThemeSelect}>
                   <SelectTrigger
                     className="header-theme-trigger"

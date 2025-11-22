@@ -10,11 +10,13 @@ import {
 } from "./data/palettes";
 import { getGradientsForPalette } from "./data/gradients";
 import { calculateGradientLine } from "./lib/utils";
+import { getCollection, getSpriteInCollection, getAllCollections } from "./constants/spriteCollections";
+import { loadSpriteImage, getCachedSpriteImage, clearSpriteImageCache } from "./lib/services/spriteImageLoader";
 
 const MIN_TILE_SCALE = 0.12;
 const MAX_TILE_SCALE = 5.5; // Allow large sprites, but positioning will be adjusted
 const MAX_ROTATION_DEGREES = 180;
-const MAX_DENSITY_PERCENT_UI = 1000;
+const MAX_DENSITY_PERCENT_UI = 1500; // Increased by 50% from 1000
 const ROTATION_SPEED_MAX = (Math.PI / 2) * 0.05; // approx 4.5°/s at 100%
 
 const degToRad = (value: number) => (value * Math.PI) / 180;
@@ -68,6 +70,21 @@ const MOVEMENT_SCALE_MULTIPLIERS: Record<MovementMode, number> = {
   isometric: 1.0,   // No adjustment
 };
 
+// Tile count multipliers for modes that spread sprites widely
+// Spiral orbit moves in wide circles, so we need more tiles to fill the canvas
+const MOVEMENT_TILE_COUNT_MULTIPLIERS: Record<MovementMode, number> = {
+  spiral: 1.8,      // 80% more tiles for spiral to compensate for wide circular movement
+  comet: 1.0,       // No adjustment
+  ripple: 1.0,      // No adjustment
+  cascade: 1.0,     // No adjustment
+  triangular: 1.0,  // No adjustment
+  drift: 1.0,       // No adjustment
+  pulse: 1.0,       // No adjustment
+  zigzag: 1.0,      // No adjustment
+  linear: 1.0,      // No adjustment
+  isometric: 1.0,   // No adjustment
+};
+
 type PaletteId = (typeof palettes)[number]["id"];
 
 type BlendModeKey = "NONE" | "MULTIPLY" | "SCREEN" | "HARD_LIGHT" | "OVERLAY" | "SOFT_LIGHT" | "DARKEST" | "LIGHTEST";
@@ -105,16 +122,36 @@ interface ShapeTile {
   // Store random multipliers for dynamic recalculation without regeneration
   rotationBaseMultiplier: number; // Random multiplier for rotationBase (-1 to 1)
   rotationSpeedMultiplier: number; // Random multiplier for rotationSpeed (0.6 to 1.2)
+  animationTimeMultiplier: number; // Random multiplier for animation time (0.85 to 1.15, +/- 15%)
 }
 
-type PreparedTile = ShapeTile;
+interface SvgTile {
+  kind: "svg";
+  svgPath: string; // Path to the SVG file
+  spriteId: string; // Sprite ID for identification
+  tint: string;
+  paletteColorIndex: number; // Index of the palette color used (before jittering)
+  u: number;
+  v: number;
+  scale: number;
+  blendMode: BlendModeKey;
+  rotationBase: number;
+  rotationDirection: number;
+  rotationSpeed: number;
+  // Store random multipliers for dynamic recalculation without regeneration
+  rotationBaseMultiplier: number; // Random multiplier for rotationBase (-1 to 1)
+  rotationSpeedMultiplier: number; // Random multiplier for rotationSpeed (0.6 to 1.2)
+  animationTimeMultiplier: number; // Random multiplier for animation time (0.85 to 1.15, +/- 15%)
+}
+
+type PreparedTile = ShapeTile | SvgTile;
 
 interface PreparedLayer {
   tiles: PreparedTile[];
   tileCount: number;
   blendMode: BlendModeKey;
   opacity: number;
-  mode: "shape";
+  mode: "shape" | "svg";
   baseSizeRatio: number;
 }
 
@@ -161,6 +198,8 @@ export interface GeneratorState {
   depthOfFieldEnabled: boolean;
   depthOfFieldFocus: number; // 0-100, represents focus percentage (50 = middle)
   depthOfFieldStrength: number; // 0-100, controls blur intensity (0 = no blur, 100 = max blur)
+  // Sprite collection settings
+  spriteCollectionId: string; // Collection ID (e.g., "primitives", "christmas")
 }
 
 export interface SpriteControllerOptions {
@@ -224,6 +263,8 @@ export const DEFAULT_STATE: GeneratorState = {
   depthOfFieldEnabled: false,
   depthOfFieldFocus: 50, // Start at middle of depth range
   depthOfFieldStrength: 50, // Moderate blur strength
+  // Sprite collection defaults
+  spriteCollectionId: "primitives", // Default to primitives collection
 };
 
 const SEED_ALPHABET = "0123456789ABCDEF";
@@ -483,9 +524,13 @@ const computeMovementOffsets = (
       return { offsetX, offsetY, scaleMultiplier };
     }
     case "spiral": {
-      const radius = baseUnit * (0.55 + layerIndex * 0.18 + motionScale * 1.35);
+      // Reduced radius to keep sprites on canvas - spiral was pushing too many tiles off-screen
+      // Original: baseUnit * (0.55 + layerIndex * 0.18 + motionScale * 1.35)
+      // Reduced motionScale multiplier from 1.35 to 0.85 to reduce movement range
+      const radius = baseUnit * (0.45 + layerIndex * 0.15 + motionScale * 0.85);
       const angle = phased * (0.04 + layerIndex * 0.02);
-      const spiralFactor = 1 + Math.sin(angle * 0.5) * 0.4;
+      // Reduced spiralFactor range from 0.4 to 0.25 to reduce maximum expansion
+      const spiralFactor = 1 + Math.sin(angle * 0.5) * 0.25;
       const offsetX = Math.cos(angle) * radius * spiralFactor;
       const offsetY = Math.sin(angle) * radius * spiralFactor;
       const scaleMultiplier = clampScale(
@@ -670,8 +715,31 @@ const computeSprite = (state: GeneratorState): PreparedSprite => {
   const rotationRange = degToRad(clamp(state.rotationAmount, 0, MAX_ROTATION_DEGREES));
   const rotationSpeedBase = clamp(state.rotationSpeed, 0, 100) / 100;
 
-  const isShapeMode = shapeModes.includes(state.spriteMode as ShapeMode);
-  const activeShape = isShapeMode ? (state.spriteMode as ShapeMode) : "rounded";
+  // Determine if we're using shape-based or SVG-based collection
+  const collection = getCollection(state.spriteCollectionId || "primitives");
+  const isShapeBased = collection?.isShapeBased ?? true;
+  
+  // Get the active sprite (shape or SVG)
+  let activeShape: ShapeMode = "rounded";
+  let activeSvgSprite: { id: string; svgPath: string } | null = null;
+  
+  if (isShapeBased) {
+    // Primitive collection - use shape mode
+    const isShapeMode = shapeModes.includes(state.spriteMode as ShapeMode);
+    activeShape = isShapeMode ? (state.spriteMode as ShapeMode) : "rounded";
+  } else {
+    // SVG collection - find the sprite by ID
+    const sprite = getSpriteInCollection(state.spriteCollectionId, state.spriteMode);
+    if (sprite && sprite.svgPath) {
+      activeSvgSprite = { id: sprite.id, svgPath: sprite.svgPath };
+    } else if (collection && collection.sprites.length > 0) {
+      // Fallback to first sprite in collection
+      const firstSprite = collection.sprites[0];
+      if (firstSprite.svgPath) {
+        activeSvgSprite = { id: firstSprite.id, svgPath: firstSprite.svgPath };
+      }
+    }
+  }
 
   // Apply mode-specific scale multiplier to improve canvas coverage
   // Modes with large movement radii (spiral, orbit) benefit from larger sprites
@@ -696,7 +764,15 @@ const computeSprite = (state: GeneratorState): PreparedSprite => {
     const baseSizeBase = 0.22;
     const baseSizeRatio =
       baseSizeBase * (1 + layerIndex * 0.18) * modeScaleMultiplier;
-    const maxTiles = 60;
+    
+    // Apply mode-specific tile count multiplier for modes that spread sprites widely
+    // Spiral orbit moves in wide circles, so we need more tiles to fill the canvas
+    const modeTileCountMultiplier = MOVEMENT_TILE_COUNT_MULTIPLIERS[state.movementMode] ?? 1.0;
+    // Reduce tile count when DoF is enabled (blur is expensive) to maintain performance
+    // Apply a 0.75x multiplier when DoF is enabled to reduce blur operations
+    const dofTileCountMultiplier = state.depthOfFieldEnabled ? 0.75 : 1.0;
+    // Reduced base max tiles from 60 to 50 for better performance at high density
+    const maxTiles = Math.round(50 * modeTileCountMultiplier * dofTileCountMultiplier);
     const minTiles = layerIndex === 0 ? 1 : 0;
     const desiredTiles = 1 + normalizedDensity * (maxTiles - 1);
     const tileTotal = Math.max(minTiles, Math.round(desiredTiles));
@@ -761,6 +837,8 @@ const computeSprite = (state: GeneratorState): PreparedSprite => {
       const rotationBase = rotationRange * rotationBaseMultiplier;
       const rotationDirection = positionRng() > 0.5 ? 1 : -1;
       const rotationSpeedMultiplier = rotationSpeedBase > 0 ? (0.6 + positionRng() * 0.6) : 0;
+      // Animation time multiplier: +/- 15% variation to prevent exact repetition
+      const animationTimeMultiplier = 0.85 + positionRng() * 0.3; // Range: 0.85 to 1.15
       const rotationSpeedValue =
         rotationSpeedBase > 0
           ? rotationSpeedBase * ROTATION_SPEED_MAX * rotationSpeedMultiplier
@@ -776,27 +854,65 @@ const computeSprite = (state: GeneratorState): PreparedSprite => {
       // Gradient assignment is now done during rendering, not during computation
       // This allows toggling gradients without regenerating sprite positions/scales
       
-      // If randomSprites is enabled, assign a random shape to each tile
-      // Otherwise, use the activeShape from spriteMode
-      const tileShape = state.randomSprites
-        ? (shapeModes[Math.floor(rng() * shapeModes.length)] as ShapeMode)
-        : activeShape;
-      
-      tiles.push({
-        kind: "shape",
-        shape: tileShape,
-        tint,
-        paletteColorIndex,
-        u,
-        v,
-        scale,
-        blendMode: tileBlend,
-        rotationBase,
-        rotationDirection,
-        rotationSpeed: rotationSpeedValue,
-        rotationBaseMultiplier,
-        rotationSpeedMultiplier,
-      });
+      if (isShapeBased) {
+        // Shape-based collection (primitives)
+        // If randomSprites is enabled, assign a random shape to each tile
+        // Otherwise, use the activeShape from spriteMode
+        const tileShape = state.randomSprites
+          ? (shapeModes[Math.floor(rng() * shapeModes.length)] as ShapeMode)
+          : activeShape;
+        
+        tiles.push({
+          kind: "shape",
+          shape: tileShape,
+          tint,
+          paletteColorIndex,
+          u,
+          v,
+          scale,
+          blendMode: tileBlend,
+          rotationBase,
+          rotationDirection,
+          rotationSpeed: rotationSpeedValue,
+          rotationBaseMultiplier,
+          rotationSpeedMultiplier,
+          animationTimeMultiplier,
+        });
+      } else {
+        // SVG-based collection
+        // If randomSprites is enabled, assign a random sprite from collection
+        // Otherwise, use the active SVG sprite
+        let tileSvgSprite = activeSvgSprite;
+        
+        if (state.randomSprites && collection && collection.sprites.length > 0) {
+          // Select a random SVG sprite from the collection
+          const randomIndex = Math.floor(rng() * collection.sprites.length);
+          const randomSprite = collection.sprites[randomIndex];
+          if (randomSprite.svgPath) {
+            tileSvgSprite = { id: randomSprite.id, svgPath: randomSprite.svgPath };
+          }
+        }
+        
+        if (tileSvgSprite) {
+          tiles.push({
+            kind: "svg",
+            svgPath: tileSvgSprite.svgPath,
+            spriteId: tileSvgSprite.id,
+            tint,
+            paletteColorIndex,
+            u,
+            v,
+            scale,
+            blendMode: tileBlend,
+            rotationBase,
+            rotationDirection,
+            rotationSpeed: rotationSpeedValue,
+            rotationBaseMultiplier,
+            rotationSpeedMultiplier,
+            animationTimeMultiplier,
+          });
+        }
+      }
     }
 
     layers.push({
@@ -804,7 +920,7 @@ const computeSprite = (state: GeneratorState): PreparedSprite => {
       tileCount: tileTotal,
       blendMode: layerBlendMode,
       opacity,
-      mode: "shape",
+      mode: isShapeBased ? "shape" : "svg",
       baseSizeRatio,
     });
   }
@@ -855,6 +971,7 @@ export interface SpriteController {
   setDepthOfFieldEnabled: (value: boolean) => void;
   setDepthOfFieldFocus: (value: number) => void;
   setDepthOfFieldStrength: (value: number) => void;
+  setSpriteCollection: (collectionId: string) => void;
   applySingleTilePreset: () => void;
   applyNebulaPreset: () => void;
   applyMinimalGridPreset: () => void;
@@ -1247,7 +1364,10 @@ export const createSpriteController = (
 
       // Depth of field setup
       const MAX_BLUR_RADIUS = 48; // Maximum blur radius in pixels
-      const DOF_THRESHOLD = 0.01; // 1% threshold to skip blur for sprites very close to focus
+      // Increased threshold to skip blur for more sprites (performance optimization at high density)
+      // At 10% threshold, sprites within 10% of focus plane distance won't get blur applied
+      // This significantly improves performance when DoF is enabled with many tiles
+      const DOF_THRESHOLD = 0.1; // 10% threshold to skip blur for sprites close to focus
       let minSize = Infinity;
       let maxSize = 0;
       
@@ -1260,21 +1380,21 @@ export const createSpriteController = (
           const baseLayerSize = drawSize * layer.baseSizeRatio;
           
           layer.tiles.forEach((tile, tileIndex) => {
-            if (tile.kind === "shape") {
-              const baseShapeSize =
+            if (tile.kind === "shape" || tile.kind === "svg") {
+              const baseSpriteSize =
                 baseLayerSize * tile.scale * (1 + layerIndex * 0.08);
               const movement = computeMovementOffsets(currentState.movementMode, {
-                time: scaledAnimationTime,
+                time: scaledAnimationTime * tile.animationTimeMultiplier,
                 phase: tileIndex * 7, // Use actual tile phase for accurate size calculation
                 motionScale,
                 layerIndex,
-                baseUnit: baseShapeSize,
+                baseUnit: baseSpriteSize,
                 layerTileSize: baseLayerSize,
                 speedFactor: 1.0,
               });
-              const shapeSize = baseShapeSize * movement.scaleMultiplier;
-              minSize = Math.min(minSize, shapeSize);
-              maxSize = Math.max(maxSize, shapeSize);
+              const spriteSize = baseSpriteSize * movement.scaleMultiplier;
+              minSize = Math.min(minSize, spriteSize);
+              maxSize = Math.max(maxSize, spriteSize);
             }
           });
         });
@@ -1314,7 +1434,7 @@ export const createSpriteController = (
             const baseShapeSize =
               baseLayerSize * tile.scale * (1 + layerIndex * 0.08);
             movement = computeMovementOffsets(currentState.movementMode, {
-              time: scaledAnimationTime, // Use smoothly accumulating scaled time
+              time: scaledAnimationTime * tile.animationTimeMultiplier, // Use smoothly accumulating scaled time with per-tile variation
               phase: tileIndex * 7,
               motionScale,
               layerIndex,
@@ -1360,13 +1480,14 @@ export const createSpriteController = (
             const allowableOverflow = Math.max(drawSize * 0.6, shapeSize * 1.25);
             
             // Clamp positions to canvas bounds with overflow allowance
+            // Note: baseX/baseY already includes movement.offsetX/offsetY, so don't add it again
             const clampedX = clamp(
-              baseX + finalMovement.offsetX,
+              baseX,
               offsetX + halfSize - allowableOverflow,
               offsetX + drawSize - halfSize + allowableOverflow,
             );
             const clampedY = clamp(
-              baseY + finalMovement.offsetY,
+              baseY,
               offsetY + halfSize - allowableOverflow,
               offsetY + drawSize - halfSize + allowableOverflow,
             );
@@ -1734,6 +1855,180 @@ export const createSpriteController = (
             // Reset filter after drawing sprite
             ctx.filter = 'none';
             p.pop();
+          } else if (tile.kind === "svg") {
+            // SVG sprite rendering
+            const baseSvgSize =
+              baseLayerSize * tile.scale * (1 + layerIndex * 0.08);
+            movement = computeMovementOffsets(currentState.movementMode, {
+              time: scaledAnimationTime * tile.animationTimeMultiplier, // Use per-tile animation time variation
+              phase: tileIndex * 7,
+              motionScale,
+              layerIndex,
+              baseUnit: baseSvgSize,
+              layerTileSize: baseLayerSize,
+              speedFactor: 1.0,
+            });
+            
+            const baseX = offsetX + normalizedU * drawSize + movement.offsetX;
+            const baseY = offsetY + normalizedV * drawSize + movement.offsetY;
+            
+            const finalMovement = movement;
+            const svgSize = baseSvgSize * finalMovement.scaleMultiplier;
+            const opacityValue = clamp(currentState.layerOpacity / 100, 0.12, 1);
+            const opacityAlpha = Math.round(opacityValue * 255);
+
+            // Calculate depth of field blur
+            let blurAmount = 0;
+            if (currentState.depthOfFieldEnabled && hasValidSizeRange && maxBlur > 0) {
+              const normalizedZ = sizeRange > 0 ? (svgSize - minSize) / sizeRange : 0.5;
+              const distance = Math.abs(normalizedZ - focusZ);
+              const normalizedDist = distance;
+              blurAmount = Math.pow(normalizedDist, 2) * maxBlur;
+              if (blurAmount < DOF_THRESHOLD * maxBlur) {
+                blurAmount = 0;
+              }
+            }
+
+            p.push();
+            
+            // Apply blur filter if needed
+            if (blurAmount > 0) {
+              ctx.filter = `blur(${blurAmount}px)`;
+            } else {
+              ctx.filter = 'none';
+            }
+            
+            const halfSize = svgSize / 2;
+            const allowableOverflow = Math.max(drawSize * 0.6, svgSize * 1.25);
+            
+            // Clamp positions to canvas bounds with overflow allowance
+            // Note: baseX/baseY already includes movement.offsetX/offsetY, so don't add it again
+            const clampedX = clamp(
+              baseX,
+              offsetX + halfSize - allowableOverflow,
+              offsetX + drawSize - halfSize + allowableOverflow,
+            );
+            const clampedY = clamp(
+              baseY,
+              offsetY + halfSize - allowableOverflow,
+              offsetY + drawSize - halfSize + allowableOverflow,
+            );
+            p.translate(clampedX, clampedY);
+            
+            // Apply rotation
+            const rotationTime = scaledAnimationTime;
+            const rotationSpeedBase = clamp(currentState.rotationSpeed, 0, 100) / 100;
+            const rotationSpeed = currentState.rotationAnimated && rotationSpeedBase > 0
+              ? rotationSpeedBase * ROTATION_SPEED_MAX * tile.rotationSpeedMultiplier
+              : 0;
+            const rotationRange = degToRad(clamp(currentState.rotationAmount, 0, MAX_ROTATION_DEGREES));
+            const rotationBase = rotationRange * tile.rotationBaseMultiplier;
+            const rotationAngle =
+              (currentState.rotationEnabled ? rotationBase : 0) +
+              rotationSpeed * tile.rotationDirection * rotationTime;
+            if (rotationAngle !== 0) {
+              p.rotate(rotationAngle);
+            }
+            
+            // Load and draw SVG image
+            // Use synchronous cache lookup - images should be preloaded
+            // SVGO processing should have already cleaned up the SVGs to remove frames
+            const cachedImg = getCachedSpriteImage(tile.svgPath);
+            if (cachedImg) {
+              ctx.save();
+              ctx.globalAlpha = opacityAlpha / 255;
+              
+              // SVGs are now processed with tight viewBoxes, so no padding compensation needed
+              // The processed SVG has a viewBox that exactly matches the content bounds
+              // Use the stored aspect ratio from viewBox to prevent square containers
+              // Fallback to natural dimensions if stored ratio isn't available
+              let aspectRatio: number;
+              if ((cachedImg as any).__svgAspectRatio) {
+                // Use stored aspect ratio from viewBox (most accurate)
+                aspectRatio = (cachedImg as any).__svgAspectRatio;
+              } else {
+                // Fallback to natural dimensions
+                const naturalWidth = cachedImg.naturalWidth || cachedImg.width || 1;
+                const naturalHeight = cachedImg.naturalHeight || cachedImg.height || 1;
+                aspectRatio = naturalWidth / naturalHeight;
+              }
+              
+              // Calculate width and height based on aspect ratio
+              // Use svgSize as the base size (largest dimension) and scale proportionally
+              let scaledWidth = svgSize;
+              let scaledHeight = svgSize;
+              
+              if (aspectRatio > 1) {
+                // Wider than tall - width is the base
+                scaledHeight = svgSize / aspectRatio;
+              } else {
+                // Taller than wide (or square) - height is the base
+                scaledWidth = svgSize * aspectRatio;
+              }
+              
+              // Render SVG directly using Path2D to avoid square container issues
+              // This bypasses Image element rasterization which might create square frames
+              const svgPathData = (cachedImg as any).__svgPathData;
+              const svgViewBox = (cachedImg as any).__svgViewBox;
+              
+              if (svgPathData && svgViewBox) {
+                // Get viewBox dimensions for scaling
+                const vbX = svgViewBox.x || 0;
+                const vbY = svgViewBox.y || 0;
+                const vbWidth = svgViewBox.width;
+                const vbHeight = svgViewBox.height;
+                
+                // Calculate scale factors to fit within scaledWidth/scaledHeight
+                const scaleX = scaledWidth / vbWidth;
+                const scaleY = scaledHeight / vbHeight;
+                
+                // Draw the path directly on canvas
+                ctx.globalCompositeOperation = "source-over";
+                ctx.fillStyle = tile.tint; // Use tint color directly
+                
+                // Transform to center and scale the path
+                // First translate by negative viewBox origin, then scale, then center
+                ctx.save();
+                ctx.translate(-scaledWidth / 2, -scaledHeight / 2);
+                ctx.scale(scaleX, scaleY);
+                ctx.translate(-vbX, -vbY); // Offset by viewBox origin
+                
+                // Create and fill the path
+                const path = new Path2D(svgPathData);
+                ctx.fill(path);
+                
+                ctx.restore();
+              } else {
+                // Fallback: Draw image if path data not available
+                ctx.globalCompositeOperation = "source-over";
+                ctx.drawImage(
+                  cachedImg, 
+                  -scaledWidth / 2, 
+                  -scaledHeight / 2, 
+                  scaledWidth, 
+                  scaledHeight
+                );
+                
+                // Apply tint color using multiply
+                ctx.globalCompositeOperation = "multiply";
+                ctx.fillStyle = tile.tint;
+                ctx.fillRect(-scaledWidth / 2, -scaledHeight / 2, scaledWidth, scaledHeight);
+              }
+              
+              // Restore composite operation
+              ctx.globalCompositeOperation = "source-over";
+              ctx.restore();
+            } else {
+              // Image not loaded yet - load it asynchronously
+              // This will show up on next frame once loaded
+              loadSpriteImage(tile.svgPath).catch((error) => {
+                console.warn(`Failed to load sprite image: ${tile.svgPath}`, error);
+              });
+            }
+            
+            // Reset filter after drawing sprite
+            ctx.filter = 'none';
+            p.pop();
           }
         });
 
@@ -1782,7 +2077,7 @@ export const createSpriteController = (
         spriteModePool[Math.floor(Math.random() * spriteModePool.length)];
       stateRef.current.spriteMode = nextMode;
       stateRef.current.paletteId = getRandomPalette().id;
-      stateRef.current.scalePercent = randomInt(220, 960);
+      stateRef.current.scalePercent = randomInt(220, MAX_DENSITY_PERCENT_UI - 60); // Use max minus small buffer
       stateRef.current.scaleBase = randomInt(52, 88);
       stateRef.current.scaleSpread = randomInt(42, 96);
       stateRef.current.paletteVariance = randomInt(32, 128);
@@ -1968,9 +2263,50 @@ export const createSpriteController = (
       applyState({ layerOpacity: clamp(value, 15, 100) }, { recompute: false });
     },
     setSpriteMode: (mode: SpriteMode) => {
-      if (!shapeModes.includes(mode as ShapeMode)) {
+      // Get the current collection ID - if not set, default to primitives
+      const collectionId = stateRef.current.spriteCollectionId || "primitives";
+      const collection = getCollection(collectionId);
+      
+      if (!collection) {
+        // Collection doesn't exist - fallback to primitives
+        const primitivesCollection = getCollection("primitives");
+        if (primitivesCollection?.isShapeBased && shapeModes.includes(mode as ShapeMode)) {
+          applyState({ spriteCollectionId: "primitives", spriteMode: mode });
+        }
         return;
       }
+      
+      if (collection.isShapeBased) {
+        // For primitives, validate it's a shape mode
+        if (shapeModes.includes(mode as ShapeMode)) {
+          applyState({ spriteMode: mode });
+        }
+        return;
+      }
+      
+      // For SVG collections, validate the sprite exists in the collection
+      const sprite = getSpriteInCollection(collectionId, mode);
+      if (sprite) {
+        // Sprite found in current collection - update mode
+        applyState({ spriteMode: mode });
+        return;
+      }
+      
+      // Sprite not found in current collection - try to find it in any collection
+      const allCollections = getAllCollections();
+      for (const coll of allCollections) {
+        if (!coll.isShapeBased) {
+          const foundSprite = getSpriteInCollection(coll.id, mode);
+          if (foundSprite) {
+            // Found it in another collection - switch to that collection and mode
+            applyState({ spriteCollectionId: coll.id, spriteMode: mode });
+            return;
+          }
+        }
+      }
+      
+      // Sprite not found anywhere - try to update mode anyway (might be a race condition)
+      // The renderer will fall back to the first sprite in the collection if invalid
       applyState({ spriteMode: mode });
     },
     setMovementMode: (mode: MovementMode) => {
@@ -2083,6 +2419,43 @@ export const createSpriteController = (
     setDepthOfFieldStrength: (value: number) => {
       // Blur strength is applied during rendering, no regeneration needed
       applyState({ depthOfFieldStrength: clamp(value, 0, 100) }, { recompute: false });
+    },
+    setSpriteCollection: (collectionId: string) => {
+      const collection = getCollection(collectionId);
+      if (collection) {
+        // Clear sprite image cache when switching collections
+        // This ensures new/modified SVG files are reloaded
+        clearSpriteImageCache();
+        
+        // If current sprite mode is not in new collection, switch to first sprite
+        const currentSpriteId = stateRef.current.spriteMode;
+        const spriteInCollection = collection.sprites.find(s => 
+          s.id === currentSpriteId || s.spriteMode === currentSpriteId
+        );
+        
+        if (!spriteInCollection && collection.sprites.length > 0) {
+          // Switch to first sprite in collection
+          const firstSprite = collection.sprites[0];
+          if (collection.isShapeBased && firstSprite.spriteMode) {
+            applyState({ 
+              spriteCollectionId: collectionId,
+              spriteMode: firstSprite.spriteMode 
+            });
+          } else if (!collection.isShapeBased && firstSprite.id) {
+            // For SVG collections, use the sprite ID as the mode
+            applyState({ 
+              spriteCollectionId: collectionId,
+              spriteMode: firstSprite.id as SpriteMode
+            });
+          } else {
+            // Fallback: just update collection ID
+            applyState({ spriteCollectionId: collectionId });
+          }
+        } else {
+          // Keep current sprite, just update collection
+          applyState({ spriteCollectionId: collectionId });
+        }
+      }
     },
     applySingleTilePreset: () => {
       updateSeed();

@@ -1,8 +1,10 @@
 import type { SpriteMode } from "@/types/generator";
+import { useState, useEffect } from "react";
 
 interface ShapeIconProps {
   shape: SpriteMode;
   size?: number;
+  svgPath?: string; // Optional SVG path for custom sprite icons
 }
 
 /**
@@ -11,7 +13,109 @@ interface ShapeIconProps {
  * Renders SVG icons for different sprite shapes.
  * Used in the sprite selection buttons to provide visual previews.
  */
-export function ShapeIcon({ shape, size = 24 }: ShapeIconProps) {
+export function ShapeIcon({ shape, size = 24, svgPath }: ShapeIconProps) {
+  const [svgContent, setSvgContent] = useState<string | null>(null);
+  const [svgError, setSvgError] = useState(false);
+
+  // Load SVG if svgPath is provided
+  useEffect(() => {
+    if (svgPath) {
+      fetch(svgPath)
+        .then((res) => res.text())
+        .then((text) => setSvgContent(text))
+        .catch(() => setSvgError(true));
+    }
+  }, [svgPath]);
+
+  // If SVG path is provided and loaded, render the SVG directly
+  if (svgPath && svgContent && !svgError) {
+    // Parse the SVG to extract viewBox and inner content
+    const svgMatch = svgContent.match(/<svg[^>]*>([\s\S]*)<\/svg>/i);
+    if (!svgMatch) {
+      return null;
+    }
+    
+    let innerContent = svgMatch[1];
+    // Extract viewBox from original SVG, or use default
+    const viewBoxMatch = svgContent.match(/viewBox="([^"]*)"/i);
+    const viewBox = viewBoxMatch ? viewBoxMatch[1] : "0 0 24 24";
+    
+    // Parse viewBox to get dimensions
+    const viewBoxParts = viewBox.split(/\s+/).map(v => parseFloat(v));
+    const viewBoxWidth = viewBoxParts[2] || 24;
+    const viewBoxHeight = viewBoxParts[3] || 24;
+    
+    // Remove background/frame rectangles
+    // These are typically full-size rectangles positioned at (0,0) or very close to viewBox size
+    // Match both self-closing and paired rect tags
+    innerContent = innerContent.replace(/<rect[^>]*\/?\s*>/gi, (match) => {
+      const widthMatch = match.match(/width=["']?([0-9.]+)["']?/i);
+      const heightMatch = match.match(/height=["']?([0-9.]+)["']?/i);
+      const xMatch = match.match(/x=["']?([0-9.-]+)["']?/i);
+      const yMatch = match.match(/y=["']?([0-9.-]+)["']?/i);
+      
+      if (widthMatch && heightMatch) {
+        const width = parseFloat(widthMatch[1]);
+        const height = parseFloat(heightMatch[1]);
+        const x = xMatch ? parseFloat(xMatch[1]) : 0;
+        const y = yMatch ? parseFloat(yMatch[1]) : 0;
+        
+        // Check if this is a full-size background rectangle
+        const isFullWidth = Math.abs(width - viewBoxWidth) < 0.5;
+        const isFullHeight = Math.abs(height - viewBoxHeight) < 0.5;
+        const isAtOrigin = Math.abs(x) < 0.5 && Math.abs(y) < 0.5;
+        
+        // If it's a full-size rect at origin, remove it (it's likely a frame/background)
+        if (isFullWidth && isFullHeight && isAtOrigin) {
+          return '';
+        }
+      }
+      
+      return match;
+    });
+    
+    // Clean up any orphaned closing tags
+    innerContent = innerContent.replace(/<\/rect>/gi, '');
+    
+    // Replace fill colors with currentColor for theming (white/black based on theme)
+    // This makes SVG icons follow the theme like primitive icons do
+    let processedContent = innerContent
+      .replace(/fill="[^"]*"/g, 'fill="currentColor"')
+      .replace(/fill:[^;"]+/g, 'fill:currentColor')
+      .replace(/stroke="[^"]*"/g, 'stroke="currentColor"')
+      .replace(/stroke:[^;"]+/g, 'stroke:currentColor');
+    
+    return (
+      <svg
+        width={size}
+        height={size}
+        viewBox={viewBox}
+        style={{ display: "block", overflow: "visible" }}
+        fill="currentColor"
+        dangerouslySetInnerHTML={{ __html: processedContent }}
+      />
+    );
+  }
+
+  // Fallback to shape rendering if SVG loading failed or not provided
+  if (svgPath && svgError) {
+    // Show a placeholder if SVG fails to load
+    return (
+      <div
+        style={{
+          width: size,
+          height: size,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "currentColor",
+          opacity: 0.2,
+          borderRadius: "4px",
+        }}
+      />
+    );
+  }
+
   const viewBox = "0 0 24 24";
   const center = 12;
   const radius = 8;

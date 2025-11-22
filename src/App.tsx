@@ -23,7 +23,7 @@ import type {
   MovementMode,
 } from "./types/generator";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import { WelcomeScreen, TabOnboarding, OnboardingTour, type TabName } from "./components/Onboarding";
+import { OnboardingPanel } from "./components/Onboarding";
 import { hasSeenWelcome } from "./lib/storage/onboardingStorage";
 
 // Lazy load modals for better initial load performance
@@ -45,6 +45,7 @@ import { useFullscreen } from "./hooks/useFullscreen";
 import { useSpriteController } from "./hooks/useSpriteController";
 import { formatMovementMode } from "./constants/movement";
 import { SPRITE_MODES } from "./constants/sprites";
+import { getCollection, getSpriteInCollection } from "./constants/spriteCollections";
 import {
   formatBlendMode,
   generatePaletteOptions,
@@ -90,16 +91,7 @@ const App = () => {
   const canvasWrapperRef = useRef<HTMLDivElement | null>(null);
   
   // Onboarding state
-  const [showWelcome, setShowWelcome] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabName | null>(null);
-  const [showTabOnboarding, setShowTabOnboarding] = useState(false);
-  const [showTour, setShowTour] = useState(false);
-  const tabRefs = {
-    sprites: useRef<HTMLElement | null>(null),
-    motion: useRef<HTMLElement | null>(null),
-    fx: useRef<HTMLElement | null>(null),
-    canvas: useRef<HTMLElement | null>(null),
-  };
+  const [showOnboarding, setShowOnboarding] = useState(false);
   
   // Use extracted hooks
   const { themeMode, setThemeMode, themeColor, setThemeColor, themeShape, setThemeShape } = useTheme();
@@ -254,37 +246,12 @@ const App = () => {
     if (!hasSeenWelcome() && ready) {
       // Small delay to ensure app is fully loaded
       const timer = setTimeout(() => {
-        setShowWelcome(true);
+        setShowOnboarding(true);
       }, 500);
       return () => clearTimeout(timer);
     }
   }, [ready]);
 
-  // Track tab changes for onboarding (only when welcome is not shown)
-  useEffect(() => {
-    if (showWelcome) {
-      // Ensure tab onboarding stays hidden while welcome screen is visible
-      setShowTabOnboarding(false);
-      return;
-    }
-    // Map tab indices to tab names
-    // Sprites = 0, Colours/FX = 1, Motion = 2 (if visible)
-    const tabMap: Record<number, TabName> = {
-      0: "sprites",
-      1: "fx", // Colours tab maps to fx
-      2: "motion",
-    };
-    
-    const tabName = tabMap[controlTabIndex];
-    if (tabName) {
-      setActiveTab(tabName);
-      // Show onboarding if needed (with small delay for tab transition)
-      const timer = setTimeout(() => {
-        setShowTabOnboarding(true);
-      }, 300);
-      return () => clearTimeout(timer);
-    }
-  }, [controlTabIndex, showWelcome]);
 
   /**
    * Check if columns should be split or merged based on viewport width
@@ -486,10 +453,23 @@ const App = () => {
 
   const currentModeLabel = useMemo(() => {
     if (!spriteState) return SPRITE_MODES[0].label;
-    return (
-      SPRITE_MODES.find((mode) => mode.value === spriteState.spriteMode)
-        ?.label ?? SPRITE_MODES[0].label
-    );
+    
+    // Check if it's a shape-based mode (primitives)
+    const shapeMode = SPRITE_MODES.find((mode) => mode.value === spriteState.spriteMode);
+    if (shapeMode) {
+      return shapeMode.label;
+    }
+    
+    // Otherwise, it might be an SVG sprite from a collection
+    const collection = getCollection(spriteState.spriteCollectionId || "primitives");
+    if (collection && !collection.isShapeBased) {
+      const sprite = getSpriteInCollection(spriteState.spriteCollectionId || "primitives", spriteState.spriteMode);
+      if (sprite) {
+        return sprite.name;
+      }
+    }
+    
+    return SPRITE_MODES[0].label;
   }, [spriteState]);
 
   // Removed: This was preventing Motion tab from working when merged
@@ -694,8 +674,8 @@ const App = () => {
           onThemeModeChange={setThemeMode}
           onThemeColorChange={setThemeColor}
           onThemeShapeChange={setThemeShape}
-          onStartTour={() => {
-            setShowTour(true);
+          onOpenOnboarding={() => {
+            setShowOnboarding(true);
           }}
         />
       </div>
@@ -712,12 +692,12 @@ const App = () => {
                 selectedIndex={controlTabIndex}
                 onChange={setControlTabIndex}
               >
-                <TabsTriggerList className="retro-tabs">
-                  <TabsTrigger>Sprites</TabsTrigger>
-                  <TabsTrigger>Colours</TabsTrigger>
+                <TabsTriggerList variant="top">
+                  <TabsTrigger variant="top">Sprites</TabsTrigger>
+                  <TabsTrigger variant="top">Colours</TabsTrigger>
                   {!isWideLayout && (
                     <>
-                      <TabsTrigger>Motion</TabsTrigger>
+                      <TabsTrigger variant="top">Motion</TabsTrigger>
                     </>
                   )}
                 </TabsTriggerList>
@@ -862,32 +842,11 @@ const App = () => {
         </ErrorBoundary>
       )}
 
-      {/* Onboarding Components */}
-      {showWelcome && (
-        <WelcomeScreen
-          onClose={() => setShowWelcome(false)}
-          onStartTour={() => {
-            setShowWelcome(false);
-            setShowTour(true);
-          }}
-        />
-      )}
-
-      {showTabOnboarding && activeTab && (
-        <TabOnboarding
-          tab={activeTab}
-          isOpen={showTabOnboarding}
-          onClose={() => setShowTabOnboarding(false)}
-          targetElement={tabRefs[activeTab].current}
-        />
-      )}
-
-      {showTour && (
-        <OnboardingTour
-          isOpen={showTour}
-          onClose={() => setShowTour(false)}
-        />
-      )}
+      {/* Onboarding Panel */}
+      <OnboardingPanel
+        isOpen={showOnboarding}
+        onClose={() => setShowOnboarding(false)}
+      />
 
     </div>
     </>

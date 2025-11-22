@@ -36,7 +36,7 @@ export function MotionControls({
   return (
     <>
       <div className="section">
-        {showHeading && <h3 className="section-title">Motion</h3>}
+        {showHeading && <h3 className="section-title">Animation</h3>}
         <ControlSelect
           id="movement-mode"
           label="Movement"
@@ -54,7 +54,7 @@ export function MotionControls({
         />
         <ControlSlider
           id="motion-range"
-          label="Motion Intensity"
+          label="Motion intensity"
           min={0}
           max={100}
           value={Math.round(spriteState.motionIntensity)}
@@ -65,7 +65,7 @@ export function MotionControls({
         />
         <ControlSlider
           id="motion-speed"
-          label="Motion Speed"
+          label="Motion speed"
           min={0}
           max={100}
           value={speedToUi(spriteState.motionSpeed)}
@@ -83,12 +83,12 @@ export function MotionControls({
           <div className="field-heading">
             <div className="field-heading-left">
               <span className="field-label" id="rotation-animate-label">
-                Animate Rotation
+                Animate rotation
               </span>
               <TooltipIcon
                 id="rotation-animate-tip"
                 text="Toggle continuous spinning when rotation offsets are enabled."
-                label="Animate Rotation"
+                label="Animate rotation"
               />
             </div>
           </div>
@@ -106,7 +106,7 @@ export function MotionControls({
           <div className="rotation-slider-wrapper">
             <ControlSlider
               id="rotation-speed"
-              label="Rotation Speed"
+              label="Rotation speed"
               min={0}
               max={100}
               value={Math.round(spriteState.rotationSpeed)}

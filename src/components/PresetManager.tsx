@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from "react";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { animateSuccess, animateShake } from "@/lib/utils/animations";
+import { ButtonGroup } from "@/components/retroui/ButtonGroup";
 import {
   Select,
   SelectTrigger,
@@ -34,6 +35,7 @@ export const PresetManager = ({
   onClose,
 }: PresetManagerProps) => {
   const [presets, setPresets] = useState<Preset[]>(getAllPresets());
+  const [view, setView] = useState<"save" | "load">("load");
   const [saveName, setSaveName] = useState("");
   const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -209,7 +211,7 @@ export const PresetManager = ({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="preset-manager-header">
-          <h2 className="preset-manager-title">Preset Management</h2>
+          <h2 className="preset-manager-title">Preset management</h2>
           <button
             type="button"
             className="preset-manager-close"
@@ -221,71 +223,113 @@ export const PresetManager = ({
         </div>
 
         <div className="preset-manager-content">
-          <div className="section">
-            <h3 className="section-title">Save Current State</h3>
-            <div className="preset-save-form">
-              <input
-                type="text"
-                className="preset-name-input"
-                placeholder="Preset name..."
-                value={saveName}
-                onChange={(e) => setSaveName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && saveName.trim() && currentState) {
-                    handleSave();
-                  }
-                }}
-                disabled={!currentState}
-              />
-              <Button
-                ref={saveButtonRef}
-                type="button"
-                size="md"
-                onClick={handleSave}
-                disabled={!currentState || !saveName.trim()}
-              >
-                Save
-              </Button>
-            </div>
-            {saveError && (
-              <div className="preset-error" role="alert">
-                {saveError}
-              </div>
-            )}
+          <div className="mb-[theme(spacing.4)]">
+            <ButtonGroup
+              value={view}
+              onChange={(value) => setView(value as "save" | "load")}
+              options={[
+                { value: "save", label: "Save" },
+                { value: "load", label: "Load" },
+              ]}
+            />
           </div>
 
-          <div className="section">
-            <h3 className="section-title">Load Preset</h3>
-            {presets.length === 0 ? (
-              <p className="preset-empty">No saved presets</p>
-            ) : (
-              <>
-                <Select
-                  value={selectedPresetId ?? undefined}
-                  onValueChange={setSelectedPresetId}
+          {/* Save View */}
+          {view === "save" && (
+            <div className="section">
+              <div className="preset-save-form">
+                <input
+                  type="text"
+                  className="preset-name-input"
+                  placeholder="Preset name..."
+                  value={saveName}
+                  onChange={(e) => setSaveName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && saveName.trim() && currentState) {
+                      handleSave();
+                    }
+                  }}
+                  disabled={!currentState}
+                />
+                <Button
+                  ref={saveButtonRef}
+                  type="button"
+                  size="md"
+                  variant="outline"
+                  onClick={handleSave}
+                  disabled={!currentState || !saveName.trim()}
+                  className="flex-1"
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a preset..." />
-                  </SelectTrigger>
-                  <SelectContent className="preset-select-dropdown">
-                    <SelectGroup>
-                      {presets.map((preset) => (
-                        <SelectItem key={preset.id} value={preset.id}>
-                          {preset.name}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-                <div className="preset-actions">
+                  Save
+                </Button>
+                {presets.length > 0 && (
                   <Button
                     type="button"
                     size="md"
+                    variant="link"
+                    onClick={handleExportAll}
+                    className="text-[var(--text-muted)] hover:text-[var(--text-color)]"
+                  >
+                    Export all
+                  </Button>
+                )}
+              </div>
+              {saveError && (
+                <div className="preset-error" role="alert">
+                  {saveError}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Load View */}
+          {view === "load" && (
+            <div className="section">
+              {presets.length === 0 ? (
+                <p className="preset-empty">No saved presets</p>
+              ) : (
+                <div className="preset-actions">
+                  <Select
+                    value={selectedPresetId ?? undefined}
+                    onValueChange={setSelectedPresetId}
+                  >
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select a preset..." />
+                    </SelectTrigger>
+                    <SelectContent className="preset-select-dropdown">
+                      <SelectGroup>
+                        {presets.map((preset) => (
+                          <SelectItem key={preset.id} value={preset.id}>
+                            {preset.name}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".json"
+                    onChange={handleImport}
+                    className="preset-import-input"
+                  />
+                  <Button
+                    type="button"
+                    size="md"
+                    variant="outline"
                     onClick={handleLoad}
                     disabled={!selectedPresetId}
-                    className="flex-1"
                   >
                     Load
+                  </Button>
+                  <Button
+                    type="button"
+                    size="md"
+                    variant="link"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="text-[var(--text-muted)] hover:text-[var(--text-color)]"
+                  >
+                    Import
                   </Button>
                   {selectedPresetId && (
                     <Button
@@ -298,70 +342,28 @@ export const PresetManager = ({
                       }}
                       type="button"
                       size="md"
-                      variant="secondary"
+                      variant="outline"
                       onClick={() => handleDelete(selectedPresetId)}
+                      className="text-[var(--destructive)] border-[var(--destructive)] hover:bg-[color-mix(in_srgb,var(--destructive)_15%,transparent)]"
                     >
                       Delete
                     </Button>
                   )}
                 </div>
-              </>
-            )}
-          </div>
+              )}
+              {importSuccess && (
+                <div className="preset-success mt-[theme(spacing.2)]" role="alert">
+                  {importSuccess}
+                </div>
+              )}
+              {importError && (
+                <div className="preset-error mt-[theme(spacing.2)]" role="alert">
+                  {importError}
+                </div>
+              )}
+            </div>
+          )}
 
-          <div className="section">
-            <h3 className="section-title">Export &amp; Import</h3>
-            <div className="preset-export-actions">
-              <Button
-                type="button"
-                size="md"
-                variant="outline"
-                onClick={handleExportAll}
-                disabled={presets.length === 0}
-                className="flex-1"
-              >
-                Export all
-              </Button>
-              <Button
-                type="button"
-                size="md"
-                variant="outline"
-                onClick={handleExportSelected}
-                disabled={!selectedPresetId}
-                className="flex-1"
-              >
-                Export selected
-              </Button>
-            </div>
-            <div className="preset-import-section">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".json"
-                onChange={handleImport}
-                className="preset-import-input"
-              />
-              <Button
-                type="button"
-                size="md"
-                variant="outline"
-                className="w-full"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                Import presets
-              </Button>
-            </div>
-            {importSuccess && (
-              <div className="preset-success" role="alert">
-                {importSuccess}
-              </div>
-            )}
-            {importError && (
-              <div className="preset-error" role="alert">
-                {importError}
-              </div>
-            )}
-          </div>
         </div>
       </Card>
     </div>

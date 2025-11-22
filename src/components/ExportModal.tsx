@@ -4,14 +4,8 @@ import { Card } from "@/components/Card";
 import { Accordion } from "@/components/retroui/Accordion";
 import { Input } from "@/components/retroui/Input";
 import { Label } from "@/components/retroui/Label";
-import {
-  Tabs,
-  TabsTriggerList,
-  TabsTrigger,
-  TabsPanels,
-  TabsContent,
-} from "@/components/retroui/Tab";
-import { X, Settings2, Share2, Copy, Check, Download } from "lucide-react";
+import { ButtonGroup } from "@/components/retroui/ButtonGroup";
+import { Settings2, Share2, Copy, Check, Download } from "lucide-react";
 import p5 from "p5";
 import { exportCanvas, downloadImage, createThumbnail, getCanvasFromP5, addLogoToCanvas, generateExportFilename } from "@/lib/services";
 import { animateSuccess } from "@/lib/utils/animations";
@@ -75,7 +69,7 @@ export const ExportModal = ({
   const exportButtonRef = useRef<HTMLButtonElement>(null);
   const shareButtonRef = useRef<HTMLButtonElement>(null);
   const copyButtonRef = useRef<HTMLButtonElement>(null);
-  const [selectedTabIndex, setSelectedTabIndex] = useState(0);
+  const [exportType, setExportType] = useState<"image" | "movie">("image"); // Movie export not ready yet
   const [isSharing, setIsSharing] = useState(false);
   const [shareError, setShareError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -335,35 +329,47 @@ export const ExportModal = ({
       setIsSharing(true);
       setShareError(null);
 
-      const canvas = getCanvasFromP5(p5Instance);
-      if (!canvas) {
-        setShareError("Canvas not found");
+      // Use custom dimensions from advanced options
+      const exportWidth = width;
+      const exportHeight = height;
+
+      // Validate dimensions
+      if (!isFinite(exportWidth) || !isFinite(exportHeight)) {
+        setShareError("Dimensions must be valid numbers");
+        setIsSharing(false);
+        return;
+      }
+      if (exportWidth < 100 || exportWidth > 16384 || exportHeight < 100 || exportHeight > 16384) {
+        setShareError("Dimensions must be between 100px and 16384px");
         setIsSharing(false);
         return;
       }
 
-      // Create a temporary canvas with logo
-      const tempCanvas = document.createElement("canvas");
-      tempCanvas.width = canvas.width;
-      tempCanvas.height = canvas.height;
-      const tempCtx = tempCanvas.getContext("2d");
-      if (!tempCtx) {
-        setShareError("Failed to create canvas context");
-        setIsSharing(false);
-        return;
+      // Ensure animation is paused
+      if (controller) {
+        controller.pauseAnimation();
+        await new Promise(resolve => setTimeout(resolve, 50));
       }
 
-      // Draw the original canvas
-      tempCtx.drawImage(canvas, 0, 0);
-      
-      // Add logo with palette from controller if available
+      // Calculate scale factor for high-resolution exports
+      const currentSize = Math.max(currentCanvasSize.width, currentCanvasSize.height);
+      const targetSize = Math.max(exportWidth, exportHeight);
+      const scale = targetSize > currentSize * 2 
+        ? Math.min(3, Math.ceil(targetSize / currentSize / 1.5))
+        : 1;
+
+      // Export canvas at custom dimensions
       const paletteId = controller?.getState()?.paletteId;
-      await addLogoToCanvas(tempCtx, canvas.width, canvas.height, tempCanvas, paletteId);
+      const dataUrl = await exportCanvas(p5Instance, {
+        width: exportWidth,
+        height: exportHeight,
+        format: "png",
+        scale: Math.min(scale, 3),
+      }, paletteId);
 
-      // Convert canvas to blob
-      const blob = await new Promise<Blob | null>((resolve) => {
-        tempCanvas.toBlob((blob) => resolve(blob), "image/png");
-      });
+      // Convert data URL to blob
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
 
       if (!blob) {
         setShareError("Failed to create image");
@@ -373,7 +379,7 @@ export const ExportModal = ({
 
       // Generate filename for share
       const state = controller?.getState() || null;
-      const shareFilename = generateExportFilename(state);
+      const shareFilename = generateExportFilename(state, exportWidth, exportHeight);
       const file = new File([blob], shareFilename, { type: "image/png" });
 
       // Check if Web Share API is available
@@ -412,22 +418,33 @@ export const ExportModal = ({
         } catch (err) {
           // If clipboard API fails, fall back to download
           const state = controller?.getState() || null;
-          const filename = generateExportFilename(state);
-          downloadImage(tempCanvas.toDataURL("image/png"), filename);
+          const filename = generateExportFilename(state, exportWidth, exportHeight);
+          downloadImage(dataUrl, filename);
           if (shareButtonRef.current) {
             animateSuccess(shareButtonRef.current);
           }
         }
+      }
+
+      // Resume animation
+      if (controller && wasAnimatingRef.current) {
+        controller.resumeAnimation();
+        wasAnimatingRef.current = false;
       }
     } catch (error) {
       // User cancelled or error occurred
       if (error instanceof Error && error.name !== "AbortError") {
         setShareError(error.message || "Share failed");
       }
+      // Resume animation even if share fails
+      if (controller && wasAnimatingRef.current) {
+        controller.resumeAnimation();
+        wasAnimatingRef.current = false;
+      }
     } finally {
       setIsSharing(false);
     }
-  }, [p5Instance, controller]);
+  }, [p5Instance, controller, width, height, currentCanvasSize]);
 
   const handleCopyToClipboard = useCallback(async () => {
     try {
@@ -438,33 +455,45 @@ export const ExportModal = ({
 
       setShareError(null);
 
-      const canvas = getCanvasFromP5(p5Instance);
-      if (!canvas) {
-        setShareError("Canvas not found");
+      // Use custom dimensions from advanced options
+      const exportWidth = width;
+      const exportHeight = height;
+
+      // Validate dimensions
+      if (!isFinite(exportWidth) || !isFinite(exportHeight)) {
+        setShareError("Dimensions must be valid numbers");
+        return;
+      }
+      if (exportWidth < 100 || exportWidth > 16384 || exportHeight < 100 || exportHeight > 16384) {
+        setShareError("Dimensions must be between 100px and 16384px");
         return;
       }
 
-      // Create a temporary canvas with logo
-      const tempCanvas = document.createElement("canvas");
-      tempCanvas.width = canvas.width;
-      tempCanvas.height = canvas.height;
-      const tempCtx = tempCanvas.getContext("2d");
-      if (!tempCtx) {
-        setShareError("Failed to create canvas context");
-        return;
+      // Ensure animation is paused
+      if (controller) {
+        controller.pauseAnimation();
+        await new Promise(resolve => setTimeout(resolve, 50));
       }
 
-      // Draw the original canvas
-      tempCtx.drawImage(canvas, 0, 0);
-      
-      // Add logo with palette from controller if available
+      // Calculate scale factor for high-resolution exports
+      const currentSize = Math.max(currentCanvasSize.width, currentCanvasSize.height);
+      const targetSize = Math.max(exportWidth, exportHeight);
+      const scale = targetSize > currentSize * 2 
+        ? Math.min(3, Math.ceil(targetSize / currentSize / 1.5))
+        : 1;
+
+      // Export canvas at custom dimensions
       const paletteId = controller?.getState()?.paletteId;
-      await addLogoToCanvas(tempCtx, canvas.width, canvas.height, tempCanvas, paletteId);
+      const dataUrl = await exportCanvas(p5Instance, {
+        width: exportWidth,
+        height: exportHeight,
+        format: "png",
+        scale: Math.min(scale, 3),
+      }, paletteId);
 
-      // Convert canvas to blob
-      const blob = await new Promise<Blob | null>((resolve) => {
-        tempCanvas.toBlob((blob) => resolve(blob), "image/png");
-      });
+      // Convert data URL to blob
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
 
       if (!blob) {
         setShareError("Failed to create image");
@@ -482,14 +511,25 @@ export const ExportModal = ({
         animateSuccess(copyButtonRef.current);
       }
       setTimeout(() => setCopied(false), 2000);
+
+      // Resume animation
+      if (controller && wasAnimatingRef.current) {
+        controller.resumeAnimation();
+        wasAnimatingRef.current = false;
+      }
     } catch (error) {
       setShareError(
         error instanceof Error
           ? error.message
           : "Failed to copy to clipboard"
       );
+      // Resume animation even if copy fails
+      if (controller && wasAnimatingRef.current) {
+        controller.resumeAnimation();
+        wasAnimatingRef.current = false;
+      }
     }
-  }, [p5Instance, controller]);
+  }, [p5Instance, controller, width, height, currentCanvasSize]);
 
   const handleQuickDownload = useCallback(async () => {
     if (!p5Instance) {
@@ -497,41 +537,65 @@ export const ExportModal = ({
       return;
     }
 
-    const canvas = getCanvasFromP5(p5Instance);
-    if (!canvas) {
-      setError("Canvas not found");
+    // Use custom dimensions from advanced options
+    const exportWidth = width;
+    const exportHeight = height;
+
+    // Validate dimensions
+    if (!isFinite(exportWidth) || !isFinite(exportHeight)) {
+      setError("Dimensions must be valid numbers");
+      return;
+    }
+    if (exportWidth < 100 || exportWidth > 16384 || exportHeight < 100 || exportHeight > 16384) {
+      setError("Dimensions must be between 100px and 16384px");
       return;
     }
 
     try {
-      // Create a temporary canvas with logo
-      const tempCanvas = document.createElement("canvas");
-      tempCanvas.width = canvas.width;
-      tempCanvas.height = canvas.height;
-      const tempCtx = tempCanvas.getContext("2d");
-      if (!tempCtx) {
-        setError("Failed to create canvas context");
-        return;
+      // Ensure animation is paused
+      if (controller) {
+        controller.pauseAnimation();
+        await new Promise(resolve => setTimeout(resolve, 50));
       }
 
-      // Draw the original canvas
-      tempCtx.drawImage(canvas, 0, 0);
-      
-      // Add logo with palette from controller if available
+      // Calculate scale factor for high-resolution exports
+      const currentSize = Math.max(currentCanvasSize.width, currentCanvasSize.height);
+      const targetSize = Math.max(exportWidth, exportHeight);
+      const scale = targetSize > currentSize * 2 
+        ? Math.min(3, Math.ceil(targetSize / currentSize / 1.5))
+        : 1;
+
+      // Export canvas at custom dimensions
       const paletteId = controller?.getState()?.paletteId;
-      await addLogoToCanvas(tempCtx, canvas.width, canvas.height, tempCanvas, paletteId);
+      const dataUrl = await exportCanvas(p5Instance, {
+        width: exportWidth,
+        height: exportHeight,
+        format: "png",
+        scale: Math.min(scale, 3),
+      }, paletteId);
 
       // Generate filename based on generator settings
       const state = controller?.getState() || null;
-      const filename = generateExportFilename(state, canvas.width, canvas.height);
-      downloadImage(tempCanvas.toDataURL("image/png"), filename);
+      const filename = generateExportFilename(state, exportWidth, exportHeight);
+      downloadImage(dataUrl, filename);
       if (exportButtonRef.current) {
         animateSuccess(exportButtonRef.current);
       }
+
+      // Resume animation
+      if (controller && wasAnimatingRef.current) {
+        controller.resumeAnimation();
+        wasAnimatingRef.current = false;
+      }
     } catch (error) {
       setError(error instanceof Error ? error.message : "Failed to download image");
+      // Resume animation even if download fails
+      if (controller && wasAnimatingRef.current) {
+        controller.resumeAnimation();
+        wasAnimatingRef.current = false;
+      }
     }
-  }, [p5Instance, controller]);
+  }, [p5Instance, controller, width, height, currentCanvasSize]);
 
   if (!isOpen) {
     return null;
@@ -549,29 +613,32 @@ export const ExportModal = ({
       <Card className="export-modal export-modal--compact" onClick={(e) => e.stopPropagation()}>
         <div className="export-modal-header">
           <h2 className="export-modal-title">Export canvas</h2>
-          <Button
+          <button
             type="button"
-            variant="outline"
-            size="icon"
+            className="preset-manager-close"
             onClick={handleClose}
             disabled={isExporting}
             aria-label="Close export modal"
-            className="export-modal-close"
           >
-            <X />
-          </Button>
+            ×
+          </button>
         </div>
 
         <div className="export-modal-content">
-          <Tabs selectedIndex={selectedTabIndex} onChange={setSelectedTabIndex}>
-            <TabsTriggerList className="retro-tabs mb-[theme(spacing.4)]">
-              <TabsTrigger>Image</TabsTrigger>
-              <TabsTrigger>Movie</TabsTrigger>
-            </TabsTriggerList>
-            <TabsPanels>
-              <TabsContent>
+          {/* <div className="mb-4">
+            <ButtonGroup
+              value={exportType}
+              onChange={(value) => setExportType(value as "image" | "movie")}
+              options={[
+                { value: "image", label: "Image" },
+                { value: "movie", label: "Movie" },
+              ]}
+            />
+          </div> */}
+          {exportType === "image" && (
+            <div>
                 {/* Compact Preview & Quick Actions */}
-                <div className="export-quick-section mb-[theme(spacing.4)]">
+                <div className="export-quick-section mb-4">
                   <div className="export-preview-compact">
                     {thumbnail ? (
                       <img
@@ -594,69 +661,8 @@ export const ExportModal = ({
                   </div>
                 </div>
 
-                {/* Share & Download Actions */}
-                <div className="section">
-                  <div className="export-actions">
-                    {typeof navigator.share !== "undefined" && (
-                      <Button
-                        ref={shareButtonRef}
-                        type="button"
-                        size="md"
-                        variant="outline"
-                        onClick={handleShare}
-                        disabled={isSharing || !p5Instance}
-                        className="export-action-button"
-                      >
-                        <Share2 className="h-4 w-4" />
-                        {isSharing ? "Sharing..." : "Share"}
-                      </Button>
-                    )}
-
-                    {typeof navigator.clipboard !== "undefined" && typeof ClipboardItem !== "undefined" && (
-                      <Button
-                        ref={copyButtonRef}
-                        type="button"
-                        size="md"
-                        variant="outline"
-                        onClick={handleCopyToClipboard}
-                        disabled={!p5Instance}
-                        className="export-action-button"
-                      >
-                        {copied ? (
-                          <>
-                            <Check className="h-4 w-4" />
-                            Copied!
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="h-4 w-4" />
-                            Copy Image
-                          </>
-                        )}
-                      </Button>
-                    )}
-
-                    <Button
-                      type="button"
-                      size="md"
-                      variant="outline"
-                      onClick={handleQuickDownload}
-                      disabled={!p5Instance}
-                      className="export-action-button"
-                    >
-                      <Download className="h-4 w-4" />
-                      Download
-                    </Button>
-                  </div>
-                  {(shareError || error) && (
-                    <div className="export-error mt-[theme(spacing.2)]" role="alert">
-                      {shareError || error}
-                    </div>
-                  )}
-                </div>
-
                 {/* Advanced Options Accordion */}
-                <Accordion type="single" collapsible className="export-accordion mt-[theme(spacing.4)]">
+                <Accordion type="single" collapsible className="export-accordion mb-4">
                   <Accordion.Item value="advanced">
                     <Accordion.Header>
                       <Settings2 className="export-accordion-icon" />
@@ -668,7 +674,7 @@ export const ExportModal = ({
                       <div className="field-heading">
                         <span className="section-title">Dimensions</span>
                       </div>
-                      <div className="control-field mt-[theme(spacing.3)]">
+                      <div className="control-field mt-3">
                         <div className="field-heading">
                           <span className="field-label">Size</span>
                         </div>
@@ -711,7 +717,7 @@ export const ExportModal = ({
                       </div>
 
                       {/* Presets - Compact Grid */}
-                      <div className="export-presets-compact mt-[theme(spacing.3)]">
+                      <div className="export-presets-compact mt-3">
                         {Object.entries(DIMENSION_PRESETS).map(([category, presets]) => (
                           <div key={category} className="export-preset-category">
                             <div className="export-preset-category-label">{category}</div>
@@ -743,35 +749,84 @@ export const ExportModal = ({
                     </div>
 
                     {/* File size estimate */}
-                    <div className="export-file-size-compact mt-[theme(spacing.2)]">
+                    <div className="export-file-size-compact mt-2">
                       ~{fileSizeEstimate}
                       {isLargeExport && <span className="export-warning-compact"> · Large export</span>}
                     </div>
-
-                    {/* Advanced Export Button */}
-                    <Button
-                      ref={exportButtonRef}
-                      type="button"
-                      variant="outline"
-                      size="md"
-                      onClick={handleExport}
-                      disabled={isExporting || !p5Instance}
-                      className="export-button-full-width mt-[theme(spacing.4)]"
-                      aria-label={isExporting ? "Exporting canvas" : "Export canvas at custom size"}
-                    >
-                      {isExporting ? `Exporting... ${exportProgress > 0 ? `${exportProgress}%` : ""}` : "Export Custom Size"}
-                    </Button>
                     </Accordion.Content>
                   </Accordion.Item>
                 </Accordion>
-              </TabsContent>
-              <TabsContent>
+
+                {/* Share & Download Actions */}
+                <div className="section">
+                  <div className="export-actions">
+                    {typeof navigator.share !== "undefined" && (
+                      <Button
+                        ref={shareButtonRef}
+                        type="button"
+                        size="md"
+                        variant="outline"
+                        onClick={handleShare}
+                        disabled={isSharing || !p5Instance}
+                        className="export-action-button"
+                      >
+                        <Share2 className="h-4 w-4" />
+                        {isSharing ? "Sharing..." : "Share"}
+                      </Button>
+                    )}
+
+                    {typeof navigator.clipboard !== "undefined" && typeof ClipboardItem !== "undefined" && (
+                      <Button
+                        ref={copyButtonRef}
+                        type="button"
+                        size="md"
+                        variant="outline"
+                        onClick={handleCopyToClipboard}
+                        disabled={!p5Instance}
+                        className="export-action-button"
+                      >
+                        {copied ? (
+                          <>
+                            <Check className="h-4 w-4" />
+                            Copied!
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-4 w-4" />
+                            Copy image
+                          </>
+                        )}
+                      </Button>
+                    )}
+
+                    <Button
+                      type="button"
+                      size="md"
+                      variant="outline"
+                      onClick={handleQuickDownload}
+                      disabled={!p5Instance}
+                      className="export-action-button"
+                    >
+                      <Download className="h-4 w-4" />
+                      Download
+                    </Button>
+                  </div>
+                  {(shareError || error) && (
+                    <div className="export-error mt-2" role="alert">
+                      {shareError || error}
+                    </div>
+                  )}
+                </div>
+            </div>
+          )}
+          {exportType === "movie" && (
+            <div>
                 {/* Looping Video Export */}
                 <div className="section">
                   <div className="field-heading">
                     <span className="section-title">Seamless loop (WebM)</span>
                   </div>
-                  <div className="export-dimension-inputs-compact items-center gap-[theme(spacing.3)] mt-[theme(spacing.3)]">
+                  <div className="export-dimension-inputs-compact items-center gap-3 mt-3">
                     <div className="grid w-full max-w-sm items-center gap-1.5">
                       <Label htmlFor="export-fps">Frames per second</Label>
                       <Input
@@ -920,13 +975,12 @@ export const ExportModal = ({
                   >
                     {isRecording ? "Recording..." : "Export seamless loop"}
                   </Button>
-                  <div className="text-xs text-[var(--text-muted)] mt-[theme(spacing.2)]">
+                  <div className="text-xs text-[var(--text-muted)] mt-2">
                     Tip: Exports a seamless loop by syncing animation time to your chosen duration and FPS.
                   </div>
                 </div>
-              </TabsContent>
-            </TabsPanels>
-          </Tabs>
+            </div>
+          )}
 
           {/* Progress */}
           {isExporting && (

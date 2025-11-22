@@ -5,7 +5,7 @@
  */
 
 const TILE_DENSITY_MIN = 50;
-const TILE_DENSITY_MAX = 1000;
+const TILE_DENSITY_MAX = 1500; // Increased by 50% from 1000
 
 const PALETTE_VARIANCE_MIN = 0;
 const PALETTE_VARIANCE_MAX = 150; // Increased from 100 to allow more variance
@@ -16,9 +16,9 @@ const clampValue = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
 
 /**
- * Converts internal density value (50-1000) to UI slider value (0-100)
+ * Converts internal density value (50-1500) to UI slider value (0-100)
  * 
- * @param value - Internal density value (50-1000)
+ * @param value - Internal density value (50-1500)
  * @returns UI slider value (0-100)
  */
 export const densityToUi = (value: number) => {
@@ -30,10 +30,10 @@ export const densityToUi = (value: number) => {
 };
 
 /**
- * Converts UI slider value (0-100) to internal density value (50-1000)
+ * Converts UI slider value (0-100) to internal density value (50-1500)
  * 
  * @param value - UI slider value (0-100)
- * @returns Internal density value (50-1000)
+ * @returns Internal density value (50-1500)
  */
 export const uiToDensity = (value: number) => {
   const bounded = clampValue(value, 0, 100);

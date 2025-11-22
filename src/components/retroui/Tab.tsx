@@ -21,17 +21,22 @@ export const Tabs = ({ children, ...props }: TabsProps) => (
 type TabsTriggerListProps = TabListProps<"div"> & {
   className?: string;
   children: ReactNode;
+  variant?: "default" | "top";
 };
 
 export const TabsTriggerList = ({
   children,
   className,
+  variant = "default",
   ...props
-}: TabsTriggerListProps) => (
-  <TabList className={cn("retro-tabs", className)} {...props}>
-    {children}
-  </TabList>
-);
+}: TabsTriggerListProps) => {
+  const variantClass = variant === "top" ? "tabs-top" : "retro-tabs";
+  return (
+    <TabList className={cn(variantClass, className)} {...props}>
+      {children}
+    </TabList>
+  );
+};
 
 type PrimitiveTabProps = React.ComponentProps<typeof Tab>;
 
@@ -39,22 +44,31 @@ interface TabsTriggerProps
   extends Omit<PrimitiveTabProps, "className" | "children"> {
   className?: string;
   children: ReactNode;
+  variant?: "default" | "top";
 }
 
 export const TabsTrigger = ({
   className,
   children,
+  variant = "default",
   ...props
-}: TabsTriggerProps) => (
-  <Tab
-    {...props}
-    className={({ selected }: { selected: boolean }) =>
-      cn("retro-tab", selected && "retro-tab-active", className)
+}: TabsTriggerProps) => {
+  const getTabClass = (selected: boolean) => {
+    if (variant === "top") {
+      return cn("tab-top", selected && "tab-top-active", className);
     }
-  >
-    {children}
-  </Tab>
-);
+    return cn("retro-tab", selected && "retro-tab-active", className);
+  };
+
+  return (
+    <Tab
+      {...props}
+      className={({ selected }: { selected: boolean }) => getTabClass(selected)}
+    >
+      {children}
+    </Tab>
+  );
+};
 
 type PrimitiveTabPanelsProps = TabPanelsProps<"div"> & {
   className?: string;

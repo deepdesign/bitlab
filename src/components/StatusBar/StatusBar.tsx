@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/Button";
 import { Badge } from "@/components/retroui/Badge";
-import { Maximize2, X, RefreshCw, Bookmark, Share2, HelpCircle, Info } from "lucide-react";
+import { Maximize2, X, RefreshCw, Bookmark, Camera, HelpCircle, Info } from "lucide-react";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { animatePulse } from "@/lib/utils/animations";
 import type { GeneratorState, MovementMode } from "@/types/generator";
@@ -143,7 +143,7 @@ export function StatusBar({
   
   return (
     <div
-      className={hudClassName}
+      className={isFullscreen ? `${hudClassName} gap-3 p-3` : hudClassName}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       data-fullscreen={isFullscreen}
@@ -157,8 +157,6 @@ export function StatusBar({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        gap: '12px',
-        padding: '12px',
         minWidth: '300px',
         maxWidth: '90vw',
         width: 'auto',
@@ -329,7 +327,7 @@ export function StatusBar({
           aria-label="Share & Export"
           title="Share & Export"
         >
-          <Share2 className="status-bar-icon" />
+          <Camera className="status-bar-icon" />
         </Button>
         <Button
           type="button"
